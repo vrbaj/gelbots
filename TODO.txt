@@ -1,0 +1,5 @@
+#TODO 1. kliknutím vybrat startovního robota a cíl
+#TODO 2. vyhledat překážky a určit jejich středy v globálním souřadnicovém systému
+#TODO 3. adaptovat potential_path_planner.py na obrázky a disky
+#TODO 4. vyřešit problém se souřadnicema globálníma vs lokálníma (mění se s každým pohybem stage a globálníma souřadnicema danýma servem
+#TODO 5. pořešit odchýlení robota od naplánované trasy (neurčitost v odezvě robota na střelu laserem)
