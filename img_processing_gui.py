@@ -15,10 +15,11 @@ class ExampleWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         # set default values
-
+        self.save_image_enable = False
+        self.raw_image = []
         self.auto_mode_enable = False
         self.shot_emulate = False
-        self.RASPI_IP = "192.168.1.101"
+        self.RASPI_IP = "192.168.0.101"
         self.RASPI_PORT = 65432
         self.RASPI_BUF = 10
         self.STEPPER_CONST = 6.6666666
@@ -36,6 +37,10 @@ class ExampleWindow(QMainWindow):
         self.gray = []
         self.template_image = []
         self.original_template_image = []
+        self.pulse_number = 0
+        self.pulse_on = 0
+        self.pulse_off = 0
+
 
         # Set validators
         self.onlyInt = QIntValidator()
@@ -131,6 +136,41 @@ class ExampleWindow(QMainWindow):
         self.brightnessInput.setValidator(self.onlyDbl)
         self.brightnessInput.editingFinished.connect(self.brightness_edited)
 
+        # Create pulse number label
+        self.pulseNumberLabel = QLabel(centralWidget)
+        self.pulseNumberLabel.setGeometry(QRect(330, 0 , 80, 31))
+        self.pulseNumberLabel.setText("Pulse n.:")
+
+        # Create pulse number input box
+        self.pulseNumberInput = QLineEdit(centralWidget)
+        self.pulseNumberInput.move(400, 0)
+        self.pulseNumberInput.setFixedWidth(40)
+        self.pulseNumberInput.setValidator(self.onlyInt)
+        self.pulseNumberInput.editingFinished.connect(self.pulse_number_edited)
+
+        # Create laser on label
+        self.laserOnLabel = QLabel(centralWidget)
+        self.laserOnLabel.setGeometry(QRect(500, 0 , 80, 31))
+        self.laserOnLabel.setText("On.:")
+
+        # Create laser on input box
+        self.laserOnInput = QLineEdit(centralWidget)
+        self.laserOnInput.move(600, 0)
+        self.laserOnInput.setFixedWidth(40)
+        self.laserOnInput.setValidator(self.onlyInt)
+        self.laserOnInput.editingFinished.connect(self.laser_on_edited)
+
+        # Create laser on label
+        self.laserOffLabel = QLabel(centralWidget)
+        self.laserOffLabel.setGeometry(QRect(700, 0 , 80, 31))
+        self.laserOffLabel.setText("Off.:")
+
+        # Create laser on input box
+        self.laserOffInput = QLineEdit(centralWidget)
+        self.laserOffInput.move(800, 0)
+        self.laserOffInput.setFixedWidth(40)
+        self.laserOffInput.setValidator(self.onlyInt)
+        self.laserOffInput.editingFinished.connect(self.laser_off_edited)
 
         # add pix
         self.imageDisplay = QLabel(self)
@@ -154,12 +194,16 @@ class ExampleWindow(QMainWindow):
         self.saveButton = QPushButton('Save img', self)
         self.saveButton.setToolTip('Save imige with disk centers')
         self.saveButton.move(1750,40)
-        self.saveButton.clicked.connect(self.save_disks)
+        self.saveButton.clicked.connect(self.save_disk_enabler)
 
 
         self.timerShowImage = QtCore.QTimer(self)
         self.timerShowImage.timeout.connect(self.show_image)
         self.timerShowImage.start(10)  # 10 Hz
+
+        self.timerSaveImage = QtCore.QTimer(self)
+        self.timerSaveImage.timeout.connect(self.save_disks)
+        self.timerSaveImage.start(500)  # 10 Hz
 
         self.timerAuto = QtCore.QTimer(self)
         self.timerAuto.timeout.connect(self.auto_mode)
@@ -276,14 +320,15 @@ class ExampleWindow(QMainWindow):
 
     # Set key press events
     def keyPressEvent(self, e):
+        print(e.key())
         self.logger.setPlainText("event " + str(e.key()))
         if e.key() == 65:
             # move left
-            #self.move_stepper("x-10")
-            try:
-                self.k.sendalla(bytes("x-10", "UTF-8"))
-            except:
-                print("dont care about boken pipe shit")
+            self.move_stepper("x-10")
+            # try:
+            #     self.k.sendalla(bytes("x-10", "UTF-8"))
+            # except:
+            #     print("dont care about boken pipe shit")
 
         elif e.key() == 68:
             # move right
@@ -294,9 +339,26 @@ class ExampleWindow(QMainWindow):
         elif e.key() == 87:
             # move down
             self.move_stepper("y-10")
+        elif e.key() == 81:
+            self.move_stepper("s")
+        elif e.key() == 69:
+            self.move_stepper("l")
+
+
 
     def shot(self):
         print("I SHOT!!!!!!!!!!")
+        for i in range(self.pulse_number):
+            print("shot n.: ", i)
+            print(self.pulse_on / 1000)
+            self.move_stepper("s")
+
+            time.sleep(self.pulse_on / 1000)
+            self.move_stepper("l")
+            time.sleep(self.pulse_off / 1000)
+            pass
+        print("shooting done")
+
         self.shot_emulate = True
 
     def auto_mode(self):
@@ -307,6 +369,7 @@ class ExampleWindow(QMainWindow):
             self.show_image()
             self.get_steps()
             self.show_image()
+            self.shot()
 
     def auto_mode_enabler(self):
         if self.timerAuto.isActive():
@@ -349,7 +412,35 @@ class ExampleWindow(QMainWindow):
                 break
 
     def save_disks(self):
-        cv2.imwrite("response" + str(datetime.datetime.now()) + ".png", self.gray)
+        #print(type(self.gray))
+        #print(self.gray)
+        if self.save_image_enable:
+            cv2.imwrite(os.path.join("25022020","response" + str(datetime.datetime.now()) + ".png"),self.raw_image)
+
+    def save_disk_enabler(self):
+        self.save_image_enable = not self.save_image_enable
+
+    def pulse_number_edited(self):
+        #TODO exception
+        try:
+            self.pulse_number = int(self.pulseNumberInput.text())
+        except Exception as e:
+            print(e)
+
+    def laser_on_edited(self):
+        # TODO exception
+        try:
+            self.pulse_on = int(self.laserOnInput.text())
+        except Exception as e:
+            print(e)
+
+
+    def laser_off_edited(self):
+        # TODO exception
+        try:
+            self.pulse_off = int(self.laserOffInput.text())
+        except Exception as e:
+            print(e)
 
 
     def recompute_target_coord(self):
@@ -388,16 +479,16 @@ class ExampleWindow(QMainWindow):
             desired_x = self.target_disk_loc[0]
         else:
             if dx > 0:
-                desired_x = self.target_disk_loc[0] - np.sign(dx) * 5
+                desired_x = self.target_disk_loc[0] - np.sign(dx) * 7
             else:
-                desired_x = self.target_disk_loc[0] - np.sign(dx) * 5
+                desired_x = self.target_disk_loc[0] - np.sign(dx) * 7
         if abs(dy) < 3:
             desired_y = self.target_disk_loc[1]
         else:
             if dy > 0:
-                desired_y = self.target_disk_loc[1] - np.sign(dy) * 5
+                desired_y = self.target_disk_loc[1] - np.sign(dy) * 7
             else:
-                desired_y = self.target_disk_loc[1] - np.sign(dy) * 5
+                desired_y = self.target_disk_loc[1] - np.sign(dy) * 7
 
         self.desired_laser_coord = (desired_x, desired_y)
         self.stepper_x = int((self.STEPPER_CONST * (self.desired_laser_coord[0] - self.laser_loc[0])))
@@ -559,11 +650,13 @@ class ExampleWindow(QMainWindow):
         """Function for showing camera image in the GUI"""
         if self.camera_enabled:
             new_image = cv2_worker.get_image(self.camera)
-            print(new_image.shape)
+            self.raw_image = cv2.cvtColor(new_image, cv2.COLOR_BGR2GRAY)
+            # print(new_image.shape)
             i = 0
             if self.find_disks_enabled:
                 print("111111")
                 gray = cv2.cvtColor(new_image, cv2.COLOR_BGR2GRAY)
+
                 self.disk_locations = cv2_worker.find_disks(gray)
                 print("disks:", self.disk_locations)
                 for max_loc in self.disk_locations:
