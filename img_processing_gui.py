@@ -371,6 +371,7 @@ class ExampleWindow(QMainWindow):
             self.show_image()
             self.shot()
 
+
     def auto_mode_enabler(self):
         if self.timerAuto.isActive():
             self.timerAuto.stop()
