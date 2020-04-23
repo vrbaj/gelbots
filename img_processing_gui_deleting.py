@@ -10,7 +10,6 @@ import time, datetime
 import numpy as np
 
 
-
 class ExampleWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
@@ -41,108 +40,17 @@ class ExampleWindow(QMainWindow):
         self.pulse_on = 0
         self.pulse_off = 0
 
-
-
-
-
-
-
-        # Create exposure label
-        self.exposureLabel = QLabel(centralWidget)
-        self.exposureLabel.setGeometry(QRect(430, 40, 80, 31))
-        self.exposureLabel.setText("Exposure:")
-
-        # Create fps input box
-        self.exposureInput = QLineEdit(centralWidget)
-        self.exposureInput.move(500, 41)
-        self.exposureInput.setFixedWidth(40)
-        self.exposureInput.setValidator(self.onlyInt)
-        self.exposureInput.editingFinished.connect(self.exposure_edited)
-
-        # Create gain label
-        self.gainLabel = QLabel(centralWidget)
-        self.gainLabel.setGeometry(QRect(800, 40, 80, 31))
-        self.gainLabel.setText("Gain:")
-
-        # Create gain input box
-        self.gainInput = QLineEdit(centralWidget)
-        self.gainInput.move(840, 41)
-        self.gainInput.setFixedWidth(40)
-        self.gainInput.setValidator(self.onlyDbl)
-        self.gainInput.editingFinished.connect(self.gain_edited)
-
-        # Create brightness label
-        self.brightnessLabel = QLabel(centralWidget)
-        self.brightnessLabel.setGeometry(QRect(900, 40, 80, 31))
-        self.brightnessLabel.setText("Brightness:")
-
-        # Create gain input box
-        self.brightnessInput = QLineEdit(centralWidget)
-        self.brightnessInput.move(980, 41)
-        self.brightnessInput.setFixedWidth(40)
-        self.brightnessInput.setValidator(self.onlyDbl)
-        self.brightnessInput.editingFinished.connect(self.brightness_edited)
-
-        # Create pulse number label
-        self.pulseNumberLabel = QLabel(centralWidget)
-        self.pulseNumberLabel.setGeometry(QRect(330, 0 , 80, 31))
-        self.pulseNumberLabel.setText("Pulse n.:")
-
-        # Create pulse number input box
-        self.pulseNumberInput = QLineEdit(centralWidget)
-        self.pulseNumberInput.move(400, 0)
-        self.pulseNumberInput.setFixedWidth(40)
-        self.pulseNumberInput.setValidator(self.onlyInt)
-        self.pulseNumberInput.editingFinished.connect(self.pulse_number_edited)
-
-        # Create laser on label
-        self.laserOnLabel = QLabel(centralWidget)
-        self.laserOnLabel.setGeometry(QRect(500, 0 , 80, 31))
-        self.laserOnLabel.setText("On.:")
-
-        # Create laser on input box
-        self.laserOnInput = QLineEdit(centralWidget)
-        self.laserOnInput.move(600, 0)
-        self.laserOnInput.setFixedWidth(40)
-        self.laserOnInput.setValidator(self.onlyInt)
-        self.laserOnInput.editingFinished.connect(self.laser_on_edited)
-
-        # Create laser on label
-        self.laserOffLabel = QLabel(centralWidget)
-        self.laserOffLabel.setGeometry(QRect(700, 0 , 80, 31))
-        self.laserOffLabel.setText("Off.:")
-
-        # Create laser on input box
-        self.laserOffInput = QLineEdit(centralWidget)
-        self.laserOffInput.move(800, 0)
-        self.laserOffInput.setFixedWidth(40)
-        self.laserOffInput.setValidator(self.onlyInt)
-        self.laserOffInput.editingFinished.connect(self.laser_off_edited)
-
-        # add pix
-        self.imageDisplay = QLabel(self)
-        self.imageDisplay.setGeometry(QRect(10, 80, 1200, 800))
-        self.imageDisplay.setPixmap(QPixmap("Disk0001.tiff"))
-        self.imageDisplay.show()
-
         # add pix with found disks
         self.disksDisplay = QLabel(self)
         self.disksDisplay.setGeometry(QRect(1230, 80, 600, 480))
         self.disksDisplay.setPixmap(QPixmap("response2020-01-28 15:08:11.933959.png"))
         self.disksDisplay.show()
 
-        # run camera button
-        self.runCameraButton = QPushButton('Run camera', self)
-        self.runCameraButton.setToolTip('This is an example button')
-        self.runCameraButton.move(600, 40)
-        self.runCameraButton.clicked.connect(self.run_camera)
-
         # save disk centers button
         self.saveButton = QPushButton('Save img', self)
         self.saveButton.setToolTip('Save imige with disk centers')
         self.saveButton.move(1750,40)
         self.saveButton.clicked.connect(self.save_disk_enabler)
-
 
         self.timerShowImage = QtCore.QTimer(self)
         self.timerShowImage.timeout.connect(self.show_image)
@@ -155,20 +63,6 @@ class ExampleWindow(QMainWindow):
         self.timerAuto = QtCore.QTimer(self)
         self.timerAuto.timeout.connect(self.auto_mode)
         #self.timerAuto.stop()
-
-        # Create log
-        self.logger = QtWidgets.QPlainTextEdit(centralWidget)
-        self.logger.setGeometry(10, 900, 1000, 40)
-        self.logger.setReadOnly(True)
-        self.logger.setPlainText("Initialized..")
-
-        # Create combobox for camera resolution and add items.
-        self.resolutionComboBox = QComboBox(centralWidget)
-        self.resolutionComboBox.setGeometry(QRect(1100, 40, 200, 31))
-        self.resolutionComboBox.setObjectName(("resolutionComboBox"))
-        self.resolutionComboBox.addItem("800 x 600")
-        self.resolutionComboBox.addItem("1920 x 1080")
-        self.resolutionComboBox.currentIndexChanged.connect(self.resolution_changed)
 
         # find disks button
         self.findDisksButton = QPushButton('Find disks', self)
@@ -210,7 +104,6 @@ class ExampleWindow(QMainWindow):
         self.diskCoordInput.move(1650, 10)
         self.diskCoordInput.setFixedWidth(100)
 
-
         # set goal  button
         self.setGoalButton = QPushButton('Goal', self)
         self.setGoalButton.setToolTip('Click to set goal location')
@@ -249,7 +142,6 @@ class ExampleWindow(QMainWindow):
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)  # works well
         time.sleep(.2)
 
-
         # Set laser loc from previous
         try:
             f = open("laser_loc.txt", "r")
@@ -261,11 +153,6 @@ class ExampleWindow(QMainWindow):
 
         self.keyPressEvent = self.keyPressEvent
 
-        # open socket for stream
-        #self.k = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #self.k.connect((self.RASPI_IP, self.RASPI_PORT))
-
-    # Set key press events
     def keyPressEvent(self, e):
         print(e.key())
         self.logger.setPlainText("event " + str(e.key()))
@@ -291,21 +178,17 @@ class ExampleWindow(QMainWindow):
         elif e.key() == 69:
             self.move_stepper("l")
 
-
-
     def shot(self):
         print("I SHOT!!!!!!!!!!")
         for i in range(self.pulse_number):
             print("shot n.: ", i)
             print(self.pulse_on / 1000)
             self.move_stepper("s")
-
             time.sleep(self.pulse_on / 1000)
             self.move_stepper("l")
             time.sleep(self.pulse_off / 1000)
             pass
         print("shooting done")
-
         self.shot_emulate = True
 
     def auto_mode(self):
@@ -318,15 +201,12 @@ class ExampleWindow(QMainWindow):
             self.show_image()
             self.shot()
 
-
     def auto_mode_enabler(self):
         if self.timerAuto.isActive():
             self.timerAuto.stop()
         else:
             self.timerAuto.start(1000)
             self.shot_emulate = True
-
-
 
     def get_disk_template(self, event, x, y, flags, param):
         pass
@@ -352,44 +232,17 @@ class ExampleWindow(QMainWindow):
             # display the image and wait for a keypress
             cv2.imshow("template win", self.template_image)
             key = cv2.waitKey(1) & 0xFF
-
-
             # if the 'c' key is pressed, break from the loop
             if key == ord("c"):
                 cv2.destroyAllWindows()
                 break
 
     def save_disks(self):
-        #print(type(self.gray))
-        #print(self.gray)
         if self.save_image_enable:
             cv2.imwrite(os.path.join("25022020","response" + str(datetime.datetime.now()) + ".png"),self.raw_image)
 
     def save_disk_enabler(self):
         self.save_image_enable = not self.save_image_enable
-
-    def pulse_number_edited(self):
-        #TODO exception
-        try:
-            self.pulse_number = int(self.pulseNumberInput.text())
-        except Exception as e:
-            print(e)
-
-    def laser_on_edited(self):
-        # TODO exception
-        try:
-            self.pulse_on = int(self.laserOnInput.text())
-        except Exception as e:
-            print(e)
-
-
-    def laser_off_edited(self):
-        # TODO exception
-        try:
-            self.pulse_off = int(self.laserOffInput.text())
-        except Exception as e:
-            print(e)
-
 
     def recompute_target_coord(self):
         max_distance = 999999
@@ -405,14 +258,11 @@ class ExampleWindow(QMainWindow):
                 new_target_loc = disk
         self.target_disk_loc = new_target_loc
 
-
     def move_stepper(self, steps):
         k = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         k.connect((self.RASPI_IP, self.RASPI_PORT))
         k.sendall(bytes(steps, "UTF-8"))
         k.close()
-
-
 
     def recompute_goal(self):
         self.goal_loc = (int(round(self.goal_loc[0] - self.stepper_x / self.STEPPER_CONST)),
@@ -467,49 +317,6 @@ class ExampleWindow(QMainWindow):
         self.target_disk_loc = eval(self.diskCoordInput.text())
         self.logger.setPlainText("target disk: {}".format(self.target_disk_loc))
 
-
-    def exposure_edited(self):
-        camera_id = self.cameraComboBox.currentIndex()
-        """Function to set oxposure of camera"""
-        # TODO validate following approach
-        exposure_value = self.camera.get(cv2.CAP_PROP_EXPOSURE)
-        try:
-            new_exposure_value = int(self.exposureInput.text())
-            self.logger.setPlainText("Exposure value changed from {} to {}".format(str(exposure_value), str(new_exposure_value)))
-        except ValueError:
-            self.logger.setPlainText("Exposure value error")
-            new_exposure_value = exposure_value
-        # subprocess.Popen("v4l2-ctl -d /dev/video{} -c exposure_auto=0".format(camera_id), shell=True)
-        subprocess.Popen("v4l2-ctl -d /dev/video{} -c exposure_absolute={}".format(camera_id, new_exposure_value), shell=True)
-
-    def gain_edited(self):
-        camera_id = self.cameraComboBox.currentIndex()
-        """Function to set gain of the camera"""
-        # TODO validate following approach
-        gain_value = self.camera.get(cv2.CAP_PROP_GAIN)
-        try:
-            new_gain_value = float(self.gainInput.text().replace(",", "."))
-            self.logger.setPlainText("Gain value changed from {} to {}".format(str(gain_value), str(new_gain_value)))
-        except ValueError:
-            self.logger.setPlainText("Gain value error")
-            new_gain_value = gain_value
-        self.camera.set(cv2.CAP_PROP_GAIN, new_gain_value)
-        # subprocess.Popen("v4l2-ctl -d /dev/video{} -c exposure_auto=0".format(camera_id), shell=True)
-        # subprocess.Popen("v4l2-ctl -d /dev/video{} -c exposure_absolute={}".format(camera_id, new_exposure_value), shell=True)
-
-    def brightness_edited(self):
-        camera_id = self.cameraComboBox.currentIndex()
-        """Function to set gain of the camera"""
-        # TODO validate following approach
-        brightness_value = self.camera.get(cv2.CAP_PROP_BRIGHTNESS)
-        try:
-            new_brightness_value = float(self.brightnessInput.text().replace(",", "."))
-            self.logger.setPlainText("Brightness value changed from {} to {}".format(str(brightness_value), str(new_brightness_value)))
-        except ValueError:
-            self.logger.setPlainText("Brightness value error")
-            new_brightness_value = brightness_value
-        self.camera.set(cv2.CAP_PROP_BRIGHTNESS, new_brightness_value)
-
     def resolution_changed(self):
         """Function to set  resolution of camera image"""
         new_width_value = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
@@ -533,8 +340,6 @@ class ExampleWindow(QMainWindow):
         time.sleep(0.1)
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, new_height_value)
         time.sleep(0.1)
-
-
 
     def get_camera_list(self):
         """Wrapping function to get camera list"""
@@ -640,22 +445,10 @@ class ExampleWindow(QMainWindow):
         "Function for enabling find disk routine"
         self.find_disks_enabled = True
 
-    def camera_changed(self):
-        try:
-            self.camera.release()
-            self.camera = cv2.VideoCapture(self.cameraComboBox.currentIndex())
-            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 800)
-            time.sleep(0.1)
-            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)
-            time.sleep(0.1)
-        except:
-            self.camera = False
-
-
-if __name__ == "__main__":
-
-    app = QtWidgets.QApplication(sys.argv)
-    mainWin = ExampleWindow()
-    mainWin.show()
-    sys.exit(app.exec_())
-
+        # # Create combobox for camera resolution and add items.
+        # self.resolutionComboBox = QComboBox(centralWidget)
+        # self.resolutionComboBox.setGeometry(QRect(1100, 40, 200, 31))
+        # self.resolutionComboBox.setObjectName(("resolutionComboBox"))
+        # self.resolutionComboBox.addItem("800 x 600")
+        # self.resolutionComboBox.addItem("1920 x 1080")
+        # self.resolutionComboBox.currentIndexChanged.connect(self.resolution_changed)
