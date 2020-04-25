@@ -18,8 +18,6 @@ class ExampleWindow(QMainWindow):
         self.raw_image = []
         self.auto_mode_enable = False
         self.shot_emulate = False
-        self.RASPI_IP = "192.168.0.101"
-        self.RASPI_PORT = 65432
         self.RASPI_BUF = 10
         self.STEPPER_CONST = 6.6666666
         self.TEMPLATE_SIZE = 60
@@ -36,9 +34,6 @@ class ExampleWindow(QMainWindow):
         self.gray = []
         self.template_image = []
         self.original_template_image = []
-        self.pulse_number = 0
-        self.pulse_on = 0
-        self.pulse_off = 0
 
         # add pix with found disks
         self.disksDisplay = QLabel(self)
@@ -82,40 +77,6 @@ class ExampleWindow(QMainWindow):
         self.recomputeGoalButton.move(1450, 600)
         self.recomputeGoalButton.clicked.connect(self.recompute_goal)
 
-        #SETTERS
-        # set laser  button
-        self.setLaserButton = QPushButton('Laser', self)
-        self.setLaserButton.setToolTip('Click to set laser location')
-        self.setLaserButton.move(1450, 40)
-        self.setLaserButton.clicked.connect(self.set_laser_loc)
-
-        # Create laser coordinatex input box
-        self.laserCoordInput = QLineEdit(centralWidget)
-        self.laserCoordInput.move(1450, 10)
-        self.laserCoordInput.setFixedWidth(100)
-
-        # Create goal coordinatex input box
-        self.goalCoordInput = QLineEdit(centralWidget)
-        self.goalCoordInput.move(1550, 10)
-        self.goalCoordInput.setFixedWidth(100)
-
-        # Create disk coordinate input box
-        self.diskCoordInput = QLineEdit(centralWidget)
-        self.diskCoordInput.move(1650, 10)
-        self.diskCoordInput.setFixedWidth(100)
-
-        # set goal  button
-        self.setGoalButton = QPushButton('Goal', self)
-        self.setGoalButton.setToolTip('Click to set goal location')
-        self.setGoalButton.move(1550, 40)
-        self.setGoalButton.clicked.connect(self.set_goal_loc)
-
-        # set target disk  button
-        self.setDiskButton = QPushButton('Disk', self)
-        self.setDiskButton.setToolTip('Click to set goal location')
-        self.setDiskButton.move(1650, 40)
-        self.setDiskButton.clicked.connect(self.set_target_disk_loc)
-
         # get template  button
         self.getTemplateButton = QPushButton('Template', self)
         self.getTemplateButton.setToolTip('Click capture templates')
@@ -150,33 +111,6 @@ class ExampleWindow(QMainWindow):
             self.laserCoordInput.setText(str(self.laser_loc)[1:-1])
         except:
             pass
-
-        self.keyPressEvent = self.keyPressEvent
-
-    def keyPressEvent(self, e):
-        print(e.key())
-        self.logger.setPlainText("event " + str(e.key()))
-        if e.key() == 65:
-            # move left
-            self.move_stepper("x-10")
-            # try:
-            #     self.k.sendalla(bytes("x-10", "UTF-8"))
-            # except:
-            #     print("dont care about boken pipe shit")
-
-        elif e.key() == 68:
-            # move right
-            self.move_stepper("x10")
-        elif e.key() == 83:
-            # move top
-            self.move_stepper("y10")
-        elif e.key() == 87:
-            # move down
-            self.move_stepper("y-10")
-        elif e.key() == 81:
-            self.move_stepper("s")
-        elif e.key() == 69:
-            self.move_stepper("l")
 
     def shot(self):
         print("I SHOT!!!!!!!!!!")
@@ -302,20 +236,10 @@ class ExampleWindow(QMainWindow):
         #self.find_disks_roi_enabled = True
         self.find_disks_enabled = True
 
-    def set_laser_loc(self):
-        self.laser_loc = eval(self.laserCoordInput.text())
-        self.logger.setPlainText("laser loc: {} ".format(str(self.laser_loc)))
-        f = open("laser_loc.txt", "w")
-        f.write(str(self.laser_loc))
-        f.close()
 
     def set_goal_loc(self):
         self.goal_loc = eval(self.goalCoordInput.text())
         self.logger.setPlainText("goal loc: {}".format(str(self.goal_loc)))
-
-    def set_target_disk_loc(self):
-        self.target_disk_loc = eval(self.diskCoordInput.text())
-        self.logger.setPlainText("target disk: {}".format(self.target_disk_loc))
 
     def resolution_changed(self):
         """Function to set  resolution of camera image"""

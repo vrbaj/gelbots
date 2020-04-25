@@ -13,7 +13,7 @@ class CameraWorker(QThread):
     def __init__(self, camera, width, height, fps, exposure, gain, brightness):
     #def __init__(self, camera):
         super(CameraWorker, self).__init__()
-        self.grab_flag = True  # saving frames to file
+        self.grab_flag = False  # saving frames to file
         self.quit_flag = False  # flag to kill worker
         self.change_params_flag = False  # flat to change camera settings
         self.status = True

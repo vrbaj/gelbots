@@ -10,6 +10,7 @@ import subprocess
 import time, datetime
 import numpy as np
 import CameraWorker
+import RaspiWorker
 import configparser
 
 
@@ -37,6 +38,10 @@ class ExampleWindow(QMainWindow):
             self.laser_off_time = self.config.getint("laser", "off_time", fallback=1)
             self.laser_x_loc = self.config.getint("laser", "x_loc", fallback=0)
             self.laser_y_loc = self.config.getint("laser", "y_loc", fallback=0)
+            self.disk_x_loc = self.config.getint("disk", "x_loc", fallback=0)
+            self.disk_y_loc = self.config.getint("disk", "y_loc", fallback=0)
+            self.goal_x_loc = self.config.getint("goal", "x_loc", fallback=0)
+            self.goal_y_loc = self.config.getint("goal", "y_loc", fallback=0)
         except Exception as ex:
             print(ex)
         print(self.config.sections())
@@ -209,6 +214,58 @@ class ExampleWindow(QMainWindow):
         self.laserCoordYInput.setText(str(self.laser_y_loc))
         self.laserCoordYInput.editingFinished.connect(self.laser_y_loc_edited)
 
+        # Create disk x loc label
+        self.diskLocXLabel = QLabel(central_widget)
+        self.diskLocXLabel.setGeometry(QRect(410, 30, 80, 31))
+        self.diskLocXLabel.setText("Disk X:")
+
+        # Create disk x coordinate input box
+        self.diskCoordXInput = QLineEdit(central_widget)
+        self.diskCoordXInput.move(445, 35)
+        self.diskCoordXInput.setFixedWidth(30)
+        self.diskCoordXInput.setValidator(self.onlyInt)
+        self.diskCoordXInput.setText(str(self.disk_x_loc))
+        self.diskCoordXInput.editingFinished.connect(self.disk_x_loc_edited)
+
+        # Create disk y loc label
+        self.diskLocYLabel = QLabel(central_widget)
+        self.diskLocYLabel.setGeometry(QRect(480, 30, 80, 31))
+        self.diskLocYLabel.setText("Y:")
+
+        # Create disk y coordinate input box
+        self.diskCoordYInput = QLineEdit(central_widget)
+        self.diskCoordYInput.move(510, 35)
+        self.diskCoordYInput.setFixedWidth(30)
+        self.diskCoordYInput.setValidator(self.onlyInt)
+        self.diskCoordYInput.setText(str(self.disk_y_loc))
+        self.diskCoordYInput.editingFinished.connect(self.disk_y_loc_edited)
+
+        # Create goal x loc label
+        self.goalLocXLabel = QLabel(central_widget)
+        self.goalLocXLabel.setGeometry(QRect(550, 30, 80, 31))
+        self.goalLocXLabel.setText("Goal X:")
+
+        # Create goal x coordinate input box
+        self.goalCoordXInput = QLineEdit(central_widget)
+        self.goalCoordXInput.move(585, 35)
+        self.goalCoordXInput.setFixedWidth(30)
+        self.goalCoordXInput.setValidator(self.onlyInt)
+        self.goalCoordXInput.setText(str(self.goal_x_loc))
+        self.goalCoordXInput.editingFinished.connect(self.goal_x_loc_edited)
+
+        # Create goal y loc label
+        self.goalLocYLabel = QLabel(central_widget)
+        self.goalLocYLabel.setGeometry(QRect(625, 30, 80, 31))
+        self.goalLocYLabel.setText("Y:")
+
+        # Create goal y coordinate input box
+        self.goalCoordYInput = QLineEdit(central_widget)
+        self.goalCoordYInput.move(640, 35)
+        self.goalCoordYInput.setFixedWidth(30)
+        self.goalCoordYInput.setValidator(self.onlyInt)
+        self.goalCoordYInput.setText(str(self.goal_y_loc))
+        self.goalCoordYInput.editingFinished.connect(self.goal_y_loc_edited)
+
         # add pix
         self.imageDisplay = QLabel(self)
         self.imageDisplay.setGeometry(QRect(10, 80, 1200, 800))
@@ -226,7 +283,82 @@ class ExampleWindow(QMainWindow):
         self.runCameraButton.setFixedHeight(22)
         self.runCameraButton.clicked.connect(self.run_camera)
 
+        # start laser blinking
+        self.blinkLaserButton = QPushButton("Blink On", self)
+        self.blinkLaserButton.setToolTip("Unlimited laser blink")
+        self.blinkLaserButton.move(1000, 0)
+        self.blinkLaserButton.setFixedHeight(22)
+        self.blinkLaserButton.clicked.connect(self.blink_laser)
+
+        # key events
+        self.keyPressEvent = self.keyPressEvent
+
+        # start Raspi communication thread
+        self.raspi_comm = RaspiWorker.RaspiWorker()
+        self.raspi_comm.signal_comm_err.connect(self.raspi_fail)
+        self.raspi_comm.start()
         self.showMaximized()
+
+    def blink_laser(self):
+        if self.blinkLaserButton.text() == "Blink On":
+            self.raspi_comm.requests_queue.append("k")
+            self.blinkLaserButton.setText("Blink Off")
+        else:
+            self.blinkLaserButton.setText("Blink On")
+            self.raspi_comm.requests_queue.append("t")
+
+    def raspi_fail(self):
+        self.message_text.setPlainText("raspi went wrong")
+        self.raspi_comm.terminate()
+
+    def keyPressEvent(self, e):
+        print(e.key())
+        self.message_text.setPlainText("event " + str(e.key()))
+        if e.key() == 65:
+            # move left
+            self.raspi_comm.requests_queue.append("x-10")
+
+        elif e.key() == 68:
+            # move right
+            self.raspi_comm.requests_queue.append("x10")
+        elif e.key() == 83:
+            # move top
+            self.raspi_comm.requests_queue.append("y10")
+        elif e.key() == 87:
+            # move down
+            self.raspi_comm.requests_queue.append("y-10")
+        elif e.key() == 81:
+            self.raspi_comm.requests_queue.append("s")
+        elif e.key() == 69:
+            self.raspi_comm.requests_queue.append("l")
+
+    def goal_x_loc_edited(self):
+        """Function to set the goal coord"""
+        self.goal_x_loc = int(self.goalCoordXInput.text())
+        self.message_text.setPlainText("goal x loc: {} ".format(str(self.goal_x_loc)))
+        self.config.set("goal", "x_loc", self.goal_x_loc)
+        self.update_config_file()
+
+    def goal_y_loc_edited(self):
+        """Function to set the goal coord"""
+        self.goal_y_loc = int(self.goalCoordYInput.text())
+        self.message_text.setPlainText("goal y loc: {} ".format(str(self.goal_y_loc)))
+        self.config.set("goal", "y_loc", self.goal_y_loc)
+        self.update_config_file()
+
+    def disk_x_loc_edited(self):
+        """Function to set the disk coord"""
+        self.disk_x_loc = int(self.diskCoordXInput.text())
+        self.message_text.setPlainText("disk x loc: {} ".format(str(self.disk_x_loc)))
+        self.config.set("disk", "x_loc", self.disk_x_loc)
+        self.update_config_file()
+
+    def disk_y_loc_edited(self):
+        """Function to set the disk coord"""
+        self.disk_y_loc = int(self.diskCoordYInput.text())
+        self.message_text.setPlainText("disk y loc: {} ".format(str(self.disk_y_loc)))
+        self.config.set("disk", "y_loc", self.disk_y_loc)
+        self.update_config_file()
 
     def laser_x_loc_edited(self):
         """Function to set the laser coord"""
@@ -387,8 +519,8 @@ class ExampleWindow(QMainWindow):
                                                            self.cam_exposure_value, self.cam_gain_value,
                                                            self.cam_brightness_value)
             # self.camera_worker = CameraWorker.CameraWorker(self.cameraComboBox.currentIndex())
-            self.camera_worker.start()
             self.camera_worker.image_ready.connect(self.obtain_image)
+            self.camera_worker.start()
             self.runCameraButton.setText("Stop camera")
         else:
             self.camera_worker.image_ready.disconnect(self.obtain_image)
