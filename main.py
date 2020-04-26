@@ -2,9 +2,9 @@ import sys, socket, copy, os
 import cv2_worker
 from configparser import ConfigParser
 from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QComboBox, QLineEdit, QPushButton
-from PyQt5.QtCore import QSize, QRect, Qt
-from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
+from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QComboBox, QLineEdit, QPushButton, QFrame
+from PyQt5.QtCore import QSize, QRect, Qt, pyqtSignal
+from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator, QPainter, QPen, QBrush
 import cv2
 import subprocess
 import time, datetime
@@ -13,6 +13,52 @@ import CameraWorker
 import RaspiWorker
 import configparser
 
+
+class VideoSettingsWindow(QMainWindow):
+    closed = pyqtSignal(str, int)
+
+    def __init__(self):
+        super(VideoSettingsWindow, self).__init__()
+        # set window properties
+        self.setMinimumSize(QSize(500, 300))
+        self.setWindowTitle("Video settings")
+        self.some_bullshit = "wtf"
+        self.onlyInt = QIntValidator()
+
+        # Interval label
+        self.intervalLabel = QLabel(self)
+        self.intervalLabel.setGeometry(QRect(10, 5, 80, 31))
+        self.intervalLabel.setText("Saving interval:")
+
+        # Create width input box
+        self.intervalInput = QLineEdit(self)
+        self.intervalInput.setGeometry(QRect(90, 10, 30, 20))
+        self.intervalInput.setText("88")
+        self.intervalInput.setValidator(self.onlyInt)
+
+        # Interval seconds label
+        self.secondsLabel = QLabel(self)
+        self.secondsLabel.setGeometry(QRect(125, 5, 80, 31))
+        self.secondsLabel.setText("[s]")
+
+        # Namespace label
+        self.namespaceLabel = QLabel(self)
+        self.namespaceLabel.setGeometry(QRect(30, 35, 80, 31))
+        self.namespaceLabel.setText("Files name:")
+
+        # Create namespace input box
+        self.namespaceInput = QLineEdit(self)
+        self.namespaceInput.setGeometry(QRect(90, 40, 85, 20))
+        self.namespaceInput.setText("video")
+
+        # Path label
+        self.pathLabel = QLabel(self)
+        self.pathLabel.setGeometry(QRect(50, 65, 80, 31))
+        self.pathLabel.setText("Path:")
+
+
+    def closeEvent(self, event):
+        self.closed.emit(self.some_bullshit, 9)
 
 
 class ExampleWindow(QMainWindow):
@@ -42,6 +88,8 @@ class ExampleWindow(QMainWindow):
             self.disk_y_loc = self.config.getint("disk", "y_loc", fallback=0)
             self.goal_x_loc = self.config.getint("goal", "x_loc", fallback=0)
             self.goal_y_loc = self.config.getint("goal", "y_loc", fallback=0)
+            self.steppers_x = self.config.getint("steppers", "x", fallback=10)
+            self.steppers_y = self.config.getint("steppers", "y", fallback=10)
         except Exception as ex:
             print(ex)
         print(self.config.sections())
@@ -290,6 +338,58 @@ class ExampleWindow(QMainWindow):
         self.blinkLaserButton.setFixedHeight(22)
         self.blinkLaserButton.clicked.connect(self.blink_laser)
 
+        # status label of raspi
+        self.raspiStatus = QLabel(central_widget)
+        self.raspiStatus.setGeometry(QRect(1500, 5, 80, 30))
+        self.raspiStatus.setText("Raspberri")
+        self.raspiStatus.setAutoFillBackground(True)
+        self.raspiStatus.setStyleSheet("background-color:green;")
+        self.raspiStatus.setAlignment(Qt.AlignCenter)
+        self.raspiStatus.setFrameShape(QFrame.Panel)
+        self.raspiStatus.setFrameShadow(QFrame.Sunken)
+        self.raspiStatus.setLineWidth(2)
+        self.raspiStatus.mousePressEvent = self.init_raspi
+
+        # red button stop
+        self.redButton = QPushButton("Red button", self)
+        self.redButton.setToolTip("Click to stop all raspberry processes")
+        self.redButton.move(1000, 30)
+        self.redButton.setFixedHeight(22)
+        self.redButton.clicked.connect(self.red_button)
+
+        # steppers x param label
+        self.steppersParamXLabel = QLabel(central_widget)
+        self.steppersParamXLabel.setGeometry(QRect(1600, 5, 80, 31))
+        self.steppersParamXLabel.setText("Manual steps X:")
+
+        # steppers x param input
+        self.steppersXInput = QLineEdit(central_widget)
+        self.steppersXInput.move(1680, 10)
+        self.steppersXInput.setFixedWidth(30)
+        self.steppersXInput.setValidator(self.onlyInt)
+        self.steppersXInput.setText(str(self.steppers_x))
+        self.steppersXInput.editingFinished.connect(self.steppers_x_edited)
+
+        # steppers y param label
+        self.steppersParamYLabel = QLabel(central_widget)
+        self.steppersParamYLabel.setGeometry(QRect(1600, 35, 80, 31))
+        self.steppersParamYLabel.setText("Manual steps Y:")
+
+        # steppers Y param input
+        self.steppersYInput = QLineEdit(central_widget)
+        self.steppersYInput.move(1680, 40)
+        self.steppersYInput.setFixedWidth(30)
+        self.steppersYInput.setValidator(self.onlyInt)
+        self.steppersYInput.setText(str(self.steppers_y))
+        self.steppersYInput.editingFinished.connect(self.steppers_y_edited)
+
+        # save path
+        self.saveVideoButton = QPushButton("Video settings", self)
+        self.saveVideoButton.setToolTip("Click to set video settings")
+        self.saveVideoButton.move(1300, 30)
+        self.saveVideoButton.setFixedHeight(22)
+        self.saveVideoButton.clicked.connect(self.save_video_settings)
+
         # key events
         self.keyPressEvent = self.keyPressEvent
 
@@ -297,11 +397,50 @@ class ExampleWindow(QMainWindow):
         self.raspi_comm = RaspiWorker.RaspiWorker()
         self.raspi_comm.signal_comm_err.connect(self.raspi_fail)
         self.raspi_comm.start()
+
+        # video settings window
+        self.video_settings_window = VideoSettingsWindow()
+        self.video_settings_window.closed.connect(self.video_settings_close)
         self.showMaximized()
+
+    def video_settings_close(self, data1, data2):
+        print(data1, " ", data2)
+
+
+    def save_video_settings(self):
+        self.video_settings_window.show()
+        # print(self.video_settings_window.some_bullshit)
+
+    def steppers_x_edited(self):
+        """Function to set steppers steps for manual control"""
+        self.steppers_x = int(self.steppersXInput.text())
+        self.message_text.setPlainText("stepper x: {} ".format(str(self.steppers_x)))
+        self.config.set("steppers", "x", self.steppers_x)
+        self.update_config_file()
+
+    def steppers_y_edited(self):
+        """Function to set steppers steps for manual control"""
+        self.steppers_y = int(self.steppersYInput.text())
+        self.message_text.setPlainText("stepper y: {} ".format(str(self.steppers_y)))
+        self.config.set("steppers", "y", self.steppers_y)
+        self.update_config_file()
+
+    def red_button(self):
+        self.raspi_comm.requests_queue.clear()
+        self.raspi_comm.requests_queue.append("r")
+
+    def init_raspi(self, event):
+        self.raspiStatus.setStyleSheet("background-color:green;")
+        if not self.raspi_comm.raspi_status:
+            self.raspi_comm = RaspiWorker.RaspiWorker()
+            self.raspi_comm.signal_comm_err.connect(self.raspi_fail)
+            self.raspi_comm.start()
 
     def blink_laser(self):
         if self.blinkLaserButton.text() == "Blink On":
-            self.raspi_comm.requests_queue.append("k")
+            time_on = int(self.laser_on_time)
+            time_off = int(self.laser_off_time)
+            self.raspi_comm.requests_queue.append("k" + "," + str(time_on) + "," + str(time_off))
             self.blinkLaserButton.setText("Blink Off")
         else:
             self.blinkLaserButton.setText("Blink On")
@@ -309,6 +448,7 @@ class ExampleWindow(QMainWindow):
 
     def raspi_fail(self):
         self.message_text.setPlainText("raspi went wrong")
+        self.raspiStatus.setStyleSheet("background-color:red;")
         self.raspi_comm.terminate()
 
     def keyPressEvent(self, e):
@@ -316,17 +456,16 @@ class ExampleWindow(QMainWindow):
         self.message_text.setPlainText("event " + str(e.key()))
         if e.key() == 65:
             # move left
-            self.raspi_comm.requests_queue.append("x-10")
-
+            self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
         elif e.key() == 68:
             # move right
-            self.raspi_comm.requests_queue.append("x10")
+            self.raspi_comm.requests_queue.append("x" + str(self.steppers_x))
         elif e.key() == 83:
             # move top
-            self.raspi_comm.requests_queue.append("y10")
+            self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
         elif e.key() == 87:
             # move down
-            self.raspi_comm.requests_queue.append("y-10")
+            self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
         elif e.key() == 81:
             self.raspi_comm.requests_queue.append("s")
         elif e.key() == 69:
@@ -512,21 +651,22 @@ class ExampleWindow(QMainWindow):
                 print("ValueError")
 
     def run_camera(self):
-        if self.runCameraButton.text() == "Run camera":
-            self.cameraComboBox.setEnabled(False)
-            self.camera_worker = CameraWorker.CameraWorker(self.cameraComboBox.currentIndex(), self.cam_width_value,
-                                                           self.cam_brightness_value, self.cam_fps_value,
-                                                           self.cam_exposure_value, self.cam_gain_value,
-                                                           self.cam_brightness_value)
-            # self.camera_worker = CameraWorker.CameraWorker(self.cameraComboBox.currentIndex())
-            self.camera_worker.image_ready.connect(self.obtain_image)
-            self.camera_worker.start()
-            self.runCameraButton.setText("Stop camera")
-        else:
-            self.camera_worker.image_ready.disconnect(self.obtain_image)
-            self.camera_worker.quit_flag = True
-            self.cameraComboBox.setEnabled(True)
-            self.runCameraButton.setText("Run camera")
+        if self.cameraComboBox.count() > 0:
+            if self.runCameraButton.text() == "Run camera":
+                self.cameraComboBox.setEnabled(False)
+                self.camera_worker = CameraWorker.CameraWorker(self.cameraComboBox.currentIndex(), self.cam_width_value,
+                                                               self.cam_brightness_value, self.cam_fps_value,
+                                                               self.cam_exposure_value, self.cam_gain_value,
+                                                               self.cam_brightness_value)
+                # self.camera_worker = CameraWorker.CameraWorker(self.cameraComboBox.currentIndex())
+                self.camera_worker.image_ready.connect(self.obtain_image)
+                self.camera_worker.start()
+                self.runCameraButton.setText("Stop camera")
+            else:
+                self.camera_worker.image_ready.disconnect(self.obtain_image)
+                self.camera_worker.quit_flag = True
+                self.cameraComboBox.setEnabled(True)
+                self.runCameraButton.setText("Run camera")
 
     def obtain_image(self):
         """Function to get camera image from camera worker. The conversion to grayscale is done."""

@@ -13,16 +13,16 @@ class RaspiWorker(QThread):
         super(RaspiWorker, self).__init__()
         self.requests_queue = []
         self.quit_flag = False  # flag to kill worker
-        self.raspi_status = False
+        self.raspi_status = True
         self.k = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.k.settimeout(0.5)
 
     def run(self):
-        # TODO connect to Raspi, as long as comm is ok raspi_status = True
         try:
             self.k.connect((self.RASPI_IP, self.RASPI_PORT))
         except OSError as ex:
             self.quit_flag = True
+            self.raspi_status = False
             self.signal_comm_err.emit()
 
         while True:
@@ -34,6 +34,7 @@ class RaspiWorker(QThread):
                     try:
                         self.k.sendall(bytes(request_to_process, "UTF-8"))
                     except (Exception, socket.error) as ex:
+                        self.raspi_status = False
                         self.k.close()
                         self.quit_flag = True
                         self.signal_comm_err.emit()

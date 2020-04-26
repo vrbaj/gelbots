@@ -14,8 +14,6 @@ class ExampleWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         # set default values
-        self.save_image_enable = False
-        self.raw_image = []
         self.auto_mode_enable = False
         self.shot_emulate = False
         self.RASPI_BUF = 10
@@ -95,22 +93,6 @@ class ExampleWindow(QMainWindow):
         self.shotButton.move(1650, 900)
         self.shotButton.clicked.connect(self.shot)
 
-        # Set camera
-        self.camera = cv2.VideoCapture(0)
-        time.sleep(0.1)
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 800)  # works well
-        time.sleep(0.1)
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)  # works well
-        time.sleep(.2)
-
-        # Set laser loc from previous
-        try:
-            f = open("laser_loc.txt", "r")
-            self.laser_loc = eval(f.readline())
-            print(self.laser_loc)
-            self.laserCoordInput.setText(str(self.laser_loc)[1:-1])
-        except:
-            pass
 
     def shot(self):
         print("I SHOT!!!!!!!!!!")
@@ -268,16 +250,6 @@ class ExampleWindow(QMainWindow):
     def get_camera_list(self):
         """Wrapping function to get camera list"""
         return cv2_worker.get_available_cameras()
-
-    def run_camera(self):
-        """Function to enable showing of camera image"""
-        print("Run camera")
-
-        self.camera_enabled = not self.camera_enabled
-        if self.camera_enabled:
-            self.runCameraButton.setText("Stop camera")
-        else:
-            self.runCameraButton.setText("Run camera")
 
     def refresh_camera_list(self):
         """Function for refreshing cameraComboBox"""
