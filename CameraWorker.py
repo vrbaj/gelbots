@@ -6,6 +6,7 @@ from tifffile import imsave
 import numpy as np
 from os import path
 
+# opencv 4.1.0.25
 
 class CameraWorker(QThread):
     image_ready = pyqtSignal()

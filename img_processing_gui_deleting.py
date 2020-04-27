@@ -174,12 +174,6 @@ class ExampleWindow(QMainWindow):
                 new_target_loc = disk
         self.target_disk_loc = new_target_loc
 
-    def move_stepper(self, steps):
-        k = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        k.connect((self.RASPI_IP, self.RASPI_PORT))
-        k.sendall(bytes(steps, "UTF-8"))
-        k.close()
-
     def recompute_goal(self):
         self.goal_loc = (int(round(self.goal_loc[0] - self.stepper_x / self.STEPPER_CONST)),
                          int(round(self.goal_loc[1] - self.stepper_y / self.STEPPER_CONST)))
