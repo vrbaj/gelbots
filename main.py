@@ -2,7 +2,8 @@ import sys, socket, copy, os
 import cv2_worker
 from configparser import ConfigParser
 from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QComboBox, QLineEdit, QPushButton, QFrame
+from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QComboBox,\
+    QLineEdit, QPushButton, QFrame, QFileDialog
 from PyQt5.QtCore import QSize, QRect, Qt, pyqtSignal
 from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator, QPainter, QPen, QBrush
 import cv2
@@ -15,12 +16,17 @@ import configparser
 
 
 class VideoSettingsWindow(QMainWindow):
-    closed = pyqtSignal(str, int)
+    closed = pyqtSignal(int, str, str)
 
-    def __init__(self):
+    def __init__(self, interval, namespace, path):
         super(VideoSettingsWindow, self).__init__()
+        # set variables
+        self.save_interval = interval
+        self.save_namespace = namespace
+        self.save_path = path
+
         # set window properties
-        self.setMinimumSize(QSize(500, 300))
+        self.setMinimumSize(QSize(800, 120))
         self.setWindowTitle("Video settings")
         self.some_bullshit = "wtf"
         self.onlyInt = QIntValidator()
@@ -33,7 +39,7 @@ class VideoSettingsWindow(QMainWindow):
         # Create width input box
         self.intervalInput = QLineEdit(self)
         self.intervalInput.setGeometry(QRect(90, 10, 30, 20))
-        self.intervalInput.setText("88")
+        self.intervalInput.setText(str(self.save_interval))
         self.intervalInput.setValidator(self.onlyInt)
 
         # Interval seconds label
@@ -49,16 +55,42 @@ class VideoSettingsWindow(QMainWindow):
         # Create namespace input box
         self.namespaceInput = QLineEdit(self)
         self.namespaceInput.setGeometry(QRect(90, 40, 85, 20))
-        self.namespaceInput.setText("video")
+        self.namespaceInput.setText(self.save_namespace)
 
         # Path label
         self.pathLabel = QLabel(self)
         self.pathLabel.setGeometry(QRect(50, 65, 80, 31))
         self.pathLabel.setText("Path:")
 
+        # Path button
+        self.pathButton = QPushButton(self)
+        self.pathButton.setGeometry(QRect(90, 70, 30, 20))
+        self.pathButton.setToolTip("Click to choose directory")
+        self.pathButton.setText("...")
+        self.pathButton.clicked.connect(self.get_video_path)
 
-    def closeEvent(self, event):
-        self.closed.emit(self.some_bullshit, 9)
+        # Path actual label
+        self.pathActualLabel = QLabel(self)
+        self.pathActualLabel.setGeometry(QRect(130, 65, 650, 31))
+        self.pathActualLabel.setText(self.save_path)
+
+        # Apply button
+        self.validateButton = QPushButton(self)
+        self.validateButton.setGeometry(QRect(739, 90, 60, 30))
+        self.validateButton.setToolTip("Click to save settings")
+        self.validateButton.setText("Apply")
+        self.validateButton.clicked.connect(self.validate_settings)
+
+    def get_video_path(self):
+        file = str(QFileDialog.getExistingDirectory(self, "Select directory"))
+        self.save_path = file
+        self.pathActualLabel.setText(file)
+
+    def validate_settings(self):
+        self.save_interval = int(self.intervalInput.text())
+        self.save_namespace = str(self.namespaceInput.text())
+        self.save_path = str(self.save_path)
+        self.closed.emit(self.save_interval, self.save_namespace, self.save_path)
 
 
 class ExampleWindow(QMainWindow):
@@ -90,6 +122,9 @@ class ExampleWindow(QMainWindow):
             self.goal_y_loc = self.config.getint("goal", "y_loc", fallback=0)
             self.steppers_x = self.config.getint("steppers", "x", fallback=10)
             self.steppers_y = self.config.getint("steppers", "y", fallback=10)
+            self.save_interval = self.config.getint("video", "interval", fallback=1)
+            self.save_namespace = self.config.get("video", "namespace", fallback="video")
+            self.save_path = self.config.get("video", "path", fallback="c:/")
         except Exception as ex:
             print(ex)
         print(self.config.sections())
@@ -399,13 +434,16 @@ class ExampleWindow(QMainWindow):
         self.raspi_comm.start()
 
         # video settings window
-        self.video_settings_window = VideoSettingsWindow()
+        self.video_settings_window = VideoSettingsWindow(self.save_interval, self.save_namespace, self.save_path)
         self.video_settings_window.closed.connect(self.video_settings_close)
         self.showMaximized()
 
-    def video_settings_close(self, data1, data2):
-        print(data1, " ", data2)
-
+    def video_settings_close(self, save_interval, save_namespace, save_path):
+        print(save_interval, save_namespace, save_path)
+        self.config.set("video", "interval", save_interval)
+        self.config.set("video", "namespace", save_namespace)
+        self.config.set("video", "path", save_path)
+        self.update_config_file()
 
     def save_video_settings(self):
         self.video_settings_window.show()
