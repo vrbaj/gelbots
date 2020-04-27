@@ -53,6 +53,9 @@ coily_direction = 35
 coily_step = 35
 coil_laser = 37
 
+used_pins = (coilx_enable, coilx_direction, coilx_step, coily_enable,
+             coily_direction, coily_step, coil_laser)
+
 GPIO.setup(coilx_enable, GPIO.OUT)
 GPIO.setup(coilx_direction, GPIO.OUT)
 GPIO.setup(coilx_step, GPIO.OUT)
@@ -61,12 +64,17 @@ GPIO.setup(coily_enable, GPIO.OUT)
 GPIO.setup(coily_direction, GPIO.OUT)
 GPIO.setup(coily_step, GPIO.OUT)
 
+def red_button(used_pins):
+    GPIO.output(used_pins, GPIO.LOW)
+
 
 
 GPIO.setup(coil_laser, GPIO.OUT)
-GPIO.output(coil_laser, GPIO.HIGH)
+GPIO.output(coil_laser, GPIO.LOW)
 
 thread_pool = []
+stop_thread = threading.Event()
+my_thread = threading.Thread(target=blink, args=(0, 0, coil_laser, stop_thread))
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((HOST,PORT))
@@ -74,36 +82,37 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     while True:
         conn, addr = s.accept()
         while True:
-            data = conn.recv(10)
-            # TODO try except. on error break loop and wait for another connection
+            try:
+                data = conn.recv(10)
+            except Exception as ex:
+                print("disconnect")
+                GPIO.output(coil_laser, GPIO.LOW)
+                break
             if len(data) > 0:
                 decoded = data.decode("UTF-8")
                 print("data:", decoded)
                 if decoded[0] == "x":
                     move_x(int(decoded[1:]), coilx_enable, coilx_direction, coilx_step)
-                    #break
                 elif decoded[0] == "y":
                     move_y(int(decoded[1:]), coily_enable, coily_direction, coily_step)
-                    #break
                 elif decoded[0] == "l":
                     GPIO.output(coil_laser, GPIO.HIGH)
-                    #break
                 elif decoded[0] == "s":
                     GPIO.output(coil_laser, GPIO.LOW)
-                    #break
                 elif decoded[0] == "k":
-                    pass
-                    stop_thread = threading.Event()
+                    on_time = int(decoded.split(",")[1])
+                    off_time = int(decoded.split(",")[2])
+                    
                     my_thread = threading.Thread(target=blink,
-                                                 args=(1, 2, coil_laser, stop_thread))
+                                                 args=(on_time, off_time, coil_laser, stop_thread))
                     my_thread.start()
                     
                 elif decoded[0] == "t":
-                    pass
                     # TODO: terminate laser thread
                     stop_thread.set()
                 elif decoded[0] == "r":
-                    pass
+                    stop_thread.set()
+                    red_button(used_pins)
                     # TODO: red button. set all outputs to LOW, terminate laser thread
                 data = None
 GPIO.cleanup()
