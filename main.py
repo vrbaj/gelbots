@@ -1,13 +1,11 @@
 import sys, socket, copy, os
 import cv2_worker
-from configparser import ConfigParser
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QComboBox,\
-    QLineEdit, QPushButton, QFrame, QFileDialog
+    QLineEdit, QPushButton, QFrame, QFileDialog, QCheckBox
 from PyQt5.QtCore import QSize, QRect, Qt, pyqtSignal
-from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator, QPainter, QPen, QBrush
+from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
 import cv2
-import subprocess
 import time, datetime
 import numpy as np
 import CameraWorker
@@ -100,6 +98,7 @@ class ExampleWindow(QMainWindow):
         QMainWindow.__init__(self)
         # variables
         self.image_to_display = []
+        self.move_laser_enabled = False
         # TODO load default settings of all values that can be set via this GUI
         self.config = configparser.RawConfigParser()
         try:
@@ -351,7 +350,9 @@ class ExampleWindow(QMainWindow):
 
         # add pix
         self.imageDisplay = QLabel(self)
-        self.imageDisplay.setGeometry(QRect(10, 80, 1200, 800))
+        self.imageDisplay.setGeometry(QRect(10, 80, 1280, 720))
+        self.imageDisplay.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        self.imageDisplay.mousePressEvent = self.click_to_move
 
         # Create log
         self.message_text = QtWidgets.QPlainTextEdit(central_widget)
@@ -418,12 +419,28 @@ class ExampleWindow(QMainWindow):
         self.steppersYInput.setText(str(self.steppers_y))
         self.steppersYInput.editingFinished.connect(self.steppers_y_edited)
 
-        # save path
+        # save video settings
         self.saveVideoButton = QPushButton("Video settings", self)
         self.saveVideoButton.setToolTip("Click to set video settings")
         self.saveVideoButton.move(1300, 30)
         self.saveVideoButton.setFixedHeight(22)
         self.saveVideoButton.clicked.connect(self.save_video_settings)
+
+        # check box to move laser to desired position
+        self.moveLaserCheckbox = QCheckBox(self)
+        self.moveLaserCheckbox.setText("Move laser")
+        self.moveLaserCheckbox.setToolTip("Click to image to move laser to desired position")
+        self.moveLaserCheckbox.setGeometry(QRect(850, 30, 100, 25))
+        self.moveLaserCheckbox.setLayoutDirection(Qt.RightToLeft)
+        self.moveLaserCheckbox.stateChanged.connect(self.laser_checkbox_click)
+
+        # check box save video on disk
+        self.saveVideoCheckbox = QCheckBox(self)
+        self.saveVideoCheckbox.setText("Save video")
+        self.saveVideoCheckbox.setToolTip("Click to save/stop saving the video on the disk")
+        self.saveVideoCheckbox.setGeometry(QRect(850, 5, 100, 25))
+        self.saveVideoCheckbox.setLayoutDirection(Qt.RightToLeft)
+        self.saveVideoCheckbox.stateChanged.connect(self.save_video_checkbox_click)
 
         # key events
         self.keyPressEvent = self.keyPressEvent
@@ -437,6 +454,21 @@ class ExampleWindow(QMainWindow):
         self.video_settings_window = VideoSettingsWindow(self.save_interval, self.save_namespace, self.save_path)
         self.video_settings_window.closed.connect(self.video_settings_close)
         self.showMaximized()
+
+    def save_video_checkbox_click(self, state):
+        if self.camera_worker is not None:
+            self.camera_worker.grab_flag = state
+
+    def laser_checkbox_click(self, state):
+        print(state)
+        self.move_laser_enabled = state
+
+
+    def click_to_move(self, event):
+        if self.move_laser_enabled:
+            print(event.pos().x())
+            print(event.pos().y())
+            # TODO recompute x, y to camera coordinates and send command to RaspiWorker
 
     def video_settings_close(self, save_interval, save_namespace, save_path):
         print(save_interval, save_namespace, save_path)
@@ -695,8 +727,8 @@ class ExampleWindow(QMainWindow):
                 self.camera_worker = CameraWorker.CameraWorker(self.cameraComboBox.currentIndex(), self.cam_width_value,
                                                                self.cam_brightness_value, self.cam_fps_value,
                                                                self.cam_exposure_value, self.cam_gain_value,
-                                                               self.cam_brightness_value)
-                # self.camera_worker = CameraWorker.CameraWorker(self.cameraComboBox.currentIndex())
+                                                               self.cam_brightness_value, self.save_interval,
+                                                               self.save_namespace, self.save_path)
                 self.camera_worker.image_ready.connect(self.obtain_image)
                 self.camera_worker.start()
                 self.runCameraButton.setText("Stop camera")
@@ -715,6 +747,9 @@ class ExampleWindow(QMainWindow):
         height, width = gray.shape[:2]
         image_for_pixmap = QtGui.QImage(gray, width, height, QtGui.QImage.Format_Grayscale8)
         self.imageDisplay.setPixmap(QPixmap(image_for_pixmap))
+
+
+
 
     def camera_changed(self):
         """

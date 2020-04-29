@@ -11,7 +11,8 @@ from os import path
 class CameraWorker(QThread):
     image_ready = pyqtSignal()
 
-    def __init__(self, camera, width, height, fps, exposure, gain, brightness):
+    def __init__(self, camera, width, height, fps, exposure, gain, brightness, saving_interval,
+                 saving_namespace, saving_path):
     #def __init__(self, camera):
         super(CameraWorker, self).__init__()
         self.grab_flag = False  # saving frames to file
@@ -28,10 +29,10 @@ class CameraWorker(QThread):
         self.exposure = exposure
         self.gain = gain
         self.brightness = brightness
-
         # grab params
-        self.grab_directory = ""
-        self.grab_period = 0.1
+        self.grab_directory = saving_path
+        self.grab_period = saving_interval
+        self.grab_namespace = saving_namespace
 
         self.mutex = QMutex()
         self.raw_image = []
@@ -61,7 +62,8 @@ class CameraWorker(QThread):
                 self.raw_image = self.get_image()
                 if self.grab_flag:
                     try:
-                        imsave("video_tiff/video{0:08d}.tiff".format(self.frame_number), self.raw_image)
+                        imsave(self.grab_directory + "/" + self.grab_namespace +
+                               "{0:08d}.tiff".format(self.frame_number), self.raw_image)
                         self.frame_number += 1
                     except Exception as ex:
                         print(ex)
