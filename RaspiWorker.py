@@ -32,7 +32,7 @@ class RaspiWorker(QThread):
                 if len(self.requests_queue):
                     request_to_process = self.requests_queue.pop(0)
                     try:
-                        self.k.sendall(bytes(request_to_process, "UTF-8"))
+                        self.k.sendall(bytes(request_to_process + ";", "UTF-8"))
                     except (Exception, socket.error) as ex:
                         self.raspi_status = False
                         self.k.close()

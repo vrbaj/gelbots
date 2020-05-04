@@ -10,6 +10,7 @@ import time, datetime
 import numpy as np
 import CameraWorker
 import RaspiWorker
+import DiskCore
 import configparser
 
 
@@ -93,12 +94,20 @@ class VideoSettingsWindow(QMainWindow):
 
 class ExampleWindow(QMainWindow):
     CONFIG_FILE_NAME = "config.ini"
+    PIXMAP_HEIGHT = 720
+    PIXMAP_WIDTH = 1280
 
     def __init__(self):
         QMainWindow.__init__(self)
         # variables
         self.image_to_display = []
+        self.gray_image = []
         self.move_laser_enabled = False
+        self.set_goal_enabled = False
+        self.set_disk_enabled = False
+        self.draw_marks_enabled = False
+        self.set_laser_enabled = False
+        self.automode_enabled = False
         # TODO load default settings of all values that can be set via this GUI
         self.config = configparser.RawConfigParser()
         try:
@@ -350,13 +359,13 @@ class ExampleWindow(QMainWindow):
 
         # add pix
         self.imageDisplay = QLabel(self)
-        self.imageDisplay.setGeometry(QRect(10, 80, 1280, 720))
+        self.imageDisplay.setGeometry(QRect(10, 60, self.PIXMAP_WIDTH, self.PIXMAP_HEIGHT))
         self.imageDisplay.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        self.imageDisplay.mousePressEvent = self.click_to_move
+        self.imageDisplay.mousePressEvent = self.click_to_get_coords
 
         # Create log
         self.message_text = QtWidgets.QPlainTextEdit(central_widget)
-        self.message_text.setGeometry(10, 900, 1000, 40)
+        self.message_text.setGeometry(10, 810, 1280, 30)
         self.message_text.setReadOnly(True)
         self.message_text.setPlainText("Initialized..")
 
@@ -434,6 +443,22 @@ class ExampleWindow(QMainWindow):
         self.moveLaserCheckbox.setLayoutDirection(Qt.RightToLeft)
         self.moveLaserCheckbox.stateChanged.connect(self.laser_checkbox_click)
 
+        # check box to select disk
+        self.setDiskCheckbox = QCheckBox(self)
+        self.setDiskCheckbox.setText("Select disk")
+        self.setDiskCheckbox.setToolTip("Click to image to to select target disk")
+        self.setDiskCheckbox.setGeometry(QRect(750, 30, 100, 25))
+        self.setDiskCheckbox.setLayoutDirection(Qt.RightToLeft)
+        self.setDiskCheckbox.stateChanged.connect(self.disk_checkbox_click)
+
+        # check box to set goal
+        self.setGoalCheckbox = QCheckBox(self)
+        self.setGoalCheckbox.setText("Set target")
+        self.setGoalCheckbox.setToolTip("Click to image to set goal")
+        self.setGoalCheckbox.setGeometry(QRect(750, 5, 100, 25))
+        self.setGoalCheckbox.setLayoutDirection(Qt.RightToLeft)
+        self.setGoalCheckbox.stateChanged.connect(self.goal_checkbox_click)
+
         # check box save video on disk
         self.saveVideoCheckbox = QCheckBox(self)
         self.saveVideoCheckbox.setText("Save video")
@@ -441,6 +466,36 @@ class ExampleWindow(QMainWindow):
         self.saveVideoCheckbox.setGeometry(QRect(850, 5, 100, 25))
         self.saveVideoCheckbox.setLayoutDirection(Qt.RightToLeft)
         self.saveVideoCheckbox.stateChanged.connect(self.save_video_checkbox_click)
+
+        # check box to draw marks
+        self.drawMarksCheckbox = QCheckBox(self)
+        self.drawMarksCheckbox.setText("Draw marks")
+        self.drawMarksCheckbox.setToolTip("Click to draw marks into image")
+        self.drawMarksCheckbox.setGeometry(QRect(1100, 5, 100, 25))
+        self.drawMarksCheckbox.setLayoutDirection(Qt.RightToLeft)
+        self.drawMarksCheckbox.stateChanged.connect(self.draw_marks_checkbox_click)
+
+        # check box to set laser
+        self.setLaserCheckbox = QCheckBox(self)
+        self.setLaserCheckbox.setText("Set laser")
+        self.setLaserCheckbox.setToolTip("Click to image to set laser position")
+        self.setLaserCheckbox.setGeometry(QRect(1100, 35, 100, 25))
+        self.setLaserCheckbox.setLayoutDirection(Qt.RightToLeft)
+        self.setLaserCheckbox.stateChanged.connect(self.set_laser_checkbox_click)
+
+        # find disks button
+        self.findDisksButton = QPushButton('Find disks', self)
+        self.findDisksButton.setToolTip('Click to find disks')
+        self.findDisksButton.move(1300, 5)
+        self.findDisksButton.setFixedHeight(22)
+        self.findDisksButton.clicked.connect(self.find_disks)
+
+        # automode button
+        self.autoModeButton = QPushButton('Auto ON', self)
+        self.autoModeButton.setToolTip('Auto ON')
+        self.autoModeButton.move(1600, 5)
+        self.autoModeButton.setFixedHeight(22)
+        self.autoModeButton.clicked.connect(self.automode)
 
         # key events
         self.keyPressEvent = self.keyPressEvent
@@ -450,25 +505,128 @@ class ExampleWindow(QMainWindow):
         self.raspi_comm.signal_comm_err.connect(self.raspi_fail)
         self.raspi_comm.start()
 
+        # start Disk Core thread
+        self.disk_core = DiskCore.DiskCore([self.disk_x_loc, self.disk_y_loc],
+                                           [self.laser_x_loc, self.laser_y_loc],
+                                           [self.goal_x_loc, self.goal_y_loc],
+                                           self.laser_pulse_n * (self.laser_on_time + self.laser_off_time))
+        self.disk_core.gray_image_request.connect(self.core_image_request)
+        self.disk_core.steppers_request.connect(self.move_steppers)
+        self.disk_core.coords_update.connect(self.update_coords)
+        self.disk_core.laser_shot.connect(self.blink_laser_n)
+        self.disk_core.auto_done.connect(self.automode_finished)
+
         # video settings window
         self.video_settings_window = VideoSettingsWindow(self.save_interval, self.save_namespace, self.save_path)
         self.video_settings_window.closed.connect(self.video_settings_close)
         self.showMaximized()
+
+    def automode_finished(self):
+        pass
+
+    def update_coords(self, goal_x, goal_y, disk_x, disk_y):
+        self.goal_x_loc = goal_x
+        self.goal_y_loc = goal_y
+        self.disk_x_loc = disk_x
+        self.disk_y_loc = disk_y
+
+        self.goalCoordXInput.setText(str(goal_x))
+        self.goalCoordYInput.setText(str(goal_y))
+        self.diskCoordXInput.setText(str(disk_x))
+        self.diskCoordYInput.setText(str(disk_y))
+
+    def move_steppers(self, x, y):
+        print("asdasdasdasda")
+        print("steppers request:", x, ", ", y)
+        self.raspi_comm.requests_queue.append("x" + str(x))
+        print("x sent")
+        self.raspi_comm.requests_queue.append("y" + str(y))
+        print("y sent")
+
+    def automode(self):
+        if self.autoModeButton.text() == "Auto ON":
+            self.autoModeButton.setText("Auto OFF")
+            self.automode_enabled = True
+            self.disk_core.auto_mode = True
+            self.disk_core.start()
+        else:
+            self.autoModeButton.setText("Auto ON")
+            self.automode_enabled = False
+            self.disk_core.auto_mode = False
+
+    def core_image_request(self):
+        self.disk_core.image_to_process = np.copy(self.gray_image)
+
+    def find_disks(self):
+        helpy_im = self.gray_image
+        locs = self.disk_core.find_disks(helpy_im)
+        for max_loc in locs:
+            helpy_im = cv2.drawMarker(helpy_im, max_loc, (255, 255, 255), markerType=cv2.MARKER_CROSS,
+                                      markerSize=20, thickness=1, line_type=cv2.LINE_AA)
+
+            cv2.putText(helpy_im, str(max_loc), max_loc, cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 255), 2,
+                        cv2.LINE_AA)
+        helpy_im = cv2.resize(helpy_im, (1280, 720))
+        cv2.imshow("Disk locations", helpy_im)
+        cv2.waitKey(0)
+
+    def set_laser_checkbox_click(self, state):
+        self.set_laser_enabled = state
+
+    def draw_marks_checkbox_click(self, state):
+        self.draw_marks_enabled = state
 
     def save_video_checkbox_click(self, state):
         if self.camera_worker is not None:
             self.camera_worker.grab_flag = state
 
     def laser_checkbox_click(self, state):
-        print(state)
         self.move_laser_enabled = state
 
+    def disk_checkbox_click(self, state):
+        self.set_disk_enabled = state
 
-    def click_to_move(self, event):
+    def goal_checkbox_click(self, state):
+        self.set_goal_enabled = state
+
+    def click_to_get_coords(self, event):
+        x_pixmap = event.pos().x()
+        y_pixmap = event.pos().y()
+        x_scale = self.cam_width_value / self.PIXMAP_WIDTH
+        y_scale = self.cam_height_value / self.PIXMAP_HEIGHT
+        x_image = int(x_pixmap * x_scale)
+        y_image = int(y_pixmap * y_scale)
+
         if self.move_laser_enabled:
-            print(event.pos().x())
-            print(event.pos().y())
-            # TODO recompute x, y to camera coordinates and send command to RaspiWorker
+            print(x_image)
+            print(y_image)
+            # TODO send command to RaspiWorker
+        elif self.set_goal_enabled:
+            self.goal_x_loc = x_image
+            self.goal_y_loc = y_image
+            self.goalCoordXInput.setText(str(x_image))
+            self.goalCoordYInput.setText(str(y_image))
+            self.config.set("goal", "x_loc", self.goal_x_loc)
+            self.config.set("goal", "y_loc", self.goal_y_loc)
+            self.update_config_file()
+        elif self.set_disk_enabled:
+            locs = self.disk_core.find_disks(self.gray_image)
+            nearest_disk = self.disk_core.nearest_disk([x_image, y_image], locs)
+            self.disk_x_loc = nearest_disk[0]
+            self.disk_y_loc = nearest_disk[1]
+            self.diskCoordXInput.setText(str(self.disk_x_loc))
+            self.diskCoordYInput.setText(str(self.disk_y_loc))
+            self.config.set("disk", "x_loc", self.disk_x_loc)
+            self.config.set("disk", "y_loc", self.disk_y_loc)
+            self.update_config_file()
+        elif self.set_laser_enabled:
+            self.laser_x_loc = x_image
+            self.laser_y_loc = y_image
+            self.laserCoordXInput.setText(str(x_image))
+            self.laserCoordYInput.setText(str(y_image))
+            self.config.set("laser", "x_loc", self.laser_x_loc)
+            self.config.set("laser", "y_loc", self.laser_y_loc)
+            self.update_config_file()
 
     def video_settings_close(self, save_interval, save_namespace, save_path):
         print(save_interval, save_namespace, save_path)
@@ -515,6 +673,12 @@ class ExampleWindow(QMainWindow):
         else:
             self.blinkLaserButton.setText("Blink On")
             self.raspi_comm.requests_queue.append("t")
+
+    def blink_laser_n(self):
+        time_on = int(self.laser_on_time)
+        time_off = int(self.laser_off_time)
+        n = int(self.laser_pulse_n)
+        self.raspi_comm.requests_queue.append("k" + "," + str(time_on) + "," + str(time_off) + "," + str(n))
 
     def raspi_fail(self):
         self.message_text.setPlainText("raspi went wrong")
@@ -717,7 +881,7 @@ class ExampleWindow(QMainWindow):
                 self.config.set("camera", "height", new_height_value)
                 self.update_config_file()
             except ValueError:
-                self.message_text.setPlainText("Width value error")
+                self.message_text.setPlainText("Height value error")
                 print("ValueError")
 
     def run_camera(self):
@@ -725,7 +889,7 @@ class ExampleWindow(QMainWindow):
             if self.runCameraButton.text() == "Run camera":
                 self.cameraComboBox.setEnabled(False)
                 self.camera_worker = CameraWorker.CameraWorker(self.cameraComboBox.currentIndex(), self.cam_width_value,
-                                                               self.cam_brightness_value, self.cam_fps_value,
+                                                               self.cam_height_value, self.cam_fps_value,
                                                                self.cam_exposure_value, self.cam_gain_value,
                                                                self.cam_brightness_value, self.save_interval,
                                                                self.save_namespace, self.save_path)
@@ -743,13 +907,22 @@ class ExampleWindow(QMainWindow):
         self.camera_worker.mutex.lock()
         self.image_to_display = np.copy(self.camera_worker.raw_image)
         self.camera_worker.mutex.unlock()
-        gray = cv2.cvtColor(self.image_to_display, cv2.COLOR_BGR2GRAY)
-        height, width = gray.shape[:2]
-        image_for_pixmap = QtGui.QImage(gray, width, height, QtGui.QImage.Format_Grayscale8)
-        self.imageDisplay.setPixmap(QPixmap(image_for_pixmap))
-
-
-
+        self.gray_image = cv2.cvtColor(self.image_to_display, cv2.COLOR_BGR2GRAY)
+        if self.draw_marks_enabled:
+            # TODO wrap draw markers into function that will check the coords (if it is inside of img)
+            pass
+            self.gray_image = cv2.drawMarker(self.gray_image, (self.goal_x_loc, self.goal_y_loc), (0, 255, 255),
+                                             markerType=cv2.MARKER_DIAMOND, markerSize=20, thickness=1,
+                                             line_type=cv2.LINE_AA)
+            self.gray_image = cv2.drawMarker(self.gray_image, (self.disk_x_loc, self.disk_y_loc), (255, 255, 0),
+                                             markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,
+                                             line_type=cv2.LINE_AA)
+            self.gray_image = cv2.drawMarker(self.gray_image, (self.laser_x_loc, self.laser_y_loc), (0, 255, 0),
+                                             markerType=cv2.MARKER_STAR, markerSize=20, thickness=1,
+                                             line_type=cv2.LINE_AA)
+        height, width = self.gray_image.shape[:2]
+        image_for_pixmap = QtGui.QImage(self.gray_image, width, height, QtGui.QImage.Format_Grayscale8)
+        self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(1280, 720))
 
     def camera_changed(self):
         """

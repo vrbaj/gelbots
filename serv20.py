@@ -73,11 +73,11 @@ GPIO.setup(coil_laser, GPIO.OUT)
 GPIO.output(coil_laser, GPIO.LOW)
 
 thread_pool = []
-stop_thread = threading.Event()
+
 my_thread = threading.Thread(target=blink, args=(0, 0, coil_laser, stop_thread))
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.bind((HOST,PORT))
+    s.bind((HOST, PORT))
     s.listen()
     while True:
         conn, addr = s.accept()

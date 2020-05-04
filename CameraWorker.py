@@ -1,28 +1,24 @@
 from PyQt5.QtCore import QThread, QMutex, pyqtSignal
-from datetime import datetime
 import time
 import cv2
 from tifffile import imsave
-import numpy as np
-from os import path
 
 # opencv 4.1.0.25
+
 
 class CameraWorker(QThread):
     image_ready = pyqtSignal()
 
     def __init__(self, camera, width, height, fps, exposure, gain, brightness, saving_interval,
                  saving_namespace, saving_path):
-    #def __init__(self, camera):
         super(CameraWorker, self).__init__()
         self.grab_flag = False  # saving frames to file
         self.quit_flag = False  # flag to kill worker
-        self.change_params_flag = False  # flat to change camera settings
+        self.change_params_flag = False  # flag to change camera settings
         self.status = True
         self.frame_number = 0
 
         # camera params
-        # TODO set all camera params according to __init__ args
         self.fps = fps
         self.width = width
         self.height = height
@@ -34,16 +30,14 @@ class CameraWorker(QThread):
         self.grab_period = saving_interval
         self.grab_namespace = saving_namespace
 
+        self.last_save_time = 0
+
         self.mutex = QMutex()
         self.raw_image = []
 
         try:
             self.camera = cv2.VideoCapture(camera, cv2.CAP_DSHOW)
-            print("EXP:", self.camera.get(cv2.CAP_PROP_EXPOSURE))
             self.update_params()
-            time.sleep(0.1)
-            print(self.camera.get(cv2.CAP_PROP_FPS))
-
         except Exception as ex:
             print("Cam exp: ", ex)
 
@@ -53,23 +47,23 @@ class CameraWorker(QThread):
                 if self.change_params_flag:
                     try:
                         self.update_params()
-                        print(self.width)
-                        print(self.height)
                         self.change_params_flag = False
                     except Exception as ex:
                         print("Exception in update params ", ex)
                 self.mutex.lock()
                 self.raw_image = self.get_image()
                 if self.grab_flag:
-                    try:
-                        imsave(self.grab_directory + "/" + self.grab_namespace +
-                               "{0:08d}.tiff".format(self.frame_number), self.raw_image)
-                        self.frame_number += 1
-                    except Exception as ex:
-                        print(ex)
+                    actual_time = time.time()
+                    if actual_time - self.last_save_time > self.grab_period:
+                        self.last_save_time = actual_time
+                        try:
+                            imsave(self.grab_directory + "/" + self.grab_namespace +
+                                   "{0:08d}.tiff".format(self.frame_number), self.raw_image)
+                            self.frame_number += 1
+                        except Exception as ex:
+                            print(ex)
                 self.mutex.unlock()
                 self.image_ready.emit()
-
                 time.sleep(1 / self.fps)
             else:
                 self.camera.release()
@@ -81,8 +75,13 @@ class CameraWorker(QThread):
         self.wait()
 
     def get_image(self):
-        ret, image = self.camera.read()
-        return image
+        try:
+            #ret, image = self.camera.read()
+            image = cv2.imread("1920x1080.png")
+            return image
+        except Exception as ex:
+            print(ex)
+            print("in get image")
 
     def update_params(self):
         try:
@@ -92,5 +91,7 @@ class CameraWorker(QThread):
             self.camera.set(cv2.CAP_PROP_GAIN, self.gain)
             self.camera.set(cv2.CAP_PROP_EXPOSURE, self.exposure)
             self.camera.set(cv2.CAP_PROP_BRIGHTNESS, self.brightness)
+
         except Exception as ex:
+            # self.camera.get(cv2.CAP_PROP_BRIGHTNESS)
             print("Exception in update_params method> ", ex)
