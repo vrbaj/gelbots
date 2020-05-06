@@ -66,7 +66,7 @@ class DiskCore(QThread):
                 self.target_disk_y = y
                 if abs(self.goal_x - x) < 5 and abs(self.goal_y - y) < 5:
                     self.auto_mode = False
-                elif abs(self.target_disk_x - x) > 20 or abs(self.target_disk_y - y) > 20:
+                elif abs(self.target_disk_x - x) > 15 or abs(self.target_disk_y - y) > 15:
                     self.auto_step = -1
                 else:
                     self.auto_step = 2
@@ -94,7 +94,7 @@ class DiskCore(QThread):
             elif self.auto_step == 5:
                 # TODO shoot with laser and wait
                 self.laser_shot.emit()
-                time.sleep(5.0)
+                time.sleep(self.laser_blink_time / 1000 + 0.05)
                 self.auto_step = -1
 
             time.sleep(0.1)

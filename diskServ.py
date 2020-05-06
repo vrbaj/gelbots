@@ -31,9 +31,9 @@ def move_y(steps, coily_enable, coily_direction, coily_step):
 def blink_n(on_period, off_period, laser_coil, n):
     print("n blink")
     for i in range(n):
-        GPIO.output(laser_coil, GPIO.HIGH)
-        time.sleep(on_period/1000)
         GPIO.output(laser_coil, GPIO.LOW)
+        time.sleep(on_period/1000)
+        GPIO.output(laser_coil, GPIO.HIGH)
         time.sleep(off_period/1000)
         stop_time=time.time()
 
@@ -41,25 +41,25 @@ def blink_n(on_period, off_period, laser_coil, n):
 def blink(on_period, off_period, laser_coil, stop_pill):
     print("enterint thread")
     while not stop_pill.wait(0.01):
-        GPIO.output(laser_coil, GPIO.HIGH)
-        time.sleep(on_period/1000)
         GPIO.output(laser_coil, GPIO.LOW)
+        time.sleep(on_period/1000)
+        GPIO.output(laser_coil, GPIO.HIGH)
         time.sleep(off_period/1000)
         stop_time=time.time()
 
 GPIO.setmode(GPIO.BOARD)
 delay = 0.0055
-HOST = "10.0.0.29"
+HOST = "192.168.0.104"
 PORT = 6543
 
-coilx_enable = 33
-coilx_direction = 33
+coilx_enable = 35
+coilx_direction = 37
 coilx_step = 33
 
-coily_enable = 35
-coily_direction = 35
-coily_step = 35
-coil_laser = 37
+coily_enable = 19
+coily_direction = 21
+coily_step = 15
+coil_laser = 40
 
 used_pins = (coilx_enable, coilx_direction, coilx_step, coily_enable,
              coily_direction, coily_step, coil_laser)
@@ -74,11 +74,12 @@ GPIO.setup(coily_step, GPIO.OUT)
 
 def red_button(used_pins):
     GPIO.output(used_pins, GPIO.LOW)
+    GPIO.output(coil_laser, GPIO.HIGH)
 
 
 
 GPIO.setup(coil_laser, GPIO.OUT)
-GPIO.output(coil_laser, GPIO.LOW)
+GPIO.output(coil_laser, GPIO.HIGH)
 
 thread_pool = []
 stop_thread = threading.Event()
@@ -136,6 +137,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 elif decoded[0] == "r":
                     stop_thread.set()
                     time.sleep(0.1)
+                    requests_list = []
                     red_button(used_pins)
                     # TODO: red button. set all outputs to LOW, terminate laser thread
                 elif decoded[0] == "q":
