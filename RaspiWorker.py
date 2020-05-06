@@ -6,7 +6,7 @@ import socket
 
 class RaspiWorker(QThread):
     signal_comm_err = pyqtSignal()
-    RASPI_IP = "10.0.0.29"
+    RASPI_IP = "192.168.0.104"
     RASPI_PORT = 6543
 
     def __init__(self):

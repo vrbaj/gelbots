@@ -36,7 +36,7 @@ class CameraWorker(QThread):
         self.raw_image = []
 
         try:
-            self.camera = cv2.VideoCapture(camera, cv2.CAP_DSHOW)
+            self.camera = cv2.VideoCapture(camera)
             self.update_params()
         except Exception as ex:
             print("Cam exp: ", ex)
@@ -76,8 +76,8 @@ class CameraWorker(QThread):
 
     def get_image(self):
         try:
-            #ret, image = self.camera.read()
-            image = cv2.imread("1920x1080.png")
+            ret, image = self.camera.read()
+            # image = cv2.imread("1920x1080.png")
             return image
         except Exception as ex:
             print(ex)

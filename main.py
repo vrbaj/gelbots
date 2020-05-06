@@ -493,7 +493,7 @@ class ExampleWindow(QMainWindow):
         # automode button
         self.autoModeButton = QPushButton('Auto ON', self)
         self.autoModeButton.setToolTip('Auto ON')
-        self.autoModeButton.move(1600, 5)
+        self.autoModeButton.move(1750, 5)
         self.autoModeButton.setFixedHeight(22)
         self.autoModeButton.clicked.connect(self.automode)
 
@@ -548,6 +548,14 @@ class ExampleWindow(QMainWindow):
             self.autoModeButton.setText("Auto OFF")
             self.automode_enabled = True
             self.disk_core.auto_mode = True
+            self.disk_core.auto_step = -1
+            self.disk_core.target_disk_x = self.disk_x_loc
+            self.disk_core.target_disk_y = self.disk_y_loc
+            self.disk_core.laser_x = self.laser_x_loc
+            self.disk_core.laser_y = self.laser_y_loc
+            self.disk_core.goal_x = self.goal_x_loc
+            self.disk_core.goal_y = self.goal_y_loc
+
             self.disk_core.start()
         else:
             self.autoModeButton.setText("Auto ON")
@@ -611,14 +619,15 @@ class ExampleWindow(QMainWindow):
             self.update_config_file()
         elif self.set_disk_enabled:
             locs = self.disk_core.find_disks(self.gray_image)
-            nearest_disk = self.disk_core.nearest_disk([x_image, y_image], locs)
-            self.disk_x_loc = nearest_disk[0]
-            self.disk_y_loc = nearest_disk[1]
-            self.diskCoordXInput.setText(str(self.disk_x_loc))
-            self.diskCoordYInput.setText(str(self.disk_y_loc))
-            self.config.set("disk", "x_loc", self.disk_x_loc)
-            self.config.set("disk", "y_loc", self.disk_y_loc)
-            self.update_config_file()
+            if len(locs) > 0:
+                nearest_disk = self.disk_core.nearest_disk([x_image, y_image], locs)
+                self.disk_x_loc = nearest_disk[0]
+                self.disk_y_loc = nearest_disk[1]
+                self.diskCoordXInput.setText(str(self.disk_x_loc))
+                self.diskCoordYInput.setText(str(self.disk_y_loc))
+                self.config.set("disk", "x_loc", self.disk_x_loc)
+                self.config.set("disk", "y_loc", self.disk_y_loc)
+                self.update_config_file()
         elif self.set_laser_enabled:
             self.laser_x_loc = x_image
             self.laser_y_loc = y_image
@@ -678,7 +687,7 @@ class ExampleWindow(QMainWindow):
         time_on = int(self.laser_on_time)
         time_off = int(self.laser_off_time)
         n = int(self.laser_pulse_n)
-        self.raspi_comm.requests_queue.append("k" + "," + str(time_on) + "," + str(time_off) + "," + str(n))
+        self.raspi_comm.requests_queue.append("q" + "," + str(time_on) + "," + str(time_off) + "," + str(n))
 
     def raspi_fail(self):
         self.message_text.setPlainText("raspi went wrong")
@@ -696,10 +705,10 @@ class ExampleWindow(QMainWindow):
             self.raspi_comm.requests_queue.append("x" + str(self.steppers_x))
         elif e.key() == 83:
             # move top
-            self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
+            self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
         elif e.key() == 87:
             # move down
-            self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
+            self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
         elif e.key() == 81:
             self.raspi_comm.requests_queue.append("s")
         elif e.key() == 69:
@@ -939,7 +948,7 @@ class ExampleWindow(QMainWindow):
         """
         arr = []
         for index in range(3):
-            cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
+            cap = cv2.VideoCapture(index)
             if cap is None or not cap.isOpened():
                 print("invalid cam at idx> ", index)
             else:
