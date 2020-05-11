@@ -497,6 +497,13 @@ class ExampleWindow(QMainWindow):
         self.autoModeButton.setFixedHeight(22)
         self.autoModeButton.clicked.connect(self.automode)
 
+        # laser swithc button
+        self.laserButton = QPushButton('Laser ON', self)
+        self.laserButton.setToolTip('Laser ON')
+        self.laserButton.move(1750, 35)
+        self.laserButton.setFixedHeight(22)
+        self.laserButton.clicked.connect(self.laser_switch)
+
         # key events
         self.keyPressEvent = self.keyPressEvent
 
@@ -520,6 +527,14 @@ class ExampleWindow(QMainWindow):
         self.video_settings_window = VideoSettingsWindow(self.save_interval, self.save_namespace, self.save_path)
         self.video_settings_window.closed.connect(self.video_settings_close)
         self.showMaximized()
+
+    def laser_switch(self):
+        if self.laserButton.text() == "Laser ON":
+            self.raspi_comm.requests_queue.append("s")
+            self.laserButton.setText("Laser OFF")
+        else:
+            self.raspi_comm.requests_queue.append("l")
+            self.laserButton.setText("Laser ON")
 
     def automode_finished(self):
         pass
