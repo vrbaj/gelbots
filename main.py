@@ -133,6 +133,11 @@ class ExampleWindow(QMainWindow):
             self.save_interval = self.config.getint("video", "interval", fallback=1)
             self.save_namespace = self.config.get("video", "namespace", fallback="video")
             self.save_path = self.config.get("video", "path", fallback="c:/")
+            self.sfl_flush_on = self.config.getint("sfl", "flush_on", fallback=50)
+            self.sfl_flush_off = self.config.getint("sfl", "flush_off", fallback=500)
+            self.sfl_light_on = self.config.getint("sfl", "light_on", fallback=50)
+            self.sfl_light_off = self.config.getint("sfl", "light_off", fallback=500)
+            self.sfl_pulse = self.config.getint("sfl", "pulse", fallback=3000)
         except Exception as ex:
             print(ex)
         print(self.config.sections())
@@ -523,10 +528,156 @@ class ExampleWindow(QMainWindow):
         self.disk_core.laser_shot.connect(self.blink_laser_n)
         self.disk_core.auto_done.connect(self.automode_finished)
 
+        # SFL
+        self.sflPulseLabel = QLabel(central_widget)
+        self.sflPulseLabel.setGeometry(QRect(1750, 145, 50, 31))
+        self.sflPulseLabel.setText("Pulse:")
+
+        self.sflPulseInput = QLineEdit(central_widget)
+        self.sflPulseInput.move(1800, 150)
+        self.sflPulseInput.setFixedWidth(30)
+        self.sflPulseInput.setValidator(self.onlyInt)
+        self.sflPulseInput.setText(str(self.sfl_pulse))
+        self.sflPulseInput.editingFinished.connect(self.sfl_pulse_edited)
+        #
+        self.sflLightOnLabel = QLabel(central_widget)
+        self.sflLightOnLabel.setGeometry(QRect(1750, 195, 50, 31))
+        self.sflLightOnLabel.setText("Light On:")
+
+        self.sflLightOnInput = QLineEdit(central_widget)
+        self.sflLightOnInput.move(1800, 200)
+        self.sflLightOnInput.setFixedWidth(30)
+        self.sflLightOnInput.setValidator(self.onlyInt)
+        self.sflLightOnInput.setText(str(self.sfl_light_on))
+        self.sflLightOnInput.editingFinished.connect(self.sfl_light_on_edited)
+
+        self.sflLightOffLabel = QLabel(central_widget)
+        self.sflLightOffLabel.setGeometry(QRect(1750, 245, 50, 31))
+        self.sflLightOffLabel.setText("Light Off:")
+
+        self.sflLightOffInput = QLineEdit(central_widget)
+        self.sflLightOffInput.move(1800, 250)
+        self.sflLightOffInput.setFixedWidth(30)
+        self.sflLightOffInput.setValidator(self.onlyInt)
+        self.sflLightOffInput.setText(str(self.sfl_light_off))
+        self.sflLightOffInput.editingFinished.connect(self.sfl_light_off_edited)
+
+        self.sflFlushOnLabel = QLabel(central_widget)
+        self.sflFlushOnLabel.setGeometry(QRect(1750, 295, 50, 31))
+        self.sflFlushOnLabel.setText("Flush On:")
+
+        self.sflFlushOnInput = QLineEdit(central_widget)
+        self.sflFlushOnInput.move(1800, 300)
+        self.sflFlushOnInput.setFixedWidth(30)
+        self.sflFlushOnInput.setValidator(self.onlyInt)
+        self.sflFlushOnInput.setText(str(self.sfl_flush_on))
+        self.sflFlushOnInput.editingFinished.connect(self.sfl_flush_on_edited)
+
+        self.sflFlushOffLabel = QLabel(central_widget)
+        self.sflFlushOffLabel.setGeometry(QRect(1750, 345, 50, 31))
+        self.sflFlushOffLabel.setText("Flush Off:")
+
+        self.sflFlushOffInput = QLineEdit(central_widget)
+        self.sflFlushOffInput.move(1800, 350)
+        self.sflFlushOffInput.setFixedWidth(30)
+        self.sflFlushOffInput.setValidator(self.onlyInt)
+        self.sflFlushOffInput.setText(str(self.sfl_flush_off))
+        self.sflFlushOffInput.editingFinished.connect(self.sfl_flush_off_edited)
+
+        # sfl swithc button
+        self.sflButton = QPushButton('SFL ON', self)
+        self.sflButton.setToolTip('SFL ON')
+        self.sflButton.move(1750, 400)
+        self.sflButton.setFixedHeight(40)
+        self.sflButton.clicked.connect(self.sfl_switch)
+
+        # sfl light switch button
+        self.sflLightButton = QPushButton('Light ON', self)
+        self.sflLightButton.setToolTip('Light ON')
+        self.sflLightButton.move(1750, 450)
+        self.sflLightButton.setFixedHeight(40)
+        self.sflLightButton.clicked.connect(self.light_switch)
+
+        # sfl flush switch button
+        self.sflFlushButton = QPushButton('Flush ON', self)
+        self.sflFlushButton.setToolTip('Flush ON')
+        self.sflFlushButton.move(1750, 500)
+        self.sflFlushButton.setFixedHeight(40)
+        self.sflFlushButton.clicked.connect(self.flush_switch)
+
+        # sfl pulse button
+        self.sflPulseButton = QPushButton('Pulse', self)
+        self.sflPulseButton.setToolTip('Pulse')
+        self.sflPulseButton.move(1750, 550)
+        self.sflPulseButton.setFixedHeight(40)
+        self.sflPulseButton.clicked.connect(self.pulse)
+
         # video settings window
         self.video_settings_window = VideoSettingsWindow(self.save_interval, self.save_namespace, self.save_path)
         self.video_settings_window.closed.connect(self.video_settings_close)
         self.showMaximized()
+
+    def pulse(self):
+        self.raspi_comm.requests_queue.append("a" + "," + str(self.sfl_light_on) + "," + str(self.sfl_pulse))
+
+
+    def sfl_pulse_edited(self):
+        self.sfl_pulse = int(self.sflPulseInput.text())
+        self.message_text.setPlainText("sfl pulse: {} ".format(str(self.sfl_pulse)))
+        self.config.set("sfl", "pulse", self.sfl_pulse)
+        self.update_config_file()
+
+    def flush_switch(self):
+        if self.sflFlushButton.text() == "Flush ON":
+            self.sflFlushButton.setText("Flush OFF")
+            self.raspi_comm.requests_queue.append("n")
+        else:
+            self.raspi_comm.requests_queue.append("m")
+            self.sflFlushButton.setText("Flush ON")
+
+    def light_switch(self):
+        if self.sflLightButton.text() == "Light ON":
+            self.sflLightButton.setText("Light OFF")
+            self.raspi_comm.requests_queue.append("j")
+        else:
+            self.raspi_comm.requests_queue.append("h")
+            self.sflLightButton.setText("Light ON")
+
+    def sfl_switch(self):
+        if self.sflButton.text() == "SFL ON":
+            self.sflButton.setText("SFL OFF")
+            self.raspi_comm.requests_queue.append("p" + "," + str(self.sfl_flush_on) + "," + str(self.sfl_flush_off) +
+                                                  "," + str(self.sfl_light_on) + "," + str(self.sfl_light_off))
+        else:
+            self.raspi_comm.requests_queue.clear()
+            self.raspi_comm.requests_queue.append("r")
+            self.sflButton.setText("SFL ON")
+
+            # TODO stop
+
+    def sfl_light_on_edited(self):
+        self.sfl_light_on = int(self.sflLightOnInput.text())
+        self.message_text.setPlainText("sfl light on: {} ".format(str(self.sfl_light_on)))
+        self.config.set("sfl", "light_on", self.sfl_light_on)
+        self.update_config_file()
+
+    def sfl_light_off_edited(self):
+        self.sfl_light_off = int(self.sflLightOffInput.text())
+        self.message_text.setPlainText("sfl light off: {} ".format(str(self.sfl_light_off)))
+        self.config.set("sfl", "light_off", self.sfl_light_off)
+        self.update_config_file()
+
+    def sfl_flush_on_edited(self):
+        self.sfl_flush_on = int(self.sflFlushOnInput.text())
+        self.message_text.setPlainText("sfl flush on: {} ".format(str(self.sfl_flush_on)))
+        self.config.set("sfl", "flush_on", self.sfl_flush_on)
+        self.update_config_file()
+
+    def sfl_flush_off_edited(self):
+        self.sfl_flush_off = int(self.sflFlushOffInput.text())
+        self.message_text.setPlainText("sfl flush off: {} ".format(str(self.sfl_flush_off)))
+        self.config.set("sfl", "flush_off", self.sfl_flush_off)
+        self.update_config_file()
 
     def laser_switch(self):
         if self.laserButton.text() == "Laser ON":
@@ -570,7 +721,6 @@ class ExampleWindow(QMainWindow):
             self.disk_core.laser_y = self.laser_y_loc
             self.disk_core.goal_x = self.goal_x_loc
             self.disk_core.goal_y = self.goal_y_loc
-
             self.disk_core.start()
         else:
             self.autoModeButton.setText("Auto ON")
