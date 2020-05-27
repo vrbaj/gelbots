@@ -866,6 +866,9 @@ class ExampleWindow(QMainWindow):
             self.update_config_file()
 
     def video_settings_close(self, save_interval, save_namespace, save_path):
+        self.save_interval = save_interval
+        self.save_namespace = save_namespace
+        self.save_path = save_path
         self.config.set("video", "interval", save_interval)
         self.config.set("video", "namespace", save_namespace)
         self.config.set("video", "path", save_path)
