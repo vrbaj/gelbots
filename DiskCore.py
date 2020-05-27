@@ -39,6 +39,8 @@ class DiskCore(QThread):
         self.status - True
         shooting_x = 0
         shooting_y = 0
+
+
         # logic for disk moving
         while self.auto_mode:
             print(self.auto_step)
@@ -61,7 +63,13 @@ class DiskCore(QThread):
                         self.auto_step = 1
 
             elif self.auto_step == 1:
+                previous_position_x = self.target_disk_x
+                previous_position_y = self.target_disk_y
                 [x, y] = self.nearest_disk([self.target_disk_x, self.target_disk_y], self.disk_locs)
+                if abs(x - previous_position_x) > 30 or abs(y - previous_position_y) > 30:
+                    print('wtf')
+                    x = previous_position_x
+                    y = previous_position_y
                 self.target_disk_x = x
                 self.target_disk_y = y
                 if abs(self.goal_x - x) < 5 and abs(self.goal_y - y) < 5:
@@ -129,7 +137,7 @@ class DiskCore(QThread):
         nearest_disk = None
         min_distance = 99999.0
         for disk in locs:
-            distance = sum((a - b) ** 2 for a, b in zip(coords, disk)) ** .5
+            distance = sum((a * 1.0 - b * 1.0) ** 2 for a, b in zip(coords, disk)) ** .5
             if distance < min_distance:
                 nearest_disk = disk
                 min_distance = distance
@@ -177,3 +185,4 @@ class DiskCore(QThread):
     def recompute_disk(self, stepper_x, stepper_y):
         self.target_disk_x = int(round(self.target_disk_x - stepper_x / self.STEPPER_CONST))
         self.target_disk_y = int(round(self.target_disk_y + stepper_y / self.STEPPER_CONST))
+

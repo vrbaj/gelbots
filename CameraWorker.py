@@ -2,6 +2,8 @@ from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 import time
 import cv2
 from tifffile import imsave
+from datetime import datetime
+
 
 # opencv 4.1.0.25
 
@@ -36,7 +38,7 @@ class CameraWorker(QThread):
         self.raw_image = []
 
         try:
-            self.camera = cv2.VideoCapture(camera)
+            self.camera = cv2.VideoCapture(camera, cv2.CAP_DSHOW)
             self.update_params()
         except Exception as ex:
             print("Cam exp: ", ex)
@@ -57,14 +59,18 @@ class CameraWorker(QThread):
                     if actual_time - self.last_save_time > self.grab_period:
                         self.last_save_time = actual_time
                         try:
-                            imsave(self.grab_directory + "/" + self.grab_namespace +
-                                   "{0:08d}.tiff".format(self.frame_number), self.raw_image)
+                            # imsave(self.grab_directory + "/" + self.grab_namespace +
+                            #        "{0:08d}.tiff".format(self.frame_number), self.raw_image)
+                            # imsave(self.grab_directory + "/" + str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3])
+                            #        + ".tiff", self.raw_image)
+                            cv2.imwrite(self.grab_directory + "/" + self.grab_namespace + str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]) + ".bmp", self.raw_image)
                             self.frame_number += 1
                         except Exception as ex:
                             print(ex)
                 self.mutex.unlock()
                 self.image_ready.emit()
                 time.sleep(1 / self.fps)
+
             else:
                 self.camera.release()
                 self.camera = None

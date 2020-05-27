@@ -829,6 +829,13 @@ class ExampleWindow(QMainWindow):
         if self.move_laser_enabled:
             print(x_image)
             print(y_image)
+            steps_x = x_image - self.laser_x_loc
+            steps_y = y_image - self.laser_y_loc
+            print("y" + str(int(6.6666 * steps_y)))
+            print("x" + str(int(6.6666 * steps_x)))
+            self.raspi_comm.requests_queue.append("y" + str(int(6.6666 * steps_y)))
+            self.raspi_comm.requests_queue.append("x" + str(int(6.6666 * steps_x)))
+
             # TODO send command to RaspiWorker
         elif self.set_goal_enabled:
             self.goal_x_loc = x_image
@@ -852,8 +859,8 @@ class ExampleWindow(QMainWindow):
         elif self.set_laser_enabled:
             self.laser_x_loc = x_image
             self.laser_y_loc = y_image
-            self.laserCoordXInput.setText(str(x_image))
-            self.laserCoordYInput.setText(str(y_image))
+            self.laser_settings_window.laserCoordXInput.setText(str(x_image))
+            self.laser_settings_window.laserCoordYInput.setText(str(y_image))
             self.config.set("laser", "x_loc", self.laser_x_loc)
             self.config.set("laser", "y_loc", self.laser_y_loc)
             self.update_config_file()
