@@ -6,7 +6,7 @@ from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 
 
 class DiskCore(QThread):
-    REGION_OFFSET = 5
+    REGION_OFFSET = 10
     STEPPER_CONST = 6.6666666
     # signals
     gray_image_request = pyqtSignal()
