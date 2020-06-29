@@ -95,6 +95,7 @@ class DiskCore(QThread):
 
             elif self.auto_step == 4:
                 # TODO recompute coordinates of goal, disk and update
+                print('steps', steps_x, steps_y)
                 self.recompute_goal(steps_x, steps_y)
                 self.recompute_disk(steps_x, steps_y)
                 self.coords_update.emit(self.goal_x, self.goal_y, self.target_disk_x, self.target_disk_y)
@@ -180,10 +181,10 @@ class DiskCore(QThread):
         return steps_x, steps_y
 
     def recompute_goal(self, stepper_x, stepper_y):
-        self.goal_x = int(round(self.goal_x - stepper_x / self.STEPPER_CONST))
-        self.goal_y = int(round(self.goal_y + stepper_y / self.STEPPER_CONST))
+        self.goal_x = (self.goal_x - stepper_x / self.STEPPER_CONST)
+        self.goal_y = (self.goal_y + stepper_y / self.STEPPER_CONST)
 
     def recompute_disk(self, stepper_x, stepper_y):
-        self.target_disk_x = int(round(self.target_disk_x - stepper_x / self.STEPPER_CONST))
-        self.target_disk_y = int(round(self.target_disk_y + stepper_y / self.STEPPER_CONST))
+        self.target_disk_x = (self.target_disk_x - stepper_x / self.STEPPER_CONST)
+        self.target_disk_y = (self.target_disk_y + stepper_y / self.STEPPER_CONST)
 

@@ -943,6 +943,8 @@ class ExampleWindow(QMainWindow):
             self.goalCoordYInput.setText(str(y_image))
             self.config.set("goal", "x_loc", self.goal_x_loc)
             self.config.set("goal", "y_loc", self.goal_y_loc)
+            self.disk_core.goal_x = self.goal_x_loc
+            self.disk_core.goal_y = self.goal_y_loc
             self.update_config_file()
         elif self.set_disk_enabled:
             locs = self.disk_core.find_disks(self.gray_image)
@@ -954,6 +956,8 @@ class ExampleWindow(QMainWindow):
                 self.diskCoordYInput.setText(str(self.disk_y_loc))
                 self.config.set("disk", "x_loc", self.disk_x_loc)
                 self.config.set("disk", "y_loc", self.disk_y_loc)
+                self.disk_core.target_disk_x = self.disk_x_loc
+                self.disk_core.target_disk_y = self.disk_y_loc
                 self.update_config_file()
         elif self.set_laser_enabled:
             self.laser_x_loc = x_image
@@ -1035,15 +1039,34 @@ class ExampleWindow(QMainWindow):
         if e.key() == 65:
             # move left
             self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
+
+            # TODO recompute goal and target disk coord
+            self.disk_core.recompute_goal(-self.steppers_x, 0)
+            self.disk_core.recompute_disk(-self.steppers_x, 0)
+            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
+                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+
         elif e.key() == 68:
             # move right
             self.raspi_comm.requests_queue.append("x" + str(self.steppers_x))
+            self.disk_core.recompute_goal(self.steppers_x, 0)
+            self.disk_core.recompute_disk(self.steppers_x, 0)
+            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
+                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
         elif e.key() == 83:
             # move top
             self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
+            self.disk_core.recompute_goal(0, -self.steppers_y)
+            self.disk_core.recompute_disk(0, -self.steppers_y)
+            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
+                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
         elif e.key() == 87:
             # move down
             self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
+            self.disk_core.recompute_goal(0, self.steppers_y)
+            self.disk_core.recompute_disk(0, self.steppers_y)
+            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
+                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
         elif e.key() == 81:
             self.raspi_comm.requests_queue.append("s")
         elif e.key() == 69:
