@@ -14,23 +14,156 @@ import DiskCore
 import configparser
 
 
-class LaserSettingsWindow(QMainWindow):
+class sflSettingsWindow(QMainWindow):
     change_params = pyqtSignal(int, int, int, int, int)
+    pulse_signal = pyqtSignal()
+    flush_switch_signal = pyqtSignal()
+    light_switch_signal = pyqtSignal()
+    sfl_switch_signal = pyqtSignal()
 
-    def __init__(self, pulse_number, on_time, off_time, x, y):
+    def __init__(self, flush_on, flush_off, light_on, light_off, pulse):
+        super(sflSettingsWindow, self).__init__()
+
+        self.sfl_flush_on = flush_on
+        self.sfl_flush_off = flush_off
+        self.sfl_light_on = light_on
+        self.sfl_light_off = light_off
+        self.sfl_pulse = pulse
+        # set window properties
+        self.setMinimumSize(QSize(250, 500))
+        self.setWindowTitle("SFL settings")
+
+        self.onlyInt = QIntValidator()
+
+        self.sflPulseLabel = QLabel(self)
+        self.sflPulseLabel.setGeometry(QRect(10, 0, 80, 20))
+        self.sflPulseLabel.setText("Pulse:")
+
+        self.sflPulseInput = QLineEdit(self)
+        self.sflPulseInput.move(60, 0)
+        self.sflPulseInput.setFixedWidth(30)
+        self.sflPulseInput.setValidator(self.onlyInt)
+        self.sflPulseInput.setText(str(self.sfl_pulse))
+
+        #
+        self.sflLightOnLabel = QLabel(self)
+        self.sflLightOnLabel.setGeometry(QRect(10, 30, 50, 31))
+        self.sflLightOnLabel.setText("Light On:")
+
+        self.sflLightOnInput = QLineEdit(self)
+        self.sflLightOnInput.move(60, 30)
+        self.sflLightOnInput.setFixedWidth(30)
+        self.sflLightOnInput.setValidator(self.onlyInt)
+        self.sflLightOnInput.setText(str(self.sfl_light_on))
+
+
+        self.sflLightOffLabel = QLabel(self)
+        self.sflLightOffLabel.setGeometry(QRect(10, 60, 50, 31))
+        self.sflLightOffLabel.setText("Light Off:")
+
+        self.sflLightOffInput = QLineEdit(self)
+        self.sflLightOffInput.move(60, 60)
+        self.sflLightOffInput.setFixedWidth(30)
+        self.sflLightOffInput.setValidator(self.onlyInt)
+        self.sflLightOffInput.setText(str(self.sfl_light_off))
+
+
+        self.sflFlushOnLabel = QLabel(self)
+        self.sflFlushOnLabel.setGeometry(QRect(10, 90, 50, 31))
+        self.sflFlushOnLabel.setText("Flush On:")
+
+        self.sflFlushOnInput = QLineEdit(self)
+        self.sflFlushOnInput.move(60, 90)
+        self.sflFlushOnInput.setFixedWidth(30)
+        self.sflFlushOnInput.setValidator(self.onlyInt)
+        self.sflFlushOnInput.setText(str(self.sfl_flush_on))
+
+
+        self.sflFlushOffLabel = QLabel(self)
+        self.sflFlushOffLabel.setGeometry(QRect(10, 120, 50, 31))
+        self.sflFlushOffLabel.setText("Flush Off:")
+
+        self.sflFlushOffInput = QLineEdit(self)
+        self.sflFlushOffInput.move(60, 120)
+        self.sflFlushOffInput.setFixedWidth(30)
+        self.sflFlushOffInput.setValidator(self.onlyInt)
+        self.sflFlushOffInput.setText(str(self.sfl_flush_off))
+
+
+        # sfl swithc button
+        self.sflButton = QPushButton('SFL ON', self)
+        self.sflButton.setToolTip('SFL ON')
+        self.sflButton.move(10, 160)
+        self.sflButton.setFixedHeight(40)
+        self.sflButton.clicked.connect(self.sfl_switch)
+
+        # sfl light switch button
+        self.sflLightButton = QPushButton('Light ON', self)
+        self.sflLightButton.setToolTip('Light ON')
+        self.sflLightButton.move(10, 210)
+        self.sflLightButton.setFixedHeight(40)
+        self.sflLightButton.clicked.connect(self.light_switch)
+
+        # sfl flush switch button
+        self.sflFlushButton = QPushButton('Flush ON', self)
+        self.sflFlushButton.setToolTip('Flush ON')
+        self.sflFlushButton.move(10, 260)
+        self.sflFlushButton.setFixedHeight(40)
+        self.sflFlushButton.clicked.connect(self.flush_switch)
+
+        # sfl pulse button
+        self.sflPulseButton = QPushButton('Pulse', self)
+        self.sflPulseButton.setToolTip('Pulse')
+        self.sflPulseButton.move(10, 310)
+        self.sflPulseButton.setFixedHeight(40)
+        self.sflPulseButton.clicked.connect(self.pulse)
+
+        # Apply button
+        self.validateButton = QPushButton(self)
+        self.validateButton.setGeometry(QRect(10, 360, 60, 30))
+        self.validateButton.setToolTip("Click to save settings")
+        self.validateButton.setText("Apply")
+        self.validateButton.clicked.connect(self.validate_settings)
+
+    def validate_settings(self):
+        self.sfl_pulse = int(self.sflPulseInput.text())
+        self.sfl_flush_on = int(self.sflFlushOnInput.text())
+        self.sfl_flush_off = int(self.sflFlushOffInput.text())
+        self.sfl_light_on = int(self.sflLightOnInput.text())
+        self.sfl_light_off = int(self.sflLightOffInput.text())
+        self.change_params.emit(self.sfl_light_on, self.sfl_light_off, self.sfl_flush_on, self.sfl_flush_off,
+                                self.sfl_pulse)
+
+    def pulse(self):
+        self.pulse_signal.emit()
+
+    def flush_switch(self):
+        self.flush_switch_signal.emit()
+
+    def light_switch(self):
+        self.light_switch_signal.emit()
+
+    def sfl_switch(self):
+        self.sfl_switch_signal.emit()
+
+
+class LaserSettingsWindow(QMainWindow):
+    change_params = pyqtSignal(int, int, int, int, int, int)
+
+    def __init__(self, pulse_number, on_time, off_time, x, y, offset):
         super(LaserSettingsWindow, self).__init__()
         # set variables
         # self.save_interval = interval
         # self.save_namespace = namespace
         # self.save_path = path
-
+        self.offset = offset
         self.laser_pulse_n = pulse_number
         self.laser_on_time = on_time
         self.laser_off_time = off_time
         self.laser_x_loc = x
         self.laser_y_loc = y
         # set window properties
-        self.setMinimumSize(QSize(250, 200))
+        self.setMinimumSize(QSize(250, 250))
         self.setWindowTitle("Laser settings")
 
         self.onlyInt = QIntValidator()
@@ -93,9 +226,20 @@ class LaserSettingsWindow(QMainWindow):
         self.laserCoordYInput.setValidator(self.onlyInt)
         self.laserCoordYInput.setText(str(self.laser_y_loc))
 
+        # Create laser offset label
+        self.laserOffsetLabel = QLabel(self)
+        self.laserOffsetLabel.setGeometry(QRect(10, 150, 80, 20))
+        self.laserOffsetLabel.setText("Offset:")
+
+        # Create laser y coordinate input box
+        self.laserOffsetInput = QLineEdit(self)
+        self.laserOffsetInput.setGeometry(QRect(60, 150, 40, 20))
+        self.laserOffsetInput.setValidator(self.onlyInt)
+        self.laserOffsetInput.setText(str(self.offset))
+
         # Apply button
         self.validateButton = QPushButton(self)
-        self.validateButton.setGeometry(QRect(10, 150, 230, 40))
+        self.validateButton.setGeometry(QRect(10, 180, 230, 40))
         self.validateButton.setToolTip("Click to save settings")
         self.validateButton.setFont(QFont('Times', 20))
         self.validateButton.setText("Apply")
@@ -107,8 +251,9 @@ class LaserSettingsWindow(QMainWindow):
         self.laser_off_time = int(self.laserOffInput.text())
         self.laser_x_loc = int(self.laserCoordXInput.text())
         self.laser_y_loc = int(self.laserCoordYInput.text())
+        self.offset = int(self.laserOffsetInput.text())
         self.change_params.emit(self.laser_pulse_n, self.laser_on_time, self.laser_off_time, self.laser_x_loc,
-                                self.laser_y_loc)
+                                self.laser_y_loc, self.offset)
 
 
 class VideoSettingsWindow(QMainWindow):
@@ -221,6 +366,7 @@ class ExampleWindow(QMainWindow):
             self.laser_off_time = self.config.getint("laser", "off_time", fallback=1)
             self.laser_x_loc = self.config.getint("laser", "x_loc", fallback=0)
             self.laser_y_loc = self.config.getint("laser", "y_loc", fallback=0)
+            self.offset = self.config.getint("laser", "offset", fallback=10)
             self.disk_x_loc = self.config.getint("disk", "x_loc", fallback=0)
             self.disk_y_loc = self.config.getint("disk", "y_loc", fallback=0)
             self.goal_x_loc = self.config.getint("goal", "x_loc", fallback=0)
@@ -478,6 +624,13 @@ class ExampleWindow(QMainWindow):
         self.laserSettingsButton.setFixedHeight(22)
         self.laserSettingsButton.clicked.connect(self.show_laser_settings)
 
+        # sfl settings window
+        self.sflSettingsButton = QPushButton("SFL settings", self)
+        self.sflSettingsButton.setToolTip("Click to set sfl settings")
+        self.sflSettingsButton.move(1300, 200)
+        self.sflSettingsButton.setFixedHeight(22)
+        self.sflSettingsButton.clicked.connect(self.show_sfl_settings)
+
         # check box to move laser to desired position
         self.moveLaserCheckbox = QCheckBox(self)
         self.moveLaserCheckbox.setText("Move laser")
@@ -559,7 +712,7 @@ class ExampleWindow(QMainWindow):
         self.disk_core = DiskCore.DiskCore([self.disk_x_loc, self.disk_y_loc],
                                            [self.laser_x_loc, self.laser_y_loc],
                                            [self.goal_x_loc, self.goal_y_loc],
-                                           self.laser_pulse_n * (self.laser_on_time + self.laser_off_time))
+                                           self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset)
         self.disk_core.gray_image_request.connect(self.core_image_request)
         self.disk_core.steppers_request.connect(self.move_steppers)
         self.disk_core.coords_update.connect(self.update_coords)
@@ -567,88 +720,7 @@ class ExampleWindow(QMainWindow):
         self.disk_core.auto_done.connect(self.automode_finished)
 
         # SFL
-        self.sflPulseLabel = QLabel(central_widget)
-        self.sflPulseLabel.setGeometry(QRect(1750, 145, 50, 31))
-        self.sflPulseLabel.setText("Pulse:")
 
-        self.sflPulseInput = QLineEdit(central_widget)
-        self.sflPulseInput.move(1800, 150)
-        self.sflPulseInput.setFixedWidth(30)
-        self.sflPulseInput.setValidator(self.onlyInt)
-        self.sflPulseInput.setText(str(self.sfl_pulse))
-        self.sflPulseInput.editingFinished.connect(self.sfl_pulse_edited)
-        #
-        self.sflLightOnLabel = QLabel(central_widget)
-        self.sflLightOnLabel.setGeometry(QRect(1750, 195, 50, 31))
-        self.sflLightOnLabel.setText("Light On:")
-
-        self.sflLightOnInput = QLineEdit(central_widget)
-        self.sflLightOnInput.move(1800, 200)
-        self.sflLightOnInput.setFixedWidth(30)
-        self.sflLightOnInput.setValidator(self.onlyInt)
-        self.sflLightOnInput.setText(str(self.sfl_light_on))
-        self.sflLightOnInput.editingFinished.connect(self.sfl_light_on_edited)
-
-        self.sflLightOffLabel = QLabel(central_widget)
-        self.sflLightOffLabel.setGeometry(QRect(1750, 245, 50, 31))
-        self.sflLightOffLabel.setText("Light Off:")
-
-        self.sflLightOffInput = QLineEdit(central_widget)
-        self.sflLightOffInput.move(1800, 250)
-        self.sflLightOffInput.setFixedWidth(30)
-        self.sflLightOffInput.setValidator(self.onlyInt)
-        self.sflLightOffInput.setText(str(self.sfl_light_off))
-        self.sflLightOffInput.editingFinished.connect(self.sfl_light_off_edited)
-
-        self.sflFlushOnLabel = QLabel(central_widget)
-        self.sflFlushOnLabel.setGeometry(QRect(1750, 295, 50, 31))
-        self.sflFlushOnLabel.setText("Flush On:")
-
-        self.sflFlushOnInput = QLineEdit(central_widget)
-        self.sflFlushOnInput.move(1800, 300)
-        self.sflFlushOnInput.setFixedWidth(30)
-        self.sflFlushOnInput.setValidator(self.onlyInt)
-        self.sflFlushOnInput.setText(str(self.sfl_flush_on))
-        self.sflFlushOnInput.editingFinished.connect(self.sfl_flush_on_edited)
-
-        self.sflFlushOffLabel = QLabel(central_widget)
-        self.sflFlushOffLabel.setGeometry(QRect(1750, 345, 50, 31))
-        self.sflFlushOffLabel.setText("Flush Off:")
-
-        self.sflFlushOffInput = QLineEdit(central_widget)
-        self.sflFlushOffInput.move(1800, 350)
-        self.sflFlushOffInput.setFixedWidth(30)
-        self.sflFlushOffInput.setValidator(self.onlyInt)
-        self.sflFlushOffInput.setText(str(self.sfl_flush_off))
-        self.sflFlushOffInput.editingFinished.connect(self.sfl_flush_off_edited)
-
-        # sfl swithc button
-        self.sflButton = QPushButton('SFL ON', self)
-        self.sflButton.setToolTip('SFL ON')
-        self.sflButton.move(1750, 400)
-        self.sflButton.setFixedHeight(40)
-        self.sflButton.clicked.connect(self.sfl_switch)
-
-        # sfl light switch button
-        self.sflLightButton = QPushButton('Light ON', self)
-        self.sflLightButton.setToolTip('Light ON')
-        self.sflLightButton.move(1750, 450)
-        self.sflLightButton.setFixedHeight(40)
-        self.sflLightButton.clicked.connect(self.light_switch)
-
-        # sfl flush switch button
-        self.sflFlushButton = QPushButton('Flush ON', self)
-        self.sflFlushButton.setToolTip('Flush ON')
-        self.sflFlushButton.move(1750, 500)
-        self.sflFlushButton.setFixedHeight(40)
-        self.sflFlushButton.clicked.connect(self.flush_switch)
-
-        # sfl pulse button
-        self.sflPulseButton = QPushButton('Pulse', self)
-        self.sflPulseButton.setToolTip('Pulse')
-        self.sflPulseButton.move(1750, 550)
-        self.sflPulseButton.setFixedHeight(40)
-        self.sflPulseButton.clicked.connect(self.pulse)
 
         # video settings window
         self.video_settings_window = VideoSettingsWindow(self.save_interval, self.save_namespace, self.save_path)
@@ -656,21 +728,48 @@ class ExampleWindow(QMainWindow):
 
         # laser settings window
         self.laser_settings_window = LaserSettingsWindow(self.laser_pulse_n, self.laser_on_time, self.laser_off_time,
-                                                         self.laser_x_loc, self.laser_y_loc)
+                                                         self.laser_x_loc, self.laser_y_loc, self.offset)
         self.laser_settings_window.change_params.connect(self.laser_settings_changed)
+
+        self.sfl_settings_window = sflSettingsWindow(self.sfl_flush_on, self.sfl_flush_off, self.sfl_light_on,
+                                                         self.sfl_light_off, self.sfl_pulse)
+        self.sfl_settings_window.change_params.connect(self.sfl_settings_changed)
+
+        self.sfl_settings_window.sfl_switch_signal.connect(self.sfl_switch)
+        self.sfl_settings_window.pulse_signal.connect(self.pulse)
+        self.sfl_settings_window.flush_switch_signal.connect(self.flush_switch)
+        self.sfl_settings_window.light_switch_signal.connect(self.light_switch)
+
         self.showMaximized()
 
-    def laser_settings_changed(self, n, on, off, x, y):
+    def sfl_settings_changed(self, light_on, light_off, flush_on, flush_off, pulse):
+        self.sfl_light_on = light_on
+        self.sfl_light_off = light_off
+        self.sfl_flush_off = flush_off
+        self.sfl_flush_on = flush_on
+        self.sfl_pulse = pulse
+        self.config.set("sfl", "pulse", self.sfl_pulse)
+        self.config.set("sfl", "light_on", self.sfl_light_on)
+        self.config.set("sfl", "light_off", self.sfl_light_off)
+        self.config.set("sfl", "flush_on", self.sfl_flush_on)
+        self.config.set("sfl", "flush_off", self.sfl_flush_off)
+        self.update_config_file()
+
+
+    def laser_settings_changed(self, n, on, off, x, y, offset):
         self.laser_pulse_n = n
         self.laser_on_time = on
         self.laser_off_time = off
         self.laser_x_loc = x
         self.laser_y_loc = y
+        self.offset = offset
         self.config.set("laser", "pulses", self.laser_pulse_n)
         self.config.set("laser", "on_time", self.laser_on_time)
         self.config.set("laser", "off_time", self.laser_off_time)
         self.config.set("laser", "x_loc", self.laser_x_loc)
         self.config.set("laser", "y_loc", self.laser_y_loc)
+        self.config.set("laser", "offset", self.offset)
+        self.disk_core.region_offset = self.offset
         self.update_config_file()
 
     def pulse(self):
@@ -684,35 +783,35 @@ class ExampleWindow(QMainWindow):
         self.update_config_file()
 
     def flush_switch(self):
-        if self.sflFlushButton.text() == "Flush ON":
-            self.sflFlushButton.setText("Flush OFF")
+        if self.sfl_settings_window.sflFlushButton.text() == "Flush ON":
+            self.sfl_settings_window.sflFlushButton.setText("Flush OFF")
             self.raspi_comm.requests_queue.append("n")
         else:
             self.raspi_comm.requests_queue.append("m")
-            self.sflFlushButton.setText("Flush ON")
+            self.sfl_settings_window.sflFlushButton.setText("Flush ON")
 
     def light_switch(self):
-        if self.sflLightButton.text() == "Light ON":
-            self.sflLightButton.setText("Light OFF")
+        if self.sfl_settings_window.sflLightButton.text() == "Light ON":
+            self.sfl_settings_window.sflLightButton.setText("Light OFF")
             self.raspi_comm.requests_queue.append("j")
         else:
             self.raspi_comm.requests_queue.append("h")
-            self.sflLightButton.setText("Light ON")
+            self.sfl_settings_window.sflLightButton.setText("Light ON")
 
     def sfl_switch(self):
-        if self.sflButton.text() == "SFL ON":
-            self.sflButton.setText("SFL OFF")
+        if self.sfl_settings_window.sflButton.text() == "SFL ON":
+            self.sfl_settings_window.sflButton.setText("SFL OFF")
             self.raspi_comm.requests_queue.append("p" + "," + str(self.sfl_flush_on) + "," + str(self.sfl_flush_off) +
                                                   "," + str(self.sfl_light_on) + "," + str(self.sfl_light_off))
         else:
             self.raspi_comm.requests_queue.clear()
             self.raspi_comm.requests_queue.append("r")
-            self.sflButton.setText("SFL ON")
+            self.sfl_settings_window.sflButton.setText("SFL ON")
 
             # TODO stop
 
     def sfl_light_on_edited(self):
-        self.sfl_light_on = int(self.sflLightOnInput.text())
+        self.sfl_settings_window.sfl_light_on = int(self.sflLightOnInput.text())
         self.message_text.setPlainText("sfl light on: {} ".format(str(self.sfl_light_on)))
         self.config.set("sfl", "light_on", self.sfl_light_on)
         self.update_config_file()
@@ -880,6 +979,9 @@ class ExampleWindow(QMainWindow):
 
     def show_laser_settings(self):
         self.laser_settings_window.show()
+
+    def show_sfl_settings(self):
+        self.sfl_settings_window.show()
 
     def steppers_x_edited(self):
         """Function to set steppers steps for manual control"""

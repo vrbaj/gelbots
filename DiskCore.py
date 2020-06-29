@@ -6,7 +6,7 @@ from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 
 
 class DiskCore(QThread):
-    REGION_OFFSET = 10
+    #REGION_OFFSET = 10
     STEPPER_CONST = 6.6666666
     # signals
     gray_image_request = pyqtSignal()
@@ -15,7 +15,7 @@ class DiskCore(QThread):
     laser_shot = pyqtSignal()
     auto_done = pyqtSignal()
 
-    def __init__(self, disk, laser, goal, laser_time):
+    def __init__(self, disk, laser, goal, laser_time, offset):
         super(DiskCore, self).__init__()
         self.image_to_process = None
         self.disk_locs = None
@@ -29,6 +29,7 @@ class DiskCore(QThread):
         self.laser_x = laser[0]
         self.laser_y = laser[1]
         self.laser_blink_time = laser_time
+        self.region_offset = offset
 
 
         self.mutex = QMutex()
@@ -151,16 +152,16 @@ class DiskCore(QThread):
             desired_x = disk[0]
         else:
             if dx > 0:
-                desired_x = disk[0] - np.sign(dx) * self.REGION_OFFSET
+                desired_x = disk[0] - np.sign(dx) * self.region_offset
             else:
-                desired_x = disk[0] - np.sign(dx) * self.REGION_OFFSET
+                desired_x = disk[0] - np.sign(dx) * self.region_offset
         if abs(dy) < 3:
             desired_y = disk[1]
         else:
             if dy > 0:
-                desired_y = disk[1] - np.sign(dy) * self.REGION_OFFSET
+                desired_y = disk[1] - np.sign(dy) * self.region_offset
             else:
-                desired_y = disk[1] - np.sign(dy) * self.REGION_OFFSET
+                desired_y = disk[1] - np.sign(dy) * self.region_offset
         return desired_x, desired_y
 
     def move_servo(self, x, y):
