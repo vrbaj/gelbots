@@ -104,7 +104,7 @@ class DiskCore(QThread):
             elif self.auto_step == 5:
                 # TODO shoot with laser and wait
                 self.laser_shot.emit()
-                time.sleep(self.laser_blink_time / 1000 + 0.05)
+                time.sleep(self.laser_blink_time / 1000 + 0.5)
                 self.auto_step = -1
 
             time.sleep(0.1)
