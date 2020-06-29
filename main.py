@@ -2,8 +2,8 @@ import sys, socket, copy, os
 import cv2_worker
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QComboBox,\
-    QLineEdit, QPushButton, QFrame, QFileDialog, QCheckBox
-from PyQt5.QtCore import QSize, QRect, Qt, pyqtSignal
+    QLineEdit, QPushButton, QFrame, QFileDialog, QCheckBox, QRubberBand
+from PyQt5.QtCore import QSize, QRect, Qt, pyqtSignal, QPoint
 from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator, QFont
 import cv2
 import time, datetime
@@ -266,6 +266,13 @@ class VideoSettingsWindow(QMainWindow):
         self.save_namespace = namespace
         self.save_path = path
 
+        # check box to save ROI
+        self.roiCheckbox = QCheckBox(self)
+        self.roiCheckbox.setText("save roi")
+        self.roiCheckbox.setToolTip("Click to save only ROI")
+        self.roiCheckbox.setGeometry(QRect(200, 30, 100, 25))
+        self.roiCheckbox.setLayoutDirection(Qt.RightToLeft)
+
         # set window properties
         self.setMinimumSize(QSize(800, 120))
         self.setWindowTitle("Video settings")
@@ -322,6 +329,18 @@ class VideoSettingsWindow(QMainWindow):
         self.validateButton.setText("Apply")
         self.validateButton.clicked.connect(self.validate_settings)
 
+        # set ROI button
+        self.roiButton = QPushButton(self)
+        self.roiButton.setGeometry(QRect(739, 40, 60, 30))
+        self.roiButton.setToolTip("Click to set ROI for saving video")
+        self.roiButton.setText("ROI")
+        self.roiButton.clicked.connect(self.roi_pushed)
+        self.roi_enabled = False
+
+    def roi_pushed(self):
+        self.roi_enabled = True
+        print(self.roi_enabled)
+
     def get_video_path(self):
         file = str(QFileDialog.getExistingDirectory(self, "Select directory"))
         self.save_path = file
@@ -341,6 +360,7 @@ class ExampleWindow(QMainWindow):
 
     def __init__(self):
         QMainWindow.__init__(self)
+        self.draw_roi = False
         # variables
         self.image_to_display = []
         self.gray_image = []
@@ -544,6 +564,8 @@ class ExampleWindow(QMainWindow):
         self.imageDisplay.setGeometry(QRect(10, 60, self.PIXMAP_WIDTH, self.PIXMAP_HEIGHT))
         self.imageDisplay.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.imageDisplay.mousePressEvent = self.click_to_get_coords
+        self.imageDisplay.mouseMoveEvent = self.mouseMoveEvent
+        self.imageDisplay.mouseReleaseEvent = self.mouseReleaseEvent
 
         # Create log
         self.message_text = QtWidgets.QPlainTextEdit(central_widget)
@@ -719,7 +741,10 @@ class ExampleWindow(QMainWindow):
         self.disk_core.laser_shot.connect(self.blink_laser_n)
         self.disk_core.auto_done.connect(self.automode_finished)
 
-        # SFL
+        self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
+        self.origin = QPoint()
+        self.endpoint = QPoint()
+
 
 
         # video settings window
@@ -967,6 +992,11 @@ class ExampleWindow(QMainWindow):
             self.config.set("laser", "x_loc", self.laser_x_loc)
             self.config.set("laser", "y_loc", self.laser_y_loc)
             self.update_config_file()
+        elif self.video_settings_window.roi_enabled:
+            if event.button() == QtCore.Qt.LeftButton:
+                self.origin = QPoint(x_pixmap, y_pixmap)
+                self.rubberBand.setGeometry(QRect(QPoint(x_pixmap + 10, y_pixmap + 60), QSize()))
+                self.rubberBand.show()
 
     def video_settings_close(self, save_interval, save_namespace, save_path):
         self.save_interval = save_interval
@@ -1273,6 +1303,10 @@ class ExampleWindow(QMainWindow):
         """Function to get camera image from camera worker. The conversion to grayscale is done."""
         self.camera_worker.mutex.lock()
         self.image_to_display = np.copy(self.camera_worker.raw_image)
+        if self.video_settings_window.roiCheckbox.isChecked():
+            self.camera_worker.save_roi = True
+        else:
+            self.camera_worker.save_roi = False
         self.camera_worker.mutex.unlock()
         self.gray_image = cv2.cvtColor(self.image_to_display, cv2.COLOR_BGR2GRAY)
         if self.draw_marks_enabled:
@@ -1287,9 +1321,17 @@ class ExampleWindow(QMainWindow):
             self.gray_image = cv2.drawMarker(self.gray_image, (self.laser_x_loc, self.laser_y_loc), (0, 255, 0),
                                              markerType=cv2.MARKER_STAR, markerSize=20, thickness=1,
                                              line_type=cv2.LINE_AA)
+            x_scale = self.cam_width_value / self.PIXMAP_WIDTH
+            y_scale = self.cam_height_value / self.PIXMAP_HEIGHT
+            if self.draw_roi:
+                self.gray_image = cv2.rectangle(self.gray_image, (int(x_scale * self.origin.x()),
+                                                                  int(y_scale * self.origin.y())),
+                                                (int(x_scale * self.endpoint.x()), int(y_scale * self.endpoint.y())),
+                                                (250, 255, 0), 2)
         height, width = self.gray_image.shape[:2]
         image_for_pixmap = QtGui.QImage(self.gray_image, width, height, QtGui.QImage.Format_Grayscale8)
         self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(1280, 720))
+
 
     def camera_changed(self):
         """
@@ -1328,6 +1370,23 @@ class ExampleWindow(QMainWindow):
             self.camera_worker.quit_flag = True
             time.sleep(0.5)
         sys.exit()
+
+    def mouseMoveEvent(self, event):
+        if not self.origin.isNull() and self.video_settings_window.roi_enabled:
+            self.rubberBand.setGeometry(QRect(QPoint(self.origin.x()+10, self.origin.y()+60),
+                                              QPoint(event.pos().x()+10, event.pos().y()+60)))
+
+    def mouseReleaseEvent(self, event):
+
+        if event.button() == QtCore.Qt.LeftButton and self.video_settings_window.roi_enabled:
+            self.rubberBand.hide()
+            self.endpoint = QPoint(event.pos())
+
+            self.video_settings_window.roi_enabled = False
+            self.draw_roi = True
+
+
+
 
 if __name__ == "__main__":
 

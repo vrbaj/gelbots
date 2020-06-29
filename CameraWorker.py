@@ -19,6 +19,7 @@ class CameraWorker(QThread):
         self.change_params_flag = False  # flag to change camera settings
         self.status = True
         self.frame_number = 0
+        self.save_roi = False
 
         # camera params
         self.fps = fps
@@ -63,7 +64,17 @@ class CameraWorker(QThread):
                             #        "{0:08d}.tiff".format(self.frame_number), self.raw_image)
                             # imsave(self.grab_directory + "/" + str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3])
                             #        + ".tiff", self.raw_image)
-                            cv2.imwrite(self.grab_directory + "/" + self.grab_namespace + str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]) + ".bmp", self.raw_image)
+                            if not self.save_roi:
+                                cv2.imwrite(self.grab_directory + "/" + self.grab_namespace +
+                                            str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]) + ".bmp",
+                                            self.raw_image)
+                            else:
+                                cv2.imwrite(self.grab_directory + "/" + self.grab_namespace +
+                                            str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]) + ".bmp",
+                                            self.raw_image)
+                                # TODO save ROI only
+
+
                             self.frame_number += 1
                         except Exception as ex:
                             print(ex)
