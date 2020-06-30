@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QThread, QMutex, pyqtSignal
+from PyQt5.QtCore import QThread, QMutex, pyqtSignal, QPoint
 import time
 import cv2
 from tifffile import imsave
@@ -20,6 +20,8 @@ class CameraWorker(QThread):
         self.status = True
         self.frame_number = 0
         self.save_roi = False
+        self.roi_origin = (0, 0)
+        self.roi_endpoint = (0, 0)
 
         # camera params
         self.fps = fps
@@ -69,10 +71,11 @@ class CameraWorker(QThread):
                                             str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]) + ".bmp",
                                             self.raw_image)
                             else:
+
                                 cv2.imwrite(self.grab_directory + "/" + self.grab_namespace +
                                             str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]) + ".bmp",
-                                            self.raw_image)
-                                # TODO save ROI only
+                                            self.raw_image[self.roi_origin[0]:self.roi_endpoint[0],
+                                            self.roi_origin[1]:self.roi_endpoint[1]])
 
 
                             self.frame_number += 1

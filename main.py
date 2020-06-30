@@ -1324,9 +1324,15 @@ class ExampleWindow(QMainWindow):
             x_scale = self.cam_width_value / self.PIXMAP_WIDTH
             y_scale = self.cam_height_value / self.PIXMAP_HEIGHT
             if self.draw_roi:
-                self.gray_image = cv2.rectangle(self.gray_image, (int(x_scale * self.origin.x()),
-                                                                  int(y_scale * self.origin.y())),
-                                                (int(x_scale * self.endpoint.x()), int(y_scale * self.endpoint.y())),
+                rectangle_startpoint_x = int(x_scale * self.origin.x())
+                rectangle_startpoint_y = int(y_scale * self.origin.y())
+                rectangle_endpoint_x = int(x_scale * self.endpoint.x())
+                rectangle_endpoint_y = int(y_scale * self.endpoint.y())
+                self.camera_worker.roi_origin = (rectangle_startpoint_x, rectangle_startpoint_y)
+                self.camera_worker.roi_endpoint = (rectangle_endpoint_x, rectangle_endpoint_y)
+                self.gray_image = cv2.rectangle(self.gray_image, (rectangle_startpoint_x,
+                                                                  rectangle_startpoint_y),
+                                                (rectangle_endpoint_x, rectangle_endpoint_y),
                                                 (250, 255, 0), 2)
         height, width = self.gray_image.shape[:2]
         image_for_pixmap = QtGui.QImage(self.gray_image, width, height, QtGui.QImage.Format_Grayscale8)
