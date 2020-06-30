@@ -1005,6 +1005,9 @@ class ExampleWindow(QMainWindow):
         self.config.set("video", "interval", save_interval)
         self.config.set("video", "namespace", save_namespace)
         self.config.set("video", "path", save_path)
+        self.camera_worker.grab_period = save_interval
+        self.camera_worker.grab_directory = save_path
+        self.camera_worker.grab_namespace = save_namespace
         self.update_config_file()
 
     def save_video_settings(self):
