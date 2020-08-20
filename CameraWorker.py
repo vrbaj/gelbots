@@ -39,12 +39,18 @@ class CameraWorker(QThread):
 
         self.mutex = QMutex()
         self.raw_image = []
-
+        self.back_ground = []
         try:
             self.camera = cv2.VideoCapture(camera, cv2.CAP_DSHOW)
             self.update_params()
+            ix = 0
+            while ix < 100:
+                self.camera.read()
+                ix = ix + 1
+            ret, self.back_ground = self.camera.read()
         except Exception as ex:
             print("Cam exp: ", ex)
+        self.backSub = cv2.createBackgroundSubtractorMOG2()
 
     def run(self):
         while True:
@@ -98,9 +104,17 @@ class CameraWorker(QThread):
 
     def get_image(self):
         try:
-            ret, image = self.camera.read()
+            ret, image2 = self.camera.read()
             # image = cv2.imread("1920x1080.png")
-            return image
+            # print("going to subb")
+            # image = []
+            # image = cv2.subtract(image2, self.back_ground)
+            # image2 = cv2.resize(image2, (1200, 800))
+            # cv2.imshow("pred odectenim", image2)
+            # cv2.waitKey(1)
+            #
+            # print(image)
+            return image2
         except Exception as ex:
             print(ex)
             print("in get image")
