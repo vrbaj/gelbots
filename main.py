@@ -149,6 +149,7 @@ class sflSettingsWindow(QMainWindow):
 
 class LaserSettingsWindow(QMainWindow):
     change_params = pyqtSignal(int, int, int, int, int, int)
+    laser_control_signal = pyqtSignal(str)
 
     def __init__(self, pulse_number, on_time, off_time, x, y, offset):
         super(LaserSettingsWindow, self).__init__()
@@ -163,7 +164,7 @@ class LaserSettingsWindow(QMainWindow):
         self.laser_x_loc = x
         self.laser_y_loc = y
         # set window properties
-        self.setMinimumSize(QSize(250, 250))
+        self.setMinimumSize(QSize(250, 300))
         self.setWindowTitle("Laser settings")
 
         self.onlyInt = QIntValidator()
@@ -237,13 +238,27 @@ class LaserSettingsWindow(QMainWindow):
         self.laserOffsetInput.setValidator(self.onlyInt)
         self.laserOffsetInput.setText(str(self.offset))
 
+        # laser blink button
+        self.blinkLaserButton = QPushButton("Blink On", self)
+        self.blinkLaserButton.setToolTip("Unlimited laser blink")
+        self.blinkLaserButton.setGeometry(QRect(10, 180, 230, 40))
+        self.blinkLaserButton.setFixedHeight(22)
+        self.blinkLaserButton.clicked.connect(self.blink_laser)
+
+        # laser switch button
+        self.switchLaserButton = QPushButton("Laser ON", self)
+        self.switchLaserButton.setToolTip("Laser switch")
+        self.switchLaserButton.setGeometry(QRect(10, 210, 230, 40))
+        self.switchLaserButton.setFixedHeight(22)
+        self.switchLaserButton.clicked.connect(self.switch_laser)
+
         # Apply button
         self.validateButton = QPushButton(self)
-        self.validateButton.setGeometry(QRect(10, 180, 230, 40))
+        self.validateButton.setGeometry(QRect(10, 240, 230, 40))
         self.validateButton.setToolTip("Click to save settings")
         self.validateButton.setFont(QFont('Times', 20))
         self.validateButton.setText("Apply")
-        self.validateButton.clicked.connect(self.validate_settings)
+        self.validateButton.clicked.connect(self.switch_laser)
 
     def validate_settings(self):
         self.laser_pulse_n = int(self.pulseNumberInput.text())
@@ -254,6 +269,25 @@ class LaserSettingsWindow(QMainWindow):
         self.offset = int(self.laserOffsetInput.text())
         self.change_params.emit(self.laser_pulse_n, self.laser_on_time, self.laser_off_time, self.laser_x_loc,
                                 self.laser_y_loc, self.offset)
+
+
+    def blink_laser(self):
+        if self.blinkLaserButton.text() == "Blink On":
+            time_on = int(self.laser_on_time)
+            time_off = int(self.laser_off_time)
+            self.laser_control_signal.emit("k" + "," + str(time_on) + "," + str(time_off))
+            self.blinkLaserButton.setText("Blink Off")
+        else:
+            self.blinkLaserButton.setText("Blink On")
+            self.laser_control_signal.emit("t")
+
+    def switch_laser(self):
+        if self.switchLaserButton.text() == "Laser ON":
+            self.laser_control_signal.emit("l")
+            self.switchLaserButton.setText("Laser OFF")
+        else:
+            self.laser_control_signal.emit("s")
+            self.switchLaserButton.setText("Laser ON")
 
 
 class VideoSettingsWindow(QMainWindow):
@@ -580,12 +614,7 @@ class ExampleWindow(QMainWindow):
         self.runCameraButton.setFixedHeight(22)
         self.runCameraButton.clicked.connect(self.run_camera)
 
-        # start laser blinking
-        self.blinkLaserButton = QPushButton("Blink On", self)
-        self.blinkLaserButton.setToolTip("Unlimited laser blink")
-        self.blinkLaserButton.move(1000, 0)
-        self.blinkLaserButton.setFixedHeight(22)
-        self.blinkLaserButton.clicked.connect(self.blink_laser)
+
 
         # status label of raspi
         self.raspiStatus = QLabel(central_widget)
@@ -755,6 +784,10 @@ class ExampleWindow(QMainWindow):
         self.laser_settings_window = LaserSettingsWindow(self.laser_pulse_n, self.laser_on_time, self.laser_off_time,
                                                          self.laser_x_loc, self.laser_y_loc, self.offset)
         self.laser_settings_window.change_params.connect(self.laser_settings_changed)
+        self.laser_settings_window.laser_control_signal.connect(self.laser_control)
+
+
+
 
         self.sfl_settings_window = sflSettingsWindow(self.sfl_flush_on, self.sfl_flush_off, self.sfl_light_on,
                                                          self.sfl_light_off, self.sfl_pulse)
@@ -765,7 +798,13 @@ class ExampleWindow(QMainWindow):
         self.sfl_settings_window.flush_switch_signal.connect(self.flush_switch)
         self.sfl_settings_window.light_switch_signal.connect(self.light_switch)
 
+
+
         self.showMaximized()
+
+
+    def laser_control(self, command):
+        self.raspi_comm.requests_queue.append(command)
 
     def sfl_settings_changed(self, light_on, light_off, flush_on, flush_off, pulse):
         self.sfl_light_on = light_on
@@ -1045,15 +1084,6 @@ class ExampleWindow(QMainWindow):
             self.raspi_comm.signal_comm_err.connect(self.raspi_fail)
             self.raspi_comm.start()
 
-    def blink_laser(self):
-        if self.blinkLaserButton.text() == "Blink On":
-            time_on = int(self.laser_on_time)
-            time_off = int(self.laser_off_time)
-            self.raspi_comm.requests_queue.append("k" + "," + str(time_on) + "," + str(time_off))
-            self.blinkLaserButton.setText("Blink Off")
-        else:
-            self.blinkLaserButton.setText("Blink On")
-            self.raspi_comm.requests_queue.append("t")
 
     def blink_laser_n(self):
         time_on = int(self.laser_on_time)

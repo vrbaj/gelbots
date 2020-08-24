@@ -18,7 +18,7 @@ for idx, filename in enumerate(files_to_proces): # enumerate(os.listdir(os.path.
     img_array.append(img)
     img_array.append(img)
 
-out = cv2.VideoWriter('crawling.avi', cv2.VideoWriter_fourcc(*'DIVX'), 30, size)
+out = cv2.VideoWriter('cancer.avi', cv2.VideoWriter_fourcc(*'DIVX'), 30, size)
 
 for i in range(len(img_array)):
     out.write(img_array[i])

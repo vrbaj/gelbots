@@ -40,8 +40,6 @@ class DiskCore(QThread):
         self.status - True
         shooting_x = 0
         shooting_y = 0
-
-
         # logic for disk moving
         while self.auto_mode:
             print(self.auto_step)
