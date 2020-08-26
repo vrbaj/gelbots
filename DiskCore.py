@@ -7,7 +7,7 @@ from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 
 class DiskCore(QThread):
     #REGION_OFFSET = 10
-    STEPPER_CONST = 6.6666666
+    STEPPER_CONST = 6.6666666 / 2.5
     # signals
     gray_image_request = pyqtSignal()
     steppers_request = pyqtSignal(int, int)
@@ -102,7 +102,7 @@ class DiskCore(QThread):
             elif self.auto_step == 5:
                 # TODO shoot with laser and wait
                 self.laser_shot.emit()
-                time.sleep(self.laser_blink_time / 1000 + 0.5)
+                time.sleep(self.laser_blink_time / 1000 + 0.6)
                 self.auto_step = -1
 
             time.sleep(0.1)
@@ -113,16 +113,16 @@ class DiskCore(QThread):
     def find_disks(self, image):
         # TODO find disks centers
         start_time = time.time()
-        # img = cv2.medianBlur(image, 5)
+         # image = cv2.medianBlur(image, 5)
         # cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
         disk_locs = []
-        circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 1, 20,
-                                   param1=50, param2=30, minRadius=20, maxRadius=30)
+        circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 1, 40,
+                                   param1=50, param2=30, minRadius=40, maxRadius=80)
         if circles is not None:
             circles = np.uint16(np.around(circles))
             for i in circles[0, :]:
                 # find center
-                if 20 < i[2] < 30:
+                if 40 < i[2] < 80:
                     disk_locs.append((i[0], i[1]))
             print(time.time() - start_time)
         return disk_locs

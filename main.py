@@ -15,13 +15,13 @@ import configparser
 
 
 class sflSettingsWindow(QMainWindow):
-    change_params = pyqtSignal(int, int, int, int, int)
+    change_params = pyqtSignal(int, int, int, int, int, int)
     pulse_signal = pyqtSignal()
     flush_switch_signal = pyqtSignal()
     light_switch_signal = pyqtSignal()
     sfl_switch_signal = pyqtSignal()
 
-    def __init__(self, flush_on, flush_off, light_on, light_off, pulse):
+    def __init__(self, flush_on, flush_off, light_on, light_off, pulse, radius):
         super(sflSettingsWindow, self).__init__()
 
         self.sfl_flush_on = flush_on
@@ -29,6 +29,7 @@ class sflSettingsWindow(QMainWindow):
         self.sfl_light_on = light_on
         self.sfl_light_off = light_off
         self.sfl_pulse = pulse
+        self.sfl_radius = radius
         # set window properties
         self.setMinimumSize(QSize(250, 500))
         self.setWindowTitle("SFL settings")
@@ -56,6 +57,16 @@ class sflSettingsWindow(QMainWindow):
         self.sflLightOnInput.setValidator(self.onlyInt)
         self.sflLightOnInput.setText(str(self.sfl_light_on))
 
+        #
+        self.sflRadiusLabel = QLabel(self)
+        self.sflRadiusLabel.setGeometry(QRect(100, 30, 50, 31))
+        self.sflRadiusLabel.setText("Radius:")
+
+        self.sflRadiusInput = QLineEdit(self)
+        self.sflRadiusInput.move(160, 30)
+        self.sflRadiusInput.setFixedWidth(30)
+        self.sflRadiusInput.setValidator(self.onlyInt)
+        self.sflRadiusInput.setText(str(self.sfl_radius))
 
         self.sflLightOffLabel = QLabel(self)
         self.sflLightOffLabel.setGeometry(QRect(10, 60, 50, 31))
@@ -131,8 +142,9 @@ class sflSettingsWindow(QMainWindow):
         self.sfl_flush_off = int(self.sflFlushOffInput.text())
         self.sfl_light_on = int(self.sflLightOnInput.text())
         self.sfl_light_off = int(self.sflLightOffInput.text())
+        self.sfl_radius = int(self.sflRadiusInput.text())
         self.change_params.emit(self.sfl_light_on, self.sfl_light_off, self.sfl_flush_on, self.sfl_flush_off,
-                                self.sfl_pulse)
+                                self.sfl_pulse, self.sfl_radius)
 
     def pulse(self):
         self.pulse_signal.emit()
@@ -258,7 +270,7 @@ class LaserSettingsWindow(QMainWindow):
         self.validateButton.setToolTip("Click to save settings")
         self.validateButton.setFont(QFont('Times', 20))
         self.validateButton.setText("Apply")
-        self.validateButton.clicked.connect(self.switch_laser)
+        self.validateButton.clicked.connect(self.validate_settings)
 
     def validate_settings(self):
         self.laser_pulse_n = int(self.pulseNumberInput.text())
@@ -283,10 +295,10 @@ class LaserSettingsWindow(QMainWindow):
 
     def switch_laser(self):
         if self.switchLaserButton.text() == "Laser ON":
-            self.laser_control_signal.emit("l")
+            self.laser_control_signal.emit("s")
             self.switchLaserButton.setText("Laser OFF")
         else:
-            self.laser_control_signal.emit("s")
+            self.laser_control_signal.emit("l")
             self.switchLaserButton.setText("Laser ON")
 
 
@@ -401,6 +413,7 @@ class ExampleWindow(QMainWindow):
         self.move_laser_enabled = False
         self.set_goal_enabled = False
         self.set_disk_enabled = False
+        self.set_sfl_enabled = False
         self.draw_marks_enabled = False
         self.set_laser_enabled = False
         self.automode_enabled = False
@@ -425,6 +438,9 @@ class ExampleWindow(QMainWindow):
             self.disk_y_loc = self.config.getint("disk", "y_loc", fallback=0)
             self.goal_x_loc = self.config.getint("goal", "x_loc", fallback=0)
             self.goal_y_loc = self.config.getint("goal", "y_loc", fallback=0)
+            self.sfl_x_loc = self.config.getint("sfl", "x_loc", fallback=0)
+            self.sfl_y_loc = self.config.getint("sfl", "y_loc", fallback=0)
+            self.sfl_radius = self.config.getint("sfl", "radius", fallback=0)
             self.steppers_x = self.config.getint("steppers", "x", fallback=10)
             self.steppers_y = self.config.getint("steppers", "y", fallback=10)
             self.save_interval = self.config.getint("video", "interval", fallback=1)
@@ -730,6 +746,14 @@ class ExampleWindow(QMainWindow):
         self.setLaserCheckbox.setLayoutDirection(Qt.RightToLeft)
         self.setLaserCheckbox.stateChanged.connect(self.set_laser_checkbox_click)
 
+        # check box to set sfl
+        self.setSflCheckbox = QCheckBox(self)
+        self.setSflCheckbox.setText("Set sfl")
+        self.setSflCheckbox.setToolTip("Click to image to set sfl position")
+        self.setSflCheckbox.setGeometry(QRect(1000, 5, 100, 25))
+        self.setSflCheckbox.setLayoutDirection(Qt.RightToLeft)
+        self.setSflCheckbox.stateChanged.connect(self.set_sfl_checkbox_click)
+
         # find disks button
         self.findDisksButton = QPushButton('Find disks', self)
         self.findDisksButton.setToolTip('Click to find disks')
@@ -790,7 +814,7 @@ class ExampleWindow(QMainWindow):
 
 
         self.sfl_settings_window = sflSettingsWindow(self.sfl_flush_on, self.sfl_flush_off, self.sfl_light_on,
-                                                         self.sfl_light_off, self.sfl_pulse)
+                                                         self.sfl_light_off, self.sfl_pulse, self.sfl_radius)
         self.sfl_settings_window.change_params.connect(self.sfl_settings_changed)
 
         self.sfl_settings_window.sfl_switch_signal.connect(self.sfl_switch)
@@ -802,21 +826,26 @@ class ExampleWindow(QMainWindow):
 
         self.showMaximized()
 
+    def set_sfl_checkbox_click(self, state):
+        self.set_sfl_enabled = state
+
 
     def laser_control(self, command):
         self.raspi_comm.requests_queue.append(command)
 
-    def sfl_settings_changed(self, light_on, light_off, flush_on, flush_off, pulse):
+    def sfl_settings_changed(self, light_on, light_off, flush_on, flush_off, pulse, radius):
         self.sfl_light_on = light_on
         self.sfl_light_off = light_off
         self.sfl_flush_off = flush_off
         self.sfl_flush_on = flush_on
         self.sfl_pulse = pulse
+        self.sfl_radius = radius
         self.config.set("sfl", "pulse", self.sfl_pulse)
         self.config.set("sfl", "light_on", self.sfl_light_on)
         self.config.set("sfl", "light_off", self.sfl_light_off)
         self.config.set("sfl", "flush_on", self.sfl_flush_on)
         self.config.set("sfl", "flush_off", self.sfl_flush_off)
+        self.config.set("sfl", "radius", self.sfl_radius)
         self.update_config_file()
 
 
@@ -996,8 +1025,8 @@ class ExampleWindow(QMainWindow):
             steps_y = y_image - self.laser_y_loc
             print("y" + str(int(6.6666 * steps_y)))
             print("x" + str(int(6.6666 * steps_x)))
-            self.raspi_comm.requests_queue.append("y" + str(int(6.6666 * steps_y)))
-            self.raspi_comm.requests_queue.append("x" + str(int(6.6666 * steps_x)))
+            self.raspi_comm.requests_queue.append("y" + str(int(6.6666 * steps_y/2.5)))
+            self.raspi_comm.requests_queue.append("x" + str(int(6.6666 * steps_x/2.5)))
 
             # TODO send command to RaspiWorker
         elif self.set_goal_enabled:
@@ -1036,6 +1065,12 @@ class ExampleWindow(QMainWindow):
                 self.origin = QPoint(x_pixmap, y_pixmap)
                 self.rubberBand.setGeometry(QRect(QPoint(x_pixmap + 10, y_pixmap + 60), QSize()))
                 self.rubberBand.show()
+        elif self.set_sfl_enabled:
+            self.sfl_x_loc = x_image
+            self.sfl_y_loc = y_image
+            self.config.set("sfl", "x_loc", self.sfl_x_loc)
+            self.config.set("sfl", "y_loc", self.sfl_y_loc)
+            self.update_config_file()
 
     def video_settings_close(self, save_interval, save_namespace, save_path):
         self.save_interval = save_interval
@@ -1354,6 +1389,11 @@ class ExampleWindow(QMainWindow):
             self.gray_image = cv2.drawMarker(self.gray_image, (self.laser_x_loc, self.laser_y_loc), (0, 255, 0),
                                              markerType=cv2.MARKER_STAR, markerSize=20, thickness=1,
                                              line_type=cv2.LINE_AA)
+            self.gray_image = cv2.drawMarker(self.gray_image, (self.sfl_x_loc, self.sfl_y_loc), (0, 255, 0),
+                                             markerType=cv2.MARKER_CROSS, markerSize=20, thickness=1,
+                                             line_type=cv2.LINE_AA)
+            self.gray_image = cv2.circle(self.gray_image, (self.sfl_x_loc, self.sfl_y_loc), self.sfl_radius,
+                                         (0, 255, 0), 2)
             x_scale = self.cam_width_value / self.PIXMAP_WIDTH
             y_scale = self.cam_height_value / self.PIXMAP_HEIGHT
             if self.draw_roi:
