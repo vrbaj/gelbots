@@ -7,7 +7,7 @@ from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 
 class DiskCore(QThread):
     #REGION_OFFSET = 10
-    STEPPER_CONST = 6.6666666 / 2.5
+    STEPPER_CONST = 6.6666666
     # signals
     gray_image_request = pyqtSignal()
     steppers_request = pyqtSignal(int, int)
@@ -117,12 +117,12 @@ class DiskCore(QThread):
         # cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
         disk_locs = []
         circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 1, 40,
-                                   param1=50, param2=30, minRadius=40, maxRadius=80)
+                                   param1=50, param2=30, minRadius=18, maxRadius=40)
         if circles is not None:
             circles = np.uint16(np.around(circles))
             for i in circles[0, :]:
                 # find center
-                if 40 < i[2] < 80:
+                if 18 < i[2] < 40:
                     disk_locs.append((i[0], i[1]))
             print(time.time() - start_time)
         return disk_locs
