@@ -103,6 +103,7 @@ class DiskCore(QThread):
                 self.coords_update.emit(self.goal_x, self.goal_y, self.target_disk_x, self.target_disk_y)
                 self.auto_step = 5
 
+
             elif self.auto_step == 5:
                 # TODO shoot with laser and wait
                 self.laser_shot.emit()
