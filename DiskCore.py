@@ -7,6 +7,7 @@ from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 
 class DiskCore(QThread):
     #REGION_OFFSET = 10
+
     STEPPER_CONST = 6.6666666
     # signals
     gray_image_request = pyqtSignal()
@@ -15,7 +16,8 @@ class DiskCore(QThread):
     laser_shot = pyqtSignal()
     auto_done = pyqtSignal()
 
-    def __init__(self, disk, laser, goal, laser_time, offset):
+
+    def __init__(self, disk, laser, goal, laser_time, offset, magnification):
         super(DiskCore, self).__init__()
         self.image_to_process = None
         self.disk_locs = None
@@ -30,7 +32,8 @@ class DiskCore(QThread):
         self.laser_y = laser[1]
         self.laser_blink_time = laser_time
         self.region_offset = offset
-
+        self.mag = magnification
+        self.MAG_STEPPER_CONST = self.STEPPER_CONST * 4 / self.mag
 
         self.mutex = QMutex()
 
@@ -42,6 +45,7 @@ class DiskCore(QThread):
         shooting_y = 0
         # logic for disk moving
         while self.auto_mode:
+            self.MAG_STEPPER_CONST = self.STEPPER_CONST * 4 / self.mag
             print(self.auto_step)
             if self.auto_step == -1:
 
@@ -115,15 +119,17 @@ class DiskCore(QThread):
         start_time = time.time()
          # image = cv2.medianBlur(image, 5)
         # cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+        scaled_min_radius = int(18 * self.mag / 4)
+        scaled_max_radius = int(40 * self.mag / 4)
         disk_locs = []
         circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 1, 40,
-                                   param1=50, param2=30, minRadius=18, maxRadius=40)
+                                   param1=50, param2=30, minRadius=scaled_min_radius, maxRadius=scaled_max_radius)
         if circles is not None:
             circles = np.uint16(np.around(circles))
             for i in circles[0, :]:
                 # find center
-                if 18 < i[2] < 40:
-                    disk_locs.append((i[0], i[1]))
+                #if 50 < i[2] < 80:
+                disk_locs.append((i[0], i[1]))
             print(time.time() - start_time)
         return disk_locs
 
@@ -174,15 +180,15 @@ class DiskCore(QThread):
         pass
 
     def get_steps(self, desired_x, desired_y):
-        steps_x = int(self.STEPPER_CONST * (- self.laser_x + desired_x))
-        steps_y = int(self.STEPPER_CONST * (self.laser_y - desired_y))
+        steps_x = int(self.MAG_STEPPER_CONST * (- self.laser_x + desired_x))
+        steps_y = int(self.MAG_STEPPER_CONST * (self.laser_y - desired_y))
         return steps_x, steps_y
 
     def recompute_goal(self, stepper_x, stepper_y):
-        self.goal_x = (self.goal_x - stepper_x / self.STEPPER_CONST)
-        self.goal_y = (self.goal_y + stepper_y / self.STEPPER_CONST)
+        self.goal_x = (self.goal_x - stepper_x / self.MAG_STEPPER_CONST)
+        self.goal_y = (self.goal_y + stepper_y / self.MAG_STEPPER_CONST)
 
     def recompute_disk(self, stepper_x, stepper_y):
-        self.target_disk_x = (self.target_disk_x - stepper_x / self.STEPPER_CONST)
-        self.target_disk_y = (self.target_disk_y + stepper_y / self.STEPPER_CONST)
+        self.target_disk_x = (self.target_disk_x - stepper_x / self.MAG_STEPPER_CONST)
+        self.target_disk_y = (self.target_disk_y + stepper_y / self.MAG_STEPPER_CONST)
 

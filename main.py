@@ -417,8 +417,13 @@ class ExampleWindow(QMainWindow):
         self.draw_marks_enabled = False
         self.set_laser_enabled = False
         self.automode_enabled = False
+        self.checker_memory = False
         # TODO load default settings of all values that can be set via this GUI
-        self.config = configparser.RawConfigParser()
+        try:
+            self.config = configparser.RawConfigParser()
+        except Exception as ex:
+            print(ex)
+
         try:
             self.config.read(self.CONFIG_FILE_NAME)
             self.cam_width_value = self.config.getint("camera", "width", fallback=1920)
@@ -428,6 +433,7 @@ class ExampleWindow(QMainWindow):
             self.cam_gain_value = float(str(self.config.get("camera", "gain", fallback=1)).replace(",", "."))
             self.cam_brightness_value = float(str(self.config.get("camera", "brightness",
                                                                   fallback=0.5)).replace(",", "."))
+            self.mag_value = self.config.getint("camera", "mag", fallback=4)
             self.laser_pulse_n = self.config.getint("laser", "pulses", fallback=1)
             self.laser_on_time = self.config.getint("laser", "on_time", fallback=1)
             self.laser_off_time = self.config.getint("laser", "off_time", fallback=1)
@@ -451,6 +457,7 @@ class ExampleWindow(QMainWindow):
             self.sfl_light_on = self.config.getint("sfl", "light_on", fallback=50)
             self.sfl_light_off = self.config.getint("sfl", "light_off", fallback=500)
             self.sfl_pulse = self.config.getint("sfl", "pulse", fallback=3000)
+            print(self.sfl_radius)
         except Exception as ex:
             print(ex)
         print(self.config.sections())
@@ -619,7 +626,7 @@ class ExampleWindow(QMainWindow):
 
         # Create log
         self.message_text = QtWidgets.QPlainTextEdit(central_widget)
-        self.message_text.setGeometry(10, 810, 1280, 30)
+        self.message_text.setGeometry(10, 1050, 1280, 30)
         self.message_text.setReadOnly(True)
         self.message_text.setPlainText("Initialized..")
 
@@ -687,14 +694,14 @@ class ExampleWindow(QMainWindow):
         # laser settings window
         self.laserSettingsButton = QPushButton("Laser settings", self)
         self.laserSettingsButton.setToolTip("Click to set laser settings")
-        self.laserSettingsButton.move(1300, 150)
+        self.laserSettingsButton.move(1750, 150)
         self.laserSettingsButton.setFixedHeight(22)
         self.laserSettingsButton.clicked.connect(self.show_laser_settings)
 
         # sfl settings window
         self.sflSettingsButton = QPushButton("SFL settings", self)
         self.sflSettingsButton.setToolTip("Click to set sfl settings")
-        self.sflSettingsButton.move(1300, 200)
+        self.sflSettingsButton.move(1750, 200)
         self.sflSettingsButton.setFixedHeight(22)
         self.sflSettingsButton.clicked.connect(self.show_sfl_settings)
 
@@ -775,6 +782,8 @@ class ExampleWindow(QMainWindow):
         self.laserButton.setFixedHeight(22)
         self.laserButton.clicked.connect(self.laser_switch)
 
+
+
         # key events
         self.keyPressEvent = self.keyPressEvent
 
@@ -787,7 +796,8 @@ class ExampleWindow(QMainWindow):
         self.disk_core = DiskCore.DiskCore([self.disk_x_loc, self.disk_y_loc],
                                            [self.laser_x_loc, self.laser_y_loc],
                                            [self.goal_x_loc, self.goal_y_loc],
-                                           self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset)
+                                           self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset,
+                                           self.mag_value)
         self.disk_core.gray_image_request.connect(self.core_image_request)
         self.disk_core.steppers_request.connect(self.move_steppers)
         self.disk_core.coords_update.connect(self.update_coords)
@@ -822,13 +832,81 @@ class ExampleWindow(QMainWindow):
         self.sfl_settings_window.flush_switch_signal.connect(self.flush_switch)
         self.sfl_settings_window.light_switch_signal.connect(self.light_switch)
 
+        # check box for magnificience
+        self.magLabel = QLabel(self)
+        self.magLabel.setText("Magnification")
+        self.magLabel.setGeometry(QRect(10, 30, 80, 25))
+        self.mag4Checkbox = QCheckBox(self)
+        self.mag4Checkbox.setText("4x")
+        self.mag4Checkbox.setToolTip("Click to set magnification")
+        self.mag4Checkbox.setGeometry(QRect(70, 30, 40, 25))
+        self.mag4Checkbox.setLayoutDirection(Qt.RightToLeft)
+        self.mag4Checkbox.stateChanged.connect(lambda: self.mag_click(self.mag4Checkbox))
+        self.mag10Checkbox = QCheckBox(self)
+        self.mag10Checkbox.setText("10x")
+        self.mag10Checkbox.setToolTip("Click to set magnification")
+        self.mag10Checkbox.setGeometry(QRect(110, 30, 40, 25))
+        self.mag10Checkbox.setLayoutDirection(Qt.RightToLeft)
+        self.mag10Checkbox.stateChanged.connect(lambda: self.mag_click(self.mag10Checkbox))
+        self.mag20Checkbox = QCheckBox(self)
+        self.mag20Checkbox.setText("20x")
+        self.mag20Checkbox.setToolTip("Click to set magnification")
+        self.mag20Checkbox.setGeometry(QRect(150, 30, 40, 25))
+        self.mag20Checkbox.setLayoutDirection(Qt.RightToLeft)
+        self.mag20Checkbox.stateChanged.connect(lambda: self.mag_click(self.mag20Checkbox))
+        self.mag40Checkbox = QCheckBox(self)
+        self.mag40Checkbox.setText("40x")
+        self.mag40Checkbox.setToolTip("Click to set magnification")
+        self.mag40Checkbox.setGeometry(QRect(190, 30, 40, 25))
+        self.mag40Checkbox.setLayoutDirection(Qt.RightToLeft)
+        self.mag40Checkbox.stateChanged.connect(lambda: self.mag_click(self.mag40Checkbox))
 
+        if self.mag_value == 4:
+            self.mag4Checkbox.setChecked(True)
+        elif self.mag_value == 10:
+            self.mag10Checkbox.setChecked(True)
+        elif self.mag_value == 20:
+            self.mag20Checkbox.setChecked(True)
+        self.checkboxMag_group = QtWidgets.QButtonGroup(self)
+        self.checkboxMag_group.addButton(self.mag4Checkbox)
+        self.checkboxMag_group.addButton(self.mag10Checkbox)
+        self.checkboxMag_group.addButton(self.mag20Checkbox)
+        self.checkboxMag_group.addButton(self.mag40Checkbox)
+        self.checkboxMag_group.setExclusive(True)
+
+        # self.checkboxMarks_group = QtWidgets.QButtonGroup(self)
+        # self.checkboxMarks_group.addButton(self.setSflCheckbox)
+        # self.checkboxMarks_group.addButton(self.setGoalCheckbox)
+        # self.checkboxMarks_group.addButton(self.setDiskCheckbox)
+        # self.checkboxMarks_group.addButton(self.setLaserCheckbox)
 
         self.showMaximized()
 
+
+    def mag_click(self, mag):
+        mag_text = mag.text()
+        if mag_text == "4x":
+            self.mag_value = 4
+            print("4x")
+            self.disk_core.mag = 4
+
+        elif mag_text == "10x":
+            self.mag_value = 10
+            self.disk_core.mag = 10
+            print("10x")
+        elif mag_text == "20x":
+            self.mag_value = 20
+            self.disk_core.mag = 20
+            print("20x")
+        elif mag_text == "40x":
+            self.mag_value = 40
+            self.disk_core.mag = 40
+            print("40x")
+        self.config.set("camera", "mag", self.mag_value)
+        self.update_config_file()
+
     def set_sfl_checkbox_click(self, state):
         self.set_sfl_enabled = state
-
 
     def laser_control(self, command):
         self.raspi_comm.requests_queue.append(command)
@@ -994,8 +1072,10 @@ class ExampleWindow(QMainWindow):
     def set_laser_checkbox_click(self, state):
         self.set_laser_enabled = state
 
+
     def draw_marks_checkbox_click(self, state):
         self.draw_marks_enabled = state
+
 
     def save_video_checkbox_click(self, state):
         if self.camera_worker is not None:
@@ -1007,8 +1087,10 @@ class ExampleWindow(QMainWindow):
     def disk_checkbox_click(self, state):
         self.set_disk_enabled = state
 
+
     def goal_checkbox_click(self, state):
         self.set_goal_enabled = state
+
 
     def click_to_get_coords(self, event):
         x_pixmap = event.pos().x()
@@ -1409,8 +1491,8 @@ class ExampleWindow(QMainWindow):
                                                 (250, 255, 0), 2)
         height, width = self.gray_image.shape[:2]
         image_for_pixmap = QtGui.QImage(self.gray_image, width, height, QtGui.QImage.Format_Grayscale8)
-        self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(1280, 720))
-
+        #self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(1280, 720))
+        self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(self.PIXMAP_WIDTH, self.PIXMAP_HEIGHT))
 
     def camera_changed(self):
         """
