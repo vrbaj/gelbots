@@ -20,6 +20,8 @@ class sflSettingsWindow(QMainWindow):
     flush_switch_signal = pyqtSignal()
     light_switch_signal = pyqtSignal()
     sfl_switch_signal = pyqtSignal()
+    key_press_signal = pyqtSignal(int)
+
 
     def __init__(self, flush_on, flush_off, light_on, light_off, pulse, radius):
         super(sflSettingsWindow, self).__init__()
@@ -135,6 +137,14 @@ class sflSettingsWindow(QMainWindow):
         self.validateButton.setToolTip("Click to save settings")
         self.validateButton.setText("Apply")
         self.validateButton.clicked.connect(self.validate_settings)
+
+        # key press event
+        self.keyPressEvent = self.keyPressEvent
+
+
+        def keyPressEvent(self, e):
+            self.key_press_signal.emit(e.key())
+
 
     def validate_settings(self):
         self.sfl_pulse = int(self.sflPulseInput.text())
@@ -832,6 +842,9 @@ class ExampleWindow(QMainWindow):
         self.sfl_settings_window.flush_switch_signal.connect(self.flush_switch)
         self.sfl_settings_window.light_switch_signal.connect(self.light_switch)
 
+        # signal from sfl window
+        self.sfl_settings_window.key_press_signal.connect(self.sfl_key)
+
         # check box for magnificience
         self.magLabel = QLabel(self)
         self.magLabel.setText("Magnification")
@@ -881,6 +894,43 @@ class ExampleWindow(QMainWindow):
         # self.checkboxMarks_group.addButton(self.setLaserCheckbox)
 
         self.showMaximized()
+
+    def sfl_key(self, pressed_key):
+        if pressed_key == 65:
+            # move left
+            self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
+
+            # TODO recompute goal and target disk coord
+            self.disk_core.recompute_goal(-self.steppers_x, 0)
+            self.disk_core.recompute_disk(-self.steppers_x, 0)
+            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
+                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+
+        elif pressed_key == 68:
+            # move right
+            self.raspi_comm.requests_queue.append("x" + str(self.steppers_x))
+            self.disk_core.recompute_goal(self.steppers_x, 0)
+            self.disk_core.recompute_disk(self.steppers_x, 0)
+            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
+                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+        elif pressed_key == 83:
+            # move top
+            self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
+            self.disk_core.recompute_goal(0, -self.steppers_y)
+            self.disk_core.recompute_disk(0, -self.steppers_y)
+            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
+                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+        elif pressed_key == 87:
+            # move down
+            self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
+            self.disk_core.recompute_goal(0, self.steppers_y)
+            self.disk_core.recompute_disk(0, self.steppers_y)
+            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
+                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+        elif pressed_key == 81:
+            self.raspi_comm.requests_queue.append("s")
+        elif pressed_key == 69:
+            self.raspi_comm.requests_queue.append("l")
 
 
     def mag_click(self, mag):
