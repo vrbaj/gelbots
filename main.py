@@ -12,6 +12,8 @@ import CameraWorker
 import RaspiWorker
 import DiskCore
 import configparser
+import keyboard
+
 
 
 class sflSettingsWindow(QMainWindow):
@@ -20,7 +22,7 @@ class sflSettingsWindow(QMainWindow):
     flush_switch_signal = pyqtSignal()
     light_switch_signal = pyqtSignal()
     sfl_switch_signal = pyqtSignal()
-    key_press_signal = pyqtSignal(int)
+    #key_press_signal = pyqtSignal(int)
 
 
     def __init__(self, flush_on, flush_off, light_on, light_off, pulse, radius):
@@ -138,11 +140,16 @@ class sflSettingsWindow(QMainWindow):
         self.validateButton.setText("Apply")
         self.validateButton.clicked.connect(self.validate_settings)
 
+        self.message_text = QtWidgets.QPlainTextEdit(self)
+        self.message_text.setGeometry(10, 400, 60, 30)
+        self.message_text.setReadOnly(True)
+        self.message_text.setPlainText("Initialized..")
         # key press event
-        self.keyPressEvent = self.keyPressEvent
+        # self.keyPressEvent = self.keyPressEvent
 
 
         def keyPressEvent(self, e):
+            print(e.key())
             self.key_press_signal.emit(e.key())
 
 
@@ -416,6 +423,7 @@ class ExampleWindow(QMainWindow):
 
     def __init__(self):
         QMainWindow.__init__(self)
+        self.hook = keyboard.on_press(self.keyboardEventReceived)
         self.draw_roi = False
         # variables
         self.image_to_display = []
@@ -795,7 +803,7 @@ class ExampleWindow(QMainWindow):
 
 
         # key events
-        self.keyPressEvent = self.keyPressEvent
+        # self.keyPressEvent = self.keyPressEvent
 
         # start Raspi communication thread
         self.raspi_comm = RaspiWorker.RaspiWorker()
@@ -843,7 +851,7 @@ class ExampleWindow(QMainWindow):
         self.sfl_settings_window.light_switch_signal.connect(self.light_switch)
 
         # signal from sfl window
-        self.sfl_settings_window.key_press_signal.connect(self.sfl_key)
+        # self.sfl_settings_window.key_press_signal.connect(self.sfl_key)
 
         # check box for magnificience
         self.magLabel = QLabel(self)
@@ -895,7 +903,48 @@ class ExampleWindow(QMainWindow):
 
         self.showMaximized()
 
+    def keyboardEventReceived(self, event):
+        keyboard_pressed = event.name
+        if keyboard_pressed == "a":
+            # move left
+            self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
+
+            # TODO recompute goal and target disk coord
+            self.disk_core.recompute_goal(-self.steppers_x, 0)
+            self.disk_core.recompute_disk(-self.steppers_x, 0)
+            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
+                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+
+        elif keyboard_pressed == "d":
+            # move right
+            self.raspi_comm.requests_queue.append("x" + str(self.steppers_x))
+            self.disk_core.recompute_goal(self.steppers_x, 0)
+            self.disk_core.recompute_disk(self.steppers_x, 0)
+            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
+                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+        elif keyboard_pressed == "w":
+            # move top
+            self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
+            self.disk_core.recompute_goal(0, -self.steppers_y)
+            self.disk_core.recompute_disk(0, -self.steppers_y)
+            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
+                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+        elif keyboard_pressed == "s":
+            # move down
+            self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
+            self.disk_core.recompute_goal(0, self.steppers_y)
+            self.disk_core.recompute_disk(0, self.steppers_y)
+            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
+                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+        elif keyboard_pressed == "q":
+            self.raspi_comm.requests_queue.append("s")
+        elif keyboard_pressed == "e":
+            self.raspi_comm.requests_queue.append("l")
+
+
+
     def sfl_key(self, pressed_key):
+        print(pressed_key)
         if pressed_key == 65:
             # move left
             self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
