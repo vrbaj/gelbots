@@ -1051,7 +1051,6 @@ class ExampleWindow(QMainWindow):
             pass
         print(command)
 
-
     def keyboardEventReceived(self, event):
         keyboard_pressed = event.name
         if keyboard_pressed == "a":
