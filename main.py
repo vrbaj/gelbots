@@ -112,6 +112,7 @@ class sflSettingsWindow(QMainWindow):
         self.sflFlushOffLabel.setGeometry(QRect(10, 120, 50, 31))
         self.sflFlushOffLabel.setText("Flush Off:")
 
+
         self.sflFlushOffInput = QLineEdit(self)
         self.sflFlushOffInput.move(60, 120)
         self.sflFlushOffInput.setFixedWidth(30)
