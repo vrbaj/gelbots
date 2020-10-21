@@ -252,9 +252,9 @@ class sflSettingsWindow(QMainWindow):
         # self.keyPressEvent = self.keyPressEvent
 
 
-        def keyPressEvent(self, e):
-            print(e.key())
-            self.key_press_signal.emit(e.key())
+        # def keyPressEvent(self, e):
+        #     print(e.key())
+        #     self.key_press_signal.emit(e.key())
 
 
     def validate_settings(self):
@@ -1070,14 +1070,14 @@ class ExampleWindow(QMainWindow):
             self.disk_core.recompute_disk(self.steppers_x, 0)
             self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
                                               self.disk_core.target_disk_x, self.disk_core.target_disk_y)
-        elif keyboard_pressed == "w":
+        elif keyboard_pressed == "s":
             # move top
             self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
             self.disk_core.recompute_goal(0, -self.steppers_y)
             self.disk_core.recompute_disk(0, -self.steppers_y)
             self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
                                               self.disk_core.target_disk_x, self.disk_core.target_disk_y)
-        elif keyboard_pressed == "s":
+        elif keyboard_pressed == "w":
             # move down
             self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
             self.disk_core.recompute_goal(0, self.steppers_y)
