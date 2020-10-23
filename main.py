@@ -1046,11 +1046,17 @@ class ExampleWindow(QMainWindow):
         self.showMaximized()
 
     def stamping_switch(self, command):
-        if command == "start":
-            pass
-        elif command == "end":
-            pass
         print(command)
+        if command == "start":
+            self.raspi_comm.requests_queue.append("b," + str(self.stamping_dx) + "," + str(self.stamping_dy) + "," +
+                                                str(self.stamping_x_steps) + "," + str(self.stamping_y_steps) + "," +
+                                                str(self.stamping_x_delay) + "," + str(self.stamping_y_delay) + "," +
+                                                str(self.stamping_light_on) + "," + str(self.stamping_light_off) + "," +
+                                                str(self.stamping_flush_on) + "," + str(self.stamping_flush_off) + "," +
+                                                str(self.stamping_batch_size))
+        elif command == "end":
+            self.raspi_comm.requests_queue.append("c")
+
 
     def keyboardEventReceived(self, event):
         keyboard_pressed = event.name
