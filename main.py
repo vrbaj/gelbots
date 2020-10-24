@@ -276,12 +276,14 @@ class sflSettingsWindow(QMainWindow):
         self.stamping_x_steps = int(self.stampingXStepsInput.text())
         self.stamping_y_steps = int(self.stampingYStepsInput.text())
         self.stamping_batch_size = int(self.stampingBatchSizeInput.text())
+
         self.change_params.emit(self.sfl_light_on, self.sfl_light_off, self.sfl_flush_on, self.sfl_flush_off,
                                 self.sfl_pulse, self.sfl_radius, self.stamping_dx, self.stamping_dy, self.stamping_x_delay,
                                                      self.stamping_y_delay, self.stamping_light_on,
                                                      self.stamping_light_off, self.stamping_flush_on,
                                                      self.stamping_flush_off, self.stamping_x_steps,
                                                      self.stamping_y_steps, self.stamping_batch_size)
+        print("emited")
 
     def pulse(self):
         self.pulse_signal.emit()
@@ -1169,6 +1171,7 @@ class ExampleWindow(QMainWindow):
                              stamping_dx, stamping_dy, stamping_x_delay, stamping_y_delay, stamping_light_on,
                              stamping_light_off, stamping_flush_on, stamping_flush_off, stamping_x_steps,
                              stamping_y_steps, stamping_batch_size):
+
         self.sfl_light_on = light_on
         self.sfl_light_off = light_off
         self.sfl_flush_off = flush_off
@@ -1206,6 +1209,7 @@ class ExampleWindow(QMainWindow):
         self.config.set("stamping", "x_steps", self.stamping_x_steps)
         self.config.set("stamping", "y_steps", self.stamping_y_steps)
         self.config.set("stamping", "batch_size", self.stamping_batch_size)
+
         self.update_config_file()
 
 
