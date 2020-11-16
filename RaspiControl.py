@@ -153,6 +153,7 @@ class RaspiControl:
         the python script (all running threads also).
         :return: None
         """
+        print('red button shit')
         used_pins = (self.coilx_enable, self.coilx_direction, self.coilx_step, self.coily_enable,
                      self.coily_direction, self.coily_step, self.coil_laser, self.valve, self.shutter)
         GPIO.output(used_pins, GPIO.LOW)
@@ -167,7 +168,6 @@ class RaspiControl:
     def stamp(self,dx, dy, steps_x, steps_y, delay_x, delay_y, light_on, light_off, sfl_on, sfl_off, batch, stop_pill):
         for i in range(batch):
             for j in range(steps_x):
-                print("stepping in x")
                 for k in range(steps_y - 1):
                     if stop_pill.wait(0.001):
                         return
@@ -179,7 +179,6 @@ class RaspiControl:
                     GPIO.output(self.shutter, GPIO.LOW)
                     # move in y
                     GPIO.output(self.coily_enable, GPIO.HIGH)
-                    print("movey")
                     if dy < 0:
                         GPIO.output(self.coily_direction, GPIO.LOW)
                     else:
@@ -228,9 +227,7 @@ class RaspiControl:
                         GPIO.output(self.coilx_step, 0)
                     time.sleep(delay_x / 1000)
             # return to start
-            print("return to start position")
             GPIO.output(self.coilx_enable, GPIO.HIGH)
-            print("movex")
             steps = dx * -1 * (steps_x - 1)
             if steps < 0:
                 GPIO.output(self.coilx_direction, GPIO.LOW)
@@ -243,7 +240,6 @@ class RaspiControl:
                 GPIO.output(self.coilx_step, 0)
             time.sleep(delay_y / 1000)
             # flush on
-            print("flush on")
             GPIO.output(self.valve, GPIO.LOW)
 
     def run(self):
@@ -256,6 +252,7 @@ class RaspiControl:
                     try:
                         data = conn.recv(100)
                         if len(data) > 0:
+                            print(data)
                             data_decode = data.decode("UTF-8")
                             self.requests_list.extend(filter(None, data_decode.split(";")))
                     except Exception as ex:
@@ -319,6 +316,8 @@ class RaspiControl:
                             self.one_pulse(on_time, wait_time)
                         elif decoded[0] == "c":
                             self.stop_stamping_thread.set()
+                        elif decoded[0] == 'o':
+                            self.stop_sfl_thread.set()
                         elif decoded[0] == "b":
                             # batch
                             dx = int(decoded.split(",")[1])

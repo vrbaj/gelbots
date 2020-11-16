@@ -1262,7 +1262,7 @@ class ExampleWindow(QMainWindow):
                                                   "," + str(self.sfl_light_on) + "," + str(self.sfl_light_off))
         else:
             self.raspi_comm.requests_queue.clear()
-            self.raspi_comm.requests_queue.append("r")
+            self.raspi_comm.requests_queue.append("o")
             self.sfl_settings_window.sflButton.setText("SFL ON")
 
             # TODO stop
