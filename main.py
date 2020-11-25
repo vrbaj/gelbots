@@ -15,6 +15,22 @@ import configparser
 import keyboard
 
 
+class formationWindow(QMainWindow):
+    def __init__(self):
+        super(formationWindow, self).__init__()
+        self.setFixedSize(QSize(300, 300))
+        self.setWindowTitle("Formation settings")
+        self.targetsList = QtWidgets.QListView(self)
+
+
+
+    # check box add coordinates to list of targets
+    # list of target positions
+    # input text for coordinates
+    # start fomration making
+    # +/-/modify buttons for removing coords from the list
+
+
 class sflSettingsWindow(QMainWindow):
     change_params = pyqtSignal(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)
     pulse_signal = pyqtSignal()
@@ -107,11 +123,9 @@ class sflSettingsWindow(QMainWindow):
         self.sflFlushOnInput.setValidator(self.onlyInt)
         self.sflFlushOnInput.setText(str(self.sfl_flush_on))
 
-
         self.sflFlushOffLabel = QLabel(self)
         self.sflFlushOffLabel.setGeometry(QRect(10, 120, 50, 31))
         self.sflFlushOffLabel.setText("Flush Off:")
-
 
         self.sflFlushOffInput = QLineEdit(self)
         self.sflFlushOffInput.move(60, 120)
@@ -968,6 +982,9 @@ class ExampleWindow(QMainWindow):
         self.origin = QPoint()
         self.endpoint = QPoint()
 
+        # formation window
+        self.formation_window = formationWindow()
+        self.formation_window.show()
 
 
         # video settings window
