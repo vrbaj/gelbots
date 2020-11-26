@@ -983,8 +983,8 @@ class ExampleWindow(QMainWindow):
         self.endpoint = QPoint()
 
         # formation window
-        self.formation_window = formationWindow()
-        self.formation_window.show()
+        # self.formation_window = formationWindow()
+        # self.formation_window.show()
 
 
         # video settings window
