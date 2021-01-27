@@ -4,10 +4,10 @@ import imutils
 import os
 
 
-# cap = cv2.VideoCapture('cancer.avi')
-cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+cap = cv2.VideoCapture('cancer.avi')
+# cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 first_frame_flag = False
 background = []
 background_storage = []
@@ -39,13 +39,20 @@ while(cap.isOpened()):
         gray = cv2.blur(gray, (3, 3))
         # gray = cv2.Canny(gray, 100, 200)
         subtracted = cv2.absdiff(gray, cv2.UMat(background))
-        thresh = cv2.threshold(subtracted, 2, 255, cv2.THRESH_BINARY)[1] #thresh 35
+        thresh = cv2.threshold(subtracted, 20, 255, cv2.THRESH_BINARY)[1] #thresh 35
         # cv2.imshow("threshed", thresh)
         # thresh = cv2.erode(thresh, np.ones((1,1),np.uint8), iterations=1)
-        cv2.imshow("eroded", thresh)
-        thresh = cv2.Canny(thresh, 50, 100)
+        cv2.imshow("threshed", thresh)
+        thresh = cv2.Canny(thresh, 50, 100) # 50 100
+        # find contours
+        # contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # print(len(contours))
         cv2.imshow('canny', thresh)
-        thresh = cv2.dilate(thresh, kernel, iterations=7)
+        # for contour in contours:
+        #     if cv2.contourArea(contour) > 20:
+        #         cv2.drawContours(thresh, contour, -1, (255, 255, 255), 3)
+        # cv2.imshow("contours", thresh)
+        thresh = cv2.dilate(thresh, kernel, iterations=6)
         cv2.imshow("dilated", thresh)
 
         cnts = cv2.findContours(thresh, cv2.RETR_EXTERNAL,
@@ -66,6 +73,9 @@ while(cap.isOpened()):
         cv2.imshow("real", frame)
         cv2.imshow("subtracted", subtracted)
         cv2.imshow('blurred', gray)
+        cv2.imwrite(os.path.join('vid_detection', 'frame' + str(frame_index).zfill(5) + '.png'), frame)
+
+
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
