@@ -66,15 +66,24 @@ class DiskCore(QThread):
                         self.auto_step = 1
 
             elif self.auto_step == 1:
+
                 previous_position_x = self.target_disk_x
                 previous_position_y = self.target_disk_y
                 [x, y] = self.nearest_disk([self.target_disk_x, self.target_disk_y], self.disk_locs)
-                if abs(x - previous_position_x) > 30 or abs(y - previous_position_y) > 30:
+                if abs(x - previous_position_x) > 30 * self.mag or abs(y - previous_position_y) > 30 * self.mag:
                     print('wtf')
                     x = previous_position_x
                     y = previous_position_y
+
                 self.target_disk_x = x
                 self.target_disk_y = y
+                f = open("moving_stats.txt", "a")
+                try:
+                    f.write("autostep 1: " + str([self.target_disk_x, self.target_disk_y]) + ";" + str(
+                        self.region_offset) + "\n")
+                    f.close()
+                except Exception as exp:
+                    print(exp)
                 if abs(self.goal_x - x) < 5 and abs(self.goal_y - y) < 5:
                     self.auto_mode = False
                 elif abs(self.target_disk_x - x) > 15 or abs(self.target_disk_y - y) > 15:
@@ -86,6 +95,12 @@ class DiskCore(QThread):
                 # TODO estimate shooting region
                 shooting_x, shooting_y = self.estimate_shooting_region([self.target_disk_x, self.target_disk_y],
                                                                        [self.goal_x, self.goal_y])
+                f = open("moving_stats.txt", "a")
+                try:
+                    f.write("shooting reg." + str([shooting_x, shooting_y]) + ";" + "\n")
+                    f.close()
+                except Exception as exp:
+                    print(exp)
                 print("shooting x", shooting_x)
                 print("shootin y", shooting_y)
 
@@ -106,6 +121,12 @@ class DiskCore(QThread):
 
             elif self.auto_step == 5:
                 # TODO shoot with laser and wait
+                f = open("moving_stats.txt", "a")
+                try:
+                    f.write("autostep 5: " + str([self.target_disk_x, self.target_disk_y]) + ";" + "\n")
+                    f.close()
+                except Exception as exp:
+                    print(exp)
                 self.laser_shot.emit()
                 time.sleep(self.laser_blink_time / 1000 + 0.6)
                 self.auto_step = -1
@@ -153,21 +174,40 @@ class DiskCore(QThread):
     def estimate_shooting_region(self, disk, goal):
         dx = goal[0] - disk[0]
         dy = goal[1] - disk[1]
+        q = 0
+        if goal[0] - disk[0] == 0:
+            k = 9999999999
+        else:
+            k = (goal[1] - disk[1])/(goal[0] - disk[0])
+        q = goal[1] - k * goal[0]
+        direction_vector = [goal[0] - disk[0], goal[1] - disk[1]]
+        desired_x1 = disk[0] + self.region_offset / math.sqrt(1 + k ** 2)
+        desired_y1 = k * desired_x1 + q
+        desired_x2 = disk[0] - self.region_offset / math.sqrt(1 + k ** 2)
+        desired_y2 = k * desired_x2 + q
+        if math.sqrt((desired_x1 - goal[0]) ** 2
+                     + (desired_y1 - goal[1]) ** 2) > math.sqrt((desired_x2 - goal[0]) ** 2
+                                                                + (desired_y2 - goal[1]) ** 2):
+            desired_x = desired_x1
+            desired_y = desired_y1
+        else:
+            desired_x = desired_x2
+            desired_y = desired_y2
+        # if abs(dx) < 3:
+        #     desired_x = disk[0]
+        # else:
+        #     if dx > 0:
+        #         desired_x = disk[0] - np.sign(dx) * self.region_offset
+        #     else:
+        #         desired_x = disk[0] - np.sign(dx) * self.region_offset
+        # if abs(dy) < 3:
+        #     desired_y = disk[1]
+        # else:
+        #     if dy > 0:
+        #         desired_y = disk[1] - np.sign(dy) * self.region_offset
+        #     else:
+        #         desired_y = disk[1] - np.sign(dy) * self.region_offset
 
-        if abs(dx) < 3:
-            desired_x = disk[0]
-        else:
-            if dx > 0:
-                desired_x = disk[0] - np.sign(dx) * self.region_offset
-            else:
-                desired_x = disk[0] - np.sign(dx) * self.region_offset
-        if abs(dy) < 3:
-            desired_y = disk[1]
-        else:
-            if dy > 0:
-                desired_y = disk[1] - np.sign(dy) * self.region_offset
-            else:
-                desired_y = disk[1] - np.sign(dy) * self.region_offset
         return desired_x, desired_y
 
     def move_servo(self, x, y):
