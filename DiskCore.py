@@ -18,6 +18,7 @@ class DiskCore(QThread):
 
     def __init__(self, disk, laser, goal, laser_time, offset, magnification, target_list, disk_list):
         super(DiskCore, self).__init__()
+        self.wait_time = 0.6  # seconds
         self.image_to_process = None
         self.disk_locs = None
         self.status = True
@@ -130,7 +131,7 @@ class DiskCore(QThread):
                 except Exception as exp:
                     print(exp)
                 self.laser_shot.emit()
-                time.sleep(self.laser_blink_time / 1000 + 0.6)
+                time.sleep(self.laser_blink_time / 1000 + self.wait_time)
                 self.auto_step = -1
 
             time.sleep(0.1)
