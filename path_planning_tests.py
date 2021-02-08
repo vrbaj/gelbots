@@ -25,21 +25,55 @@ class Node:
         self.f = 0
 
 
+def construct_path(goal, env_map):
+    pass
+    return 0
+
+
 def a_star(env_map, start, goal):
+    # get size of image
+    env_map_size = np.shape(env_map)
+    # possible moves on the image
+    possible_moves = [[-1, -1],     # go NW
+                       [-1, 0],     # go N
+                       [-1, 1],     # NE
+                       [0, -1],     # go W
+                       [0, 1],      # go E
+                       [1, -1],     # go SW
+                       [1, 0],      # go S
+                       [1, 1]]      # go SE
+    # list with open nodes
     open_nodes = []
+    # list with already visited nodes
     closed_nodes = []
+    # starting node
     start_node = Node(None, start)
+    # goal node
     goal_node = Node(None, goal)
+    # insert starting node into open nodes list
     open_nodes.append(start_node)
+    # while there are any open nodes, search
     while len(open_nodes) > 0:
         # expand best node
         current_node = open_nodes[0]
         for idx, node in enumerate(open_nodes):
+            # find the most promising node from open nodes
             if node.f < current_node.f:
                 current_node = node
                 current_index = idx
-        open_nodes.pop(idx)
+        # remove the most promising node from open nodes list
+        open_nodes.pop(current_index)
+        # insert the most promising node to visited nodes list
         closed_nodes.append(current_node)
+        # if the most promising nose is the goal return the path
+        if node == goal:
+            return construct_path(node, env_map)
+        # else get children of the node
+        else:
+            # list of successors nodes
+            successor_nodes = []
+            for position in possible_moves:
+                successor_position = current_node.position[0] + position[0], current_node.position[1] + position[1]
 
     return env_map
 
