@@ -6,7 +6,7 @@ from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 
 
 class DiskCore(QThread):
-    #REGION_OFFSET = 10
+    # REGION_OFFSET = 10
 
     STEPPER_CONST = 6.6666666
     # signals
@@ -15,7 +15,6 @@ class DiskCore(QThread):
     coords_update = pyqtSignal(int, int, int, int)
     laser_shot = pyqtSignal()
     auto_done = pyqtSignal()
-
 
     def __init__(self, disk, laser, goal, laser_time, offset, magnification):
         super(DiskCore, self).__init__()
@@ -40,9 +39,11 @@ class DiskCore(QThread):
         # raspberry worker or signal to gui?
 
     def run(self):
-        self.status - True
+        self.status = True
         shooting_x = 0
         shooting_y = 0
+        steps_x = 0
+        steps_y = 0
         # logic for disk moving
         while self.auto_mode:
             self.MAG_STEPPER_CONST = self.STEPPER_CONST * 4 / self.mag
@@ -118,7 +119,6 @@ class DiskCore(QThread):
                 self.coords_update.emit(self.goal_x, self.goal_y, self.target_disk_x, self.target_disk_y)
                 self.auto_step = 5
 
-
             elif self.auto_step == 5:
                 # TODO shoot with laser and wait
                 f = open("moving_stats.txt", "a")
@@ -139,7 +139,7 @@ class DiskCore(QThread):
     def find_disks(self, image):
         # TODO find disks centers
         start_time = time.time()
-         # image = cv2.medianBlur(image, 5)
+        # image = cv2.medianBlur(image, 5)
         # cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
         scaled_min_radius = int(18 * self.mag / 4)
         scaled_max_radius = int(40 * self.mag / 4)
@@ -150,7 +150,7 @@ class DiskCore(QThread):
             circles = np.uint16(np.around(circles))
             for i in circles[0, :]:
                 # find center
-                #if 50 < i[2] < 80:
+                # if 50 < i[2] < 80:
                 disk_locs.append((i[0], i[1]))
             print(time.time() - start_time)
         return disk_locs
@@ -174,13 +174,13 @@ class DiskCore(QThread):
     def estimate_shooting_region(self, disk, goal):
         dx = goal[0] - disk[0]
         dy = goal[1] - disk[1]
-        q = 0
-        if goal[0] - disk[0] == 0:
+        # q = 0
+        if dx == 0:
             k = 9999999999
         else:
-            k = (goal[1] - disk[1])/(goal[0] - disk[0])
+            k = dy / dx
         q = goal[1] - k * goal[0]
-        direction_vector = [goal[0] - disk[0], goal[1] - disk[1]]
+        # direction_vector = [dx, dy]
         desired_x1 = disk[0] + self.region_offset / math.sqrt(1 + k ** 2)
         desired_y1 = k * desired_x1 + q
         desired_x2 = disk[0] - self.region_offset / math.sqrt(1 + k ** 2)
@@ -232,4 +232,3 @@ class DiskCore(QThread):
     def recompute_disk(self, stepper_x, stepper_y):
         self.target_disk_x = (self.target_disk_x - stepper_x / self.MAG_STEPPER_CONST)
         self.target_disk_y = (self.target_disk_y + stepper_y / self.MAG_STEPPER_CONST)
-

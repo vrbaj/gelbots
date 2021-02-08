@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QThread, QMutex, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal
 from datetime import datetime
 import time
 import socket
