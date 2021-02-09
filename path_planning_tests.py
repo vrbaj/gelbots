@@ -13,8 +13,16 @@ REPULSIVE_POTENTIAL = 500.0
 ATTRACTIVE_POTENTIAL = 5.0
 DISKS_COORDS = []
 FORMATION_COORDS = [[500, 500], [500, 560], [560, 500], [560, 560]]
-DISKS_N = 4
+DISKS_N = 10
 DISK_RADIUS = 30
+
+
+class Path:
+    def __init__(self, start, goal):
+        self.start = start
+        self.goal = goal
+        self.visited_nodes = []
+        self.length = 0
 
 
 class Node:
@@ -30,23 +38,28 @@ class Node:
 
 
 def construct_path(evaluated_node, env_map):
+    ext_path = Path(None, None)
     path = []
     map_shape = np.shape(env_map)
     result = [[-1 for i in range(map_shape[1])] for j in range(map_shape[1])]
     actual_node = evaluated_node
     while actual_node is not None:
         path.append(actual_node.position)
+        ext_path.visited_nodes.append(list(actual_node.position))
         actual_node = actual_node.parent
     path = path[::-1]
     start_value = 0
     for i in range(len(path)):
-        result[path[i][0]][path[i][1]] = start_value
+        result[path[i][0]][path[i][1]] = 50
         start_value += 1
+    return result, ext_path
 
-    return result
+
+def distance(point1, point2):
+    return math.sqrt(((point1[0] - point2[0]) ** 2) + (point1[1] - point2[1]) ** 2)
 
 
-def a_star(env_map, start, goal):
+def a_star(env_map, start, goal, obstacles):
     # get size of image
     start_node = Node(None, tuple(start))
     start_node.g = start_node.h = start_node.f = 0
@@ -69,7 +82,7 @@ def a_star(env_map, start, goal):
     # starting node
     # start_node = Node(None, start)
     # goal node
-    #goal_node = Node(None, goal)
+    # goal_node = Node(None, goal)
     # insert starting node into open nodes list
     open_nodes.append(start_node)
     # while there are any open nodes, search
@@ -86,8 +99,9 @@ def a_star(env_map, start, goal):
         open_nodes.pop(current_index)
         # insert the most promising node to visited nodes list
         closed_nodes.append(current_node)
-        # if the most promising nose is the goal return the path
+        # if the most promising node is the goal return the path
         if current_node == goal_node:
+            print("Goal node: ", goal_node.position)
             return construct_path(node, env_map)
         # else get children of the node
         else:
@@ -101,9 +115,14 @@ def a_star(env_map, start, goal):
                     successor_position[0] < 0 or
                     successor_position[1] > (env_map_size[1] - 1) or
                         successor_position[1] < 0):
+                    print("Invalid position")
                     continue
-                # check for obstacle
-                if env_map[successor_position[0]][successor_position[1]] != 0:
+                # TODO check for obstacle
+                collision = False
+                for obstacle in obstacles:
+                    if distance(obstacle, successor_position) < DISK_RADIUS * 2.05:
+                        collision = True
+                if collision:
                     continue
                 # create new successor node
                 new_successor = Node(current_node, successor_position)
@@ -113,7 +132,7 @@ def a_star(env_map, start, goal):
             for successor_node in successor_nodes:
                 if len([visited_successor for visited_successor in closed_nodes if visited_successor == successor_node]) > 0:
                     continue
-                cost = 1
+                cost = distance(current_node.position, successor_node.position)
                 successor_node.g = current_node.g + cost
                 successor_node.h = ((successor_node.position[0] - goal_node.position[0]) ** 2 +
                                     (successor_node.position[1] - goal_node.position[1]) ** 2)
@@ -135,8 +154,11 @@ def disks_positions(n):
         overlap = False
         for idx, coordinates in enumerate(coordinates_list):
             for coordinates2 in coordinates_list[idx + 1:-1]:
+                print("coords>", coordinates, " and ", coordinates2)
                 if get_eucl_distance(coordinates, coordinates2) < DISK_RADIUS:
-                    coordinates_list[idx] = random.randint(DISK_RADIUS, AREA_SIZE - DISK_RADIUS)
+                    coordinates_list[idx] = [random.randint(DISK_RADIUS, AREA_SIZE - DISK_RADIUS),
+                                             random.randint(DISK_RADIUS, AREA_SIZE - DISK_RADIUS)]
+
                     overlap = True
 
     return coordinates_list
@@ -160,12 +182,13 @@ def create_map(disks_coords, formation_coords, area_size):
 
 
 DISKS_COORDS = disks_positions(DISKS_N)
+DISKS_COORDS = [[100, 100], [150, 150], [200, 300], [380, 400], [200, 220]]
 map_graph = create_map(DISKS_COORDS, FORMATION_COORDS, AREA_SIZE)
 fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.pcolor(map_graph, vmax=100.0, cmap=plt.cm.hot)
 ax.set_aspect(1)
-plt.show()
+
 
 # Evolution Strategy
 POPULATION_SIZE = 9
@@ -178,15 +201,46 @@ population = [[random.sample(targets, len(targets)),
                random.sample(targets, len(targets))] for _ in range(POPULATION_SIZE)]
 print(population)
 
-maze = [[0,1,0,0,0,0],
-        [0,0,0,0,0,0],
-        [0,1,0,1,0,0],
-        [0,1,0,0,1,0],
-        [0,0,0,0,1,0]]
-start = [0, 0]
-end = [4, 5]
-path = a_star(maze, start, end)
-print(path)
+# maze = [[0,1,0,0,0,0],
+#         [0,0,0,0,0,0],
+#         [0,1,0,1,0,0],
+#         [0,1,0,0,1,0],
+#         [0,0,0,0,1,0]]
+# start = [0, 0]
+# end = [4, 5]
+maze = map_graph
+start = DISKS_COORDS[0]
+end = FORMATION_COORDS[0]
+
+
+path, ext_path = a_star(maze, start, end, DISKS_COORDS[1:])
+
+# print(path)
+fig = plt.figure(2)
+ax = fig.add_subplot(111)
+ax.pcolor(path)
+ax.set_aspect(1)
+
+fig = plt.figure(3)
+ax = fig.add_subplot(111)
+ax.pcolor(path + map_graph, cmap=plt.cm.hot)
+ax.set_aspect(1)
+
+for node in ext_path.visited_nodes:
+    map_graph[node[0]][node[1]] = 100
+
+for i in range(len(ext_path.visited_nodes) - 1):
+    ext_path.length = ext_path.length + distance(ext_path.visited_nodes[i], ext_path.visited_nodes[i+1])
+
+
+fig = plt.figure(4)
+ax = fig.add_subplot(111)
+ax.pcolor(map_graph, vmax=100.0, cmap=plt.cm.hot)
+ax.set_aspect(1)
+plt.show()
+
+print("path length: ", ext_path.length)
+
 # STEP 4. COMPUTE DISTANCE FOR FIRST DISK
 
 # STEP 5. UPDATE DISK POSITIONS
