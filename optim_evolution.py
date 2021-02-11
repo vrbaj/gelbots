@@ -3,18 +3,7 @@ import math
 from matplotlib import pyplot as plt
 import numpy as np
 import skimage.draw
-
-
-# STEP 1. PLACE DISKS AND TARGETS
-
-
-AREA_SIZE = 1000
-REPULSIVE_POTENTIAL = 500.0
-ATTRACTIVE_POTENTIAL = 5.0
-DISKS_COORDS = []
-FORMATION_COORDS = [[500, 500], [500, 560], [560, 500], [560, 560]]
-DISKS_N = 10
-DISK_RADIUS = 30
+import copy
 
 
 class Path:
@@ -52,7 +41,10 @@ def construct_path(evaluated_node, env_map):
     for i in range(len(path)):
         result[path[i][0]][path[i][1]] = 50
         start_value += 1
-    return path, ext_path
+    if len(path) > 1:
+        for i in range(len(ext_path.visited_nodes) - 1):
+            ext_path.length = ext_path.length + distance(ext_path.visited_nodes[i], ext_path.visited_nodes[i + 1])
+    return ext_path
 
 
 def distance(point1, point2):
@@ -120,7 +112,7 @@ def a_star(env_map, start, goal, obstacles):
                 # TODO check for obstacle
                 collision = False
                 for obstacle in obstacles:
-                    if distance(obstacle, successor_position) < DISK_RADIUS * 2.05:
+                    if distance(obstacle, successor_position) < DISK_RADIUS * 1.99:
                         collision = True
                 if collision:
                     continue
@@ -141,6 +133,7 @@ def a_star(env_map, start, goal, obstacles):
                     continue
 
                 open_nodes.append(successor_node)
+    print("astar fail")
     return env_map
 
 
@@ -154,7 +147,7 @@ def disks_positions(n):
         overlap = False
         for idx, coordinates in enumerate(coordinates_list):
             for coordinates2 in coordinates_list[idx + 1:-1]:
-                print("coords>", coordinates, " and ", coordinates2)
+                # print("coords>", coordinates, " and ", coordinates2)
                 if get_eucl_distance(coordinates, coordinates2) < DISK_RADIUS:
                     coordinates_list[idx] = [random.randint(DISK_RADIUS, AREA_SIZE - DISK_RADIUS),
                                              random.randint(DISK_RADIUS, AREA_SIZE - DISK_RADIUS)]
@@ -180,9 +173,20 @@ def create_map(disks_coords, formation_coords, area_size):
         state_map[rr, cc] = 50
     return state_map
 
+# STEP 1. PLACE DISKS AND TARGETS
+
+
+AREA_SIZE = 1000
+DISKS_COORDS = []
+FORMATION_COORDS = [[500, 500], [500, 560], [560, 500], [560, 560]]
+DISKS_N = 4
+DISK_RADIUS = 30
+
 
 DISKS_COORDS = disks_positions(DISKS_N)
-DISKS_COORDS = [[100, 100], [150, 150], [200, 300], [380, 400], [200, 220]]
+# DISKS_COORDS = [[100, 100], [150, 150], [200, 300], [380, 400], [200, 220]]
+
+
 map_graph = create_map(DISKS_COORDS, FORMATION_COORDS, AREA_SIZE)
 fig = plt.figure()
 ax = fig.add_subplot(111)
@@ -194,52 +198,71 @@ ax.set_aspect(1)
 POPULATION_SIZE = 9
 population = []
 targets = range(len(FORMATION_COORDS))
-print(targets)
+print("targets: ", FORMATION_COORDS)
+print("disks: ", DISKS_COORDS)
 
 # STEP 1: GENERATE POPULATION
+# individual = [[disk order],[target]]
+# i.e. [[3, 0, 1, 2], [0, 2 , 3 , 1]] -> disk 3 goes to target 0, disk 0 goes to target 2, disk 1 goes to target 3, etc.
 population = [[random.sample(targets, len(targets)),
                random.sample(targets, len(targets))] for _ in range(POPULATION_SIZE)]
 print(population)
+path_len = []
+for idx1, individual in enumerate(population):
+    path_len.append(0)
+    obstacle_list = copy.deepcopy(DISKS_COORDS)
+    print(idx1, " individual: ", individual)
+    for idx, disk in enumerate(individual[0]):
+        obstacle_list.remove(DISKS_COORDS[disk])
+        start = DISKS_COORDS[disk]
+        goal = FORMATION_COORDS[individual[1][idx]]
 
-# maze = [[0,1,0,0,0,0],
-#         [0,0,0,0,0,0],
-#         [0,1,0,1,0,0],
-#         [0,1,0,0,1,0],
-#         [0,0,0,0,1,0]]
-# start = [0, 0]
-# end = [4, 5]
+        print("individual: ", individual, "start: ", start, "goal: ", goal)
+        path = a_star(map_graph, start, goal, obstacle_list)
+        obstacle_list.append(goal)
+        path_len[idx1] = path_len[idx1] + path.length
+
+
+   # SUM all paths length
+# find the best individual solutions
+print(path_len)
+# select, mutate repeat
+
 maze = map_graph
 start = DISKS_COORDS[0]
 end = FORMATION_COORDS[0]
 
+balast = False
+if balast:
 
-path, ext_path = a_star(maze, start, end, DISKS_COORDS[1:])
+    path, ext_path = a_star(maze, start, end, DISKS_COORDS[1:])
 
-# print(path)
-fig = plt.figure(2)
-ax = fig.add_subplot(111)
-ax.pcolor(path)
-ax.set_aspect(1)
+    # print(path)
+    fig = plt.figure(2)
+    ax = fig.add_subplot(111)
+    ax.pcolor(path)
+    ax.set_aspect(1)
 
-fig = plt.figure(3)
-ax = fig.add_subplot(111)
-ax.pcolor(path + map_graph, cmap=plt.cm.hot)
-ax.set_aspect(1)
+    fig = plt.figure(3)
+    ax = fig.add_subplot(111)
+    ax.pcolor(path + map_graph, cmap=plt.cm.hot)
+    ax.set_aspect(1)
 
-for node in ext_path.visited_nodes:
-    map_graph[node[0]][node[1]] = 100
-
-for i in range(len(ext_path.visited_nodes) - 1):
-    ext_path.length = ext_path.length + distance(ext_path.visited_nodes[i], ext_path.visited_nodes[i+1])
+    for node in ext_path.visited_nodes:
+        map_graph[node[0]][node[1]] = 100
 
 
-fig = plt.figure(4)
-ax = fig.add_subplot(111)
-ax.pcolor(map_graph, vmax=100.0, cmap=plt.cm.hot)
-ax.set_aspect(1)
-plt.show()
 
-print("path length: ", ext_path.length)
+
+    fig = plt.figure(4)
+    ax = fig.add_subplot(111)
+    ax.pcolor(map_graph, vmax=100.0, cmap=plt.cm.hot)
+    ax.set_aspect(1)
+    plt.show()
+
+    print("path length: ", ext_path.length)
+
+
 
 # STEP 4. COMPUTE DISTANCE FOR FIRST DISK
 
