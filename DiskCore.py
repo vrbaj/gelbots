@@ -16,7 +16,7 @@ class DiskCore(QThread):
     laser_shot = pyqtSignal()
     auto_done = pyqtSignal()
 
-    def __init__(self, disk, laser, goal, laser_time, offset, magnification):
+    def __init__(self, disk, laser, goal, laser_time, offset, magnification, target_list, disk_list):
         super(DiskCore, self).__init__()
         self.image_to_process = None
         self.disk_locs = None
@@ -33,6 +33,8 @@ class DiskCore(QThread):
         self.region_offset = offset
         self.mag = magnification
         self.MAG_STEPPER_CONST = self.STEPPER_CONST * 4 / self.mag
+        self.target_list = target_list
+        self.disk_list = disk_list
 
         self.mutex = QMutex()
 

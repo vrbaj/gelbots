@@ -104,7 +104,7 @@ class CameraWorker(QThread):
     def get_image(self):
         try:
             ret, image2 = self.camera.read()
-            # image = cv2.imread("1920x1080.png")
+            image2 = cv2.imread("1920x1080.png")
             # print("going to subb")
             # image = []
             # image = cv2.subtract(image2, self.back_ground)

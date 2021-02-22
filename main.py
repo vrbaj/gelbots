@@ -1,8 +1,10 @@
 import sys, socket, copy, os
+from typing import List, Any
+
 import cv2_worker
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QComboBox,\
-    QLineEdit, QPushButton, QFrame, QFileDialog, QCheckBox, QRubberBand
+    QLineEdit, QPushButton, QFrame, QFileDialog, QCheckBox, QRubberBand, QInputDialog
 from PyQt5.QtCore import QSize, QRect, Qt, pyqtSignal, QPoint
 from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator, QFont
 import cv2
@@ -15,15 +17,110 @@ import configparser
 import keyboard
 
 
-class formationWindow(QMainWindow):
+class FormationWindow(QMainWindow):
+    change_params = pyqtSignal(list, list)
+
     def __init__(self):
-        super(formationWindow, self).__init__()
-        self.setFixedSize(QSize(300, 300))
+        super(FormationWindow, self).__init__()
+        self.disksList = []
+        self.targetsList = []
+
+        self.setFixedSize(QSize(300, 500))
         self.setWindowTitle("Formation settings")
-        self.targetsList = QtWidgets.QListView(self)
+        self.disk_label = QLabel(self)
+        self.disk_label.setGeometry(QRect(10, 0, 80, 20))
+        self.disk_label.setText("Disks")
+        self.disksListView = QtWidgets.QListView(self)
+        self.disksListView.setGeometry(QRect(10, 25, 80, 400))
+        self.disksModel = QtGui.QStandardItemModel()
+        self.disksListView.setModel(self.disksModel)
 
+        self.target_label = QLabel(self)
+        self.target_label.setGeometry(QRect(100, 0, 80, 20))
+        self.target_label.setText("Targets")
+        self.targetsListView = QtWidgets.QListView(self)
+        self.targetsListView.setGeometry(QRect(100, 25, 80, 400))
+        self.targetsModel = QtGui.QStandardItemModel()
+        self.targetsListView.setModel(self.targetsModel)
 
+        self.add_disk_button = QPushButton(self)
+        self.add_disk_button.setGeometry(QRect(200, 300, 100, 30))
+        self.add_disk_button.setToolTip("Click to add disk coordinates")
+        self.add_disk_button.setText("Add disk")
+        self.add_disk_button.clicked.connect(self.add_disk_text)
 
+        self.remove_disk_button = QPushButton(self)
+        self.remove_disk_button.setGeometry(QRect(200, 380, 100, 30))
+        self.remove_disk_button.setToolTip("Click to remove selected disk coordinates")
+        self.remove_disk_button.setText("Remove disk")
+        self.remove_disk_button.clicked.connect(self.remove_disk)
+
+        self.add_target_button = QPushButton(self)
+        self.add_target_button.setGeometry(QRect(200, 340, 100, 30))
+        self.add_target_button.setToolTip("Click to add target coordinates")
+        self.add_target_button.setText("Add target")
+        self.add_target_button.clicked.connect(self.add_taget_text)
+
+        self.remove_target_button = QPushButton(self)
+        self.remove_target_button.setGeometry(QRect(200, 420, 100, 30))
+        self.remove_target_button.setToolTip("Click to remove selected target coordinates")
+        self.remove_target_button.setText("Remove target")
+        self.remove_target_button.clicked.connect(self.remove_target)
+
+    def remove_disk(self):
+        index_list = []
+        for model_index in self.disksListView.selectionModel().selectedRows():
+            index = QtCore.QPersistentModelIndex(model_index)
+            index_list.append(index)
+        for index in index_list:
+            self.disksModel.removeRow(index.row())
+        self.get_targets_disks()
+
+    def remove_target(self):
+        index_list = []
+        for model_index in self.targetsListView.selectionModel().selectedRows():
+            index = QtCore.QPersistentModelIndex(model_index)
+            index_list.append(index)
+        for index in index_list:
+            self.targetsModel.removeRow(index.row())
+        self.get_targets_disks()
+
+    def add_disk(self, disk):
+        item = QtGui.QStandardItem(disk)
+        self.disksModel.appendRow(item)
+        self.get_targets_disks()
+
+    def get_targets_disks(self):
+        self.disksList = []
+        self.targetsList = []
+        for index in range(self.disksModel.rowCount()):
+            item = self.disksModel.item(index)
+            raw_list = list(map(int, item.text().strip('][').split(', ')))
+            self.disksList.append(raw_list)
+        for index in range(self.targetsModel.rowCount()):
+            item = self.targetsModel.item(index)
+            raw_list = list(map(int, item.text().strip('][').split(', ')))
+            self.targetsList.append(raw_list)
+        self.change_params.emit(self.disksList, self.targetsList)
+
+    def add_target(self, disk):
+        item = QtGui.QStandardItem(disk)
+        self.targetsModel.appendRow(item)
+        self.get_targets_disks()
+
+    def add_disk_text(self):
+        text, ok_pressed = QInputDialog.getText(self, "Input disk coordinates [x, y]", "Coordinates [x, y]:", QLineEdit.Normal, "")
+        if ok_pressed and text != '':
+            item = QtGui.QStandardItem(text)
+            self.disksModel.appendRow(item)
+        self.get_targets_disks()
+
+    def add_taget_text(self):
+        text, ok_pressed = QInputDialog.getText(self, "Input target coodinates [x, y]", "Coordinatex [x, y]:", QLineEdit.Normal, "")
+        if ok_pressed and text != '':
+            item = QtGui.QStandardItem(text)
+            self.targetsModel.appendRow(item)
+        self.get_targets_disks()
     # check box add coordinates to list of targets
     # list of target positions
     # input text for coordinates
@@ -576,10 +673,14 @@ class ExampleWindow(QMainWindow):
         self.set_goal_enabled = False
         self.set_disk_enabled = False
         self.set_sfl_enabled = False
+        self.add_disk_formation = False
+        self.add_target_formation = False
         self.draw_marks_enabled = False
         self.set_laser_enabled = False
         self.automode_enabled = False
         self.checker_memory = False
+        self.target_list = []
+        self.disk_list = []
         # TODO load default settings of all values that can be set via this GUI
         try:
             self.config = configparser.RawConfigParser()
@@ -903,6 +1004,22 @@ class ExampleWindow(QMainWindow):
         self.setGoalCheckbox.setLayoutDirection(Qt.RightToLeft)
         self.setGoalCheckbox.stateChanged.connect(self.goal_checkbox_click)
 
+        # check box to add disk to formation
+        self.setDiskFormationCheckbox = QCheckBox(self)
+        self.setDiskFormationCheckbox.setText("Add disk")
+        self.setDiskFormationCheckbox.setToolTip("Click to image to add disk to formation")
+        self.setDiskFormationCheckbox.setGeometry(QRect(1800, 500, 100, 25))
+        self.setDiskFormationCheckbox.setLayoutDirection(Qt.RightToLeft)
+        self.setDiskFormationCheckbox.stateChanged.connect(self.disk_formation_checkbox_click)
+
+        # check box to add disk to formation
+        self.setDiskFormationCheckbox = QCheckBox(self)
+        self.setDiskFormationCheckbox.setText("Add target")
+        self.setDiskFormationCheckbox.setToolTip("Click to image to add target to formation")
+        self.setDiskFormationCheckbox.setGeometry(QRect(1800, 530, 100, 25))
+        self.setDiskFormationCheckbox.setLayoutDirection(Qt.RightToLeft)
+        self.setDiskFormationCheckbox.stateChanged.connect(self.goal_formation_checkbox_click)
+
         # check box save video on disk
         self.saveVideoCheckbox = QCheckBox(self)
         self.saveVideoCheckbox.setText("Save video")
@@ -971,7 +1088,7 @@ class ExampleWindow(QMainWindow):
                                            [self.laser_x_loc, self.laser_y_loc],
                                            [self.goal_x_loc, self.goal_y_loc],
                                            self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset,
-                                           self.mag_value)
+                                           self.mag_value, self.target_list, self.disk_list)
         self.disk_core.gray_image_request.connect(self.core_image_request)
         self.disk_core.steppers_request.connect(self.move_steppers)
         self.disk_core.coords_update.connect(self.update_coords)
@@ -983,9 +1100,21 @@ class ExampleWindow(QMainWindow):
         self.endpoint = QPoint()
 
         # formation window
-        # self.formation_window = formationWindow()
-        # self.formation_window.show()
+        self.formation_window = FormationWindow()
+        self.formation_window_button = QPushButton("Formation editor", self)
+        self.formation_window_button.setToolTip("Click to setup formation")
+        self.formation_window_button.move(1750, 300)
+        self.formation_window_button.setFixedHeight(22)
+        self.formation_window_button.clicked.connect(self.show_formation_window)
 
+        self.formation_start_button = QPushButton("Start formation", self)
+        self.formation_start_button.setToolTip("Click to establish formation")
+        self.formation_start_button.move(1750, 350)
+        self.formation_start_button.setFixedHeight(22)
+        self.formation_start_button.clicked.connect(self.start_formation)
+
+        # self.formation_window.show()
+        self.formation_window.change_params.connect(self.formation_change)
 
         # video settings window
         self.video_settings_window = VideoSettingsWindow(self.save_interval, self.save_namespace, self.save_path)
@@ -1063,6 +1192,18 @@ class ExampleWindow(QMainWindow):
         # self.checkboxMarks_group.addButton(self.setLaserCheckbox)
 
         self.showMaximized()
+
+    def start_formation(self):
+        pass
+
+    def formation_change(self, disksList, targetsList):
+        self.disk_list = disksList
+        self.target_list = targetsList
+        print("disks> ", self.disk_list)
+        print("targets> ", self.target_list)
+
+    def show_formation_window(self):
+        self.formation_window.show()
 
     def stamping_switch(self, command):
         print(command)
@@ -1375,10 +1516,8 @@ class ExampleWindow(QMainWindow):
     def set_laser_checkbox_click(self, state):
         self.set_laser_enabled = state
 
-
     def draw_marks_checkbox_click(self, state):
         self.draw_marks_enabled = state
-
 
     def save_video_checkbox_click(self, state):
         if self.camera_worker is not None:
@@ -1390,10 +1529,14 @@ class ExampleWindow(QMainWindow):
     def disk_checkbox_click(self, state):
         self.set_disk_enabled = state
 
+    def disk_formation_checkbox_click(self, state):
+        self.add_disk_formation = state
+
+    def goal_formation_checkbox_click(self, state):
+        self.add_target_formation = state
 
     def goal_checkbox_click(self, state):
         self.set_goal_enabled = state
-
 
     def click_to_get_coords(self, event):
         x_pixmap = event.pos().x()
@@ -1456,6 +1599,15 @@ class ExampleWindow(QMainWindow):
             self.config.set("sfl", "x_loc", self.sfl_x_loc)
             self.config.set("sfl", "y_loc", self.sfl_y_loc)
             self.update_config_file()
+        elif self.add_disk_formation:
+            locs = self.disk_core.find_disks(self.gray_image)
+            if len(locs) > 0:
+                nearest_disk = self.disk_core.nearest_disk([x_image, y_image], locs)
+            self.disk_list.append([nearest_disk[0], nearest_disk[1]])
+            self.formation_window.add_disk(str([nearest_disk[0], nearest_disk[1]]))
+        elif self.add_target_formation:
+            self.target_list.append([x_image, y_image])
+            self.formation_window.add_target(str([x_image, y_image]))
 
     def video_settings_close(self, save_interval, save_namespace, save_path):
         self.save_interval = save_interval
@@ -1771,6 +1923,14 @@ class ExampleWindow(QMainWindow):
             self.gray_image = cv2.drawMarker(self.gray_image, (self.disk_x_loc, self.disk_y_loc), (255, 255, 0),
                                              markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,
                                              line_type=cv2.LINE_AA)
+            for disk in self.disk_list:
+                self.gray_image = cv2.drawMarker(self.gray_image, tuple(disk), (255, 255, 0),
+                                                 markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,
+                                                 line_type=cv2.LINE_AA)
+            for target in self.target_list:
+                self.gray_image = cv2.drawMarker(self.gray_image, tuple(target), (255, 255, 0),
+                                                 markerType=cv2.MARKER_DIAMOND, markerSize=20, thickness=1,
+                                                 line_type=cv2.LINE_AA)
             self.gray_image = cv2.drawMarker(self.gray_image, (self.laser_x_loc, self.laser_y_loc), (0, 255, 0),
                                              markerType=cv2.MARKER_STAR, markerSize=20, thickness=1,
                                              line_type=cv2.LINE_AA)

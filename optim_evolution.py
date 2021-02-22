@@ -6,6 +6,26 @@ import skimage.draw
 import copy
 
 
+class Individual:
+    def __init__(self, disk_order, goal_order):
+        self.disk_order = disk_order
+        self.goal_order = goal_order
+        self.collisions = 99999
+
+    def mutate(self):
+        idx = range(len(self.disk_order))
+        i1, i2 = random.sample(idx, 2)
+        if bool(random.getrandbits(1)):
+            self.disk_order[i1], self.disk_order[i2] = self.disk_order[i2], self.disk_order[i1]
+        else:
+            self.goal_order[i1], self.goal_order[i2] = self.goal_order[i2], self.goal_order[i1]
+        self.collisions = 99999
+
+    def __str__(self):
+        return "Invidual - disk order: " + str(self.disk_order) + ", goal order: " + str(self.goal_order) +\
+               ", collisions: " + str(self.collisions)
+
+
 class Path:
     def __init__(self, start, goal):
         self.start = start
@@ -94,7 +114,7 @@ def a_star(env_map, start, goal, obstacles):
         # if the most promising node is the goal return the path
         if current_node == goal_node:
             print("Goal node: ", goal_node.position)
-            return construct_path(node, env_map)
+            return construct_path(current_node, env_map)
         # else get children of the node
         else:
             # list of successors nodes
@@ -173,13 +193,45 @@ def create_map(disks_coords, formation_coords, area_size):
         state_map[rr, cc] = 50
     return state_map
 
+
+def check_collision(start, goal, obstacle_list, required_distance):
+    collisions_number = 0
+    for obstacle in obstacle_list:
+        if dist(start[0], start[1], goal[0], goal[1], obstacle[0], obstacle[1]) < required_distance:
+            collisions_number += 1
+    return collisions_number
+
+
+def dist(x1, y1, x2, y2, x3, y3): # x3,y3 is the point
+    px = x2-x1
+    py = y2-y1
+
+    norm = px*px + py*py
+
+    u = ((x3 - x1) * px + (y3 - y1) * py) / float(norm)
+
+    if u > 1:
+        u = 1
+    elif u < 0:
+        u = 0
+
+    x = x1 + u * px
+    y = y1 + u * py
+
+    dx = x - x3
+    dy = y - y3
+    dist = (dx * dx + dy * dy) ** .5
+    return dist
+
 # STEP 1. PLACE DISKS AND TARGETS
 
 
 AREA_SIZE = 1000
-DISKS_COORDS = []
-FORMATION_COORDS = [[500, 500], [500, 560], [560, 500], [560, 560]]
-DISKS_N = 4
+# DISKS_COORDS = []
+FORMATION_COORDS = [[500, 500], [500, 560], [560, 500], [560, 560], [60, 60], [60, 120], [60, 180],
+                    [700, 700], [640, 640], [800, 800], [800, 860], [400, 400], [460, 460], [500, 60], [290, 290],
+                    [700, 300], [760, 60]]
+DISKS_N = 17
 DISK_RADIUS = 30
 
 
@@ -195,8 +247,7 @@ ax.set_aspect(1)
 
 
 # Evolution Strategy
-POPULATION_SIZE = 9
-population = []
+POPULATION_SIZE = 30
 targets = range(len(FORMATION_COORDS))
 print("targets: ", FORMATION_COORDS)
 print("disks: ", DISKS_COORDS)
@@ -204,23 +255,48 @@ print("disks: ", DISKS_COORDS)
 # STEP 1: GENERATE POPULATION
 # individual = [[disk order],[target]]
 # i.e. [[3, 0, 1, 2], [0, 2 , 3 , 1]] -> disk 3 goes to target 0, disk 0 goes to target 2, disk 1 goes to target 3, etc.
-population = [[random.sample(targets, len(targets)),
-               random.sample(targets, len(targets))] for _ in range(POPULATION_SIZE)]
-print(population)
-path_len = []
-for idx1, individual in enumerate(population):
-    path_len.append(0)
-    obstacle_list = copy.deepcopy(DISKS_COORDS)
-    print(idx1, " individual: ", individual)
-    for idx, disk in enumerate(individual[0]):
-        obstacle_list.remove(DISKS_COORDS[disk])
-        start = DISKS_COORDS[disk]
-        goal = FORMATION_COORDS[individual[1][idx]]
+# population = [[random.sample(targets, len(targets)),
+#                random.sample(targets, len(targets))] for _ in range(POPULATION_SIZE)]
 
-        print("individual: ", individual, "start: ", start, "goal: ", goal)
-        path = a_star(map_graph, start, goal, obstacle_list)
-        obstacle_list.append(goal)
-        path_len[idx1] = path_len[idx1] + path.length
+population = []
+for index in range(POPULATION_SIZE):
+    population.append(Individual(random.sample(targets, len(targets)), random.sample(targets, len(targets))))
+path_len = []
+found_solution = False
+
+generation = -1
+while not found_solution:
+    generation += 1
+    for idx1, individual in enumerate(population):
+        # path_len.append(0)
+        obstacle_list = copy.deepcopy(DISKS_COORDS)
+        # print(idx1, " individual: ", individual)
+        individual.collisions = 0
+        for idx, disk in enumerate(individual.disk_order):
+            obstacle_list.remove(DISKS_COORDS[disk])
+            start = DISKS_COORDS[disk]
+            goal = FORMATION_COORDS[individual.goal_order[idx]]
+            # print("individual idx1: ", idx1, "start: ", start, "goal: ", goal)
+            # path = a_star(map_graph, start, goal, obstacle_list)
+            individual.collisions = individual.collisions + check_collision(start, goal, obstacle_list, DISK_RADIUS)
+            obstacle_list.append(goal)
+            # path_len[idx1] = path_len[idx1] + path.length
+        if individual.collisions == 0:
+            found_solution = True
+            print(individual)
+            break
+        # print(individual)
+    # SELECTION
+    print("NEW GENERATION ", generation)
+    population.sort(key=lambda x: x.collisions, reverse=False)
+    next_generation = []
+    next_generation = population[0:int(POPULATION_SIZE / 3)]
+    for individual in population[0:int(POPULATION_SIZE / 3)]:
+        individual.mutate()
+        next_generation.append(individual)
+        next_generation.append(Individual(random.sample(targets, len(targets)), random.sample(targets, len(targets))))
+    population = copy.deepcopy(next_generation)
+    # CREATE NEW POPULATION FOR NEXT GENERATION
 
 
    # SUM all paths length
@@ -262,7 +338,7 @@ if balast:
 
     print("path length: ", ext_path.length)
 
-
+plt.show()
 
 # STEP 4. COMPUTE DISTANCE FOR FIRST DISK
 
