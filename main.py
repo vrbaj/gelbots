@@ -12,7 +12,7 @@ import time, datetime
 import numpy as np
 import CameraWorker
 import RaspiWorker
-import DiskCore
+import DiskCore2 as DiskCore
 import configparser
 import keyboard
 
@@ -1084,11 +1084,15 @@ class ExampleWindow(QMainWindow):
         self.raspi_comm.start()
 
         # start Disk Core thread
-        self.disk_core = DiskCore.DiskCore([self.disk_x_loc, self.disk_y_loc],
-                                           [self.laser_x_loc, self.laser_y_loc],
-                                           [self.goal_x_loc, self.goal_y_loc],
+        # self.disk_core = DiskCore.DiskCore([self.disk_x_loc, self.disk_y_loc],
+        #                                    [self.laser_x_loc, self.laser_y_loc],
+        #                                    [self.goal_x_loc, self.goal_y_loc],
+        #                                    self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset,
+        #                                    self.mag_value, self.target_list, self.disk_list)
+        self.disk_core = DiskCore.DiskCore([self.laser_x_loc, self.laser_y_loc],
                                            self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset,
                                            self.mag_value, self.target_list, self.disk_list)
+
         self.disk_core.gray_image_request.connect(self.core_image_request)
         self.disk_core.steppers_request.connect(self.move_steppers)
         self.disk_core.coords_update.connect(self.update_coords)
@@ -1460,16 +1464,36 @@ class ExampleWindow(QMainWindow):
     def automode_finished(self):
         pass
 
-    def update_coords(self, goal_x, goal_y, disk_x, disk_y):
-        self.goal_x_loc = goal_x
-        self.goal_y_loc = goal_y
-        self.disk_x_loc = disk_x
-        self.disk_y_loc = disk_y
+    def update_coords(self, disk_list, target_list):
+        print("update coords")
+        self.disk_list = []
+        self.target_list = []
+        for item in disk_list:
+            int_coords = []
+            for coord in item:
+                int_coords.append(int(coord))
+            self.disk_list.append(int_coords)
+        for item in target_list:
+            int_coords = []
+            for coord in item:
+                int_coords.append(int(coord))
+            self.target_list.append(int_coords)
+        print(self.disk_list)
+        print(self.target_list)
+        print("update coords done")
 
-        self.goalCoordXInput.setText(str(goal_x))
-        self.goalCoordYInput.setText(str(goal_y))
-        self.diskCoordXInput.setText(str(disk_x))
-        self.diskCoordYInput.setText(str(disk_y))
+    # def update_coords(self, goal_x, goal_y, disk_x, disk_y):
+    #     print("enter update coords")
+    #     print(goal_x)
+    #     self.goal_x_loc = goal_x
+    #     self.goal_y_loc = goal_y
+    #     self.disk_x_loc = disk_x
+    #     self.disk_y_loc = disk_y
+    #
+    #     self.goalCoordXInput.setText(str(goal_x))
+    #     self.goalCoordYInput.setText(str(goal_y))
+    #     self.diskCoordXInput.setText(str(disk_x))
+    #     self.diskCoordYInput.setText(str(disk_y))
 
     def move_steppers(self, x, y):
         print("asdasdasdasda")
@@ -1491,6 +1515,9 @@ class ExampleWindow(QMainWindow):
             self.disk_core.laser_y = self.laser_y_loc
             self.disk_core.goal_x = self.goal_x_loc
             self.disk_core.goal_y = self.goal_y_loc
+            self.disk_core.target_list = self.target_list
+            self.disk_core.disk_list = self.disk_list
+
             self.disk_core.start()
         else:
             self.autoModeButton.setText("Auto ON")
@@ -1600,10 +1627,14 @@ class ExampleWindow(QMainWindow):
             self.config.set("sfl", "y_loc", self.sfl_y_loc)
             self.update_config_file()
         elif self.add_disk_formation:
+            print("add disk formation")
             locs = self.disk_core.find_disks(self.gray_image)
+            print("add disk formation 1 ")
             if len(locs) > 0:
                 nearest_disk = self.disk_core.nearest_disk([x_image, y_image], locs)
+            print("add disk formation 2")
             self.disk_list.append([nearest_disk[0], nearest_disk[1]])
+            print("add disk formation 3")
             self.formation_window.add_disk(str([nearest_disk[0], nearest_disk[1]]))
         elif self.add_target_formation:
             self.target_list.append([x_image, y_image])
@@ -1658,6 +1689,7 @@ class ExampleWindow(QMainWindow):
 
 
     def blink_laser_n(self):
+        print("main.py blink_laser_n")
         time_on = int(self.laser_on_time)
         time_off = int(self.laser_off_time)
         n = int(self.laser_pulse_n)
@@ -1906,56 +1938,59 @@ class ExampleWindow(QMainWindow):
 
     def obtain_image(self):
         """Function to get camera image from camera worker. The conversion to grayscale is done."""
-        self.camera_worker.mutex.lock()
-        self.image_to_display = np.copy(self.camera_worker.raw_image)
-        if self.video_settings_window.roiCheckbox.isChecked():
-            self.camera_worker.save_roi = True
-        else:
-            self.camera_worker.save_roi = False
-        self.camera_worker.mutex.unlock()
-        self.gray_image = cv2.cvtColor(self.image_to_display, cv2.COLOR_BGR2GRAY)
-        if self.draw_marks_enabled:
-            # TODO wrap draw markers into function that will check the coords (if it is inside of img)
-            pass
-            self.gray_image = cv2.drawMarker(self.gray_image, (self.goal_x_loc, self.goal_y_loc), (0, 255, 255),
-                                             markerType=cv2.MARKER_DIAMOND, markerSize=20, thickness=1,
-                                             line_type=cv2.LINE_AA)
-            self.gray_image = cv2.drawMarker(self.gray_image, (self.disk_x_loc, self.disk_y_loc), (255, 255, 0),
-                                             markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,
-                                             line_type=cv2.LINE_AA)
-            for disk in self.disk_list:
-                self.gray_image = cv2.drawMarker(self.gray_image, tuple(disk), (255, 255, 0),
-                                                 markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,
-                                                 line_type=cv2.LINE_AA)
-            for target in self.target_list:
-                self.gray_image = cv2.drawMarker(self.gray_image, tuple(target), (255, 255, 0),
+        try:
+            self.camera_worker.mutex.lock()
+            self.image_to_display = np.copy(self.camera_worker.raw_image)
+            if self.video_settings_window.roiCheckbox.isChecked():
+                self.camera_worker.save_roi = True
+            else:
+                self.camera_worker.save_roi = False
+            self.camera_worker.mutex.unlock()
+            self.gray_image = cv2.cvtColor(self.image_to_display, cv2.COLOR_BGR2GRAY)
+            if self.draw_marks_enabled:
+                # TODO wrap draw markers into function that will check the coords (if it is inside of img)
+                pass
+                self.gray_image = cv2.drawMarker(self.gray_image, (self.goal_x_loc, self.goal_y_loc), (0, 255, 255),
                                                  markerType=cv2.MARKER_DIAMOND, markerSize=20, thickness=1,
                                                  line_type=cv2.LINE_AA)
-            self.gray_image = cv2.drawMarker(self.gray_image, (self.laser_x_loc, self.laser_y_loc), (0, 255, 0),
-                                             markerType=cv2.MARKER_STAR, markerSize=20, thickness=1,
-                                             line_type=cv2.LINE_AA)
-            self.gray_image = cv2.drawMarker(self.gray_image, (self.sfl_x_loc, self.sfl_y_loc), (0, 255, 0),
-                                             markerType=cv2.MARKER_CROSS, markerSize=20, thickness=1,
-                                             line_type=cv2.LINE_AA)
-            self.gray_image = cv2.circle(self.gray_image, (self.sfl_x_loc, self.sfl_y_loc), self.sfl_radius,
-                                         (0, 255, 0), 2)
-            x_scale = self.cam_width_value / self.PIXMAP_WIDTH
-            y_scale = self.cam_height_value / self.PIXMAP_HEIGHT
-            if self.draw_roi:
-                rectangle_startpoint_x = int(x_scale * self.origin.x())
-                rectangle_startpoint_y = int(y_scale * self.origin.y())
-                rectangle_endpoint_x = int(x_scale * self.endpoint.x())
-                rectangle_endpoint_y = int(y_scale * self.endpoint.y())
-                self.camera_worker.roi_origin = (rectangle_startpoint_x, rectangle_startpoint_y)
-                self.camera_worker.roi_endpoint = (rectangle_endpoint_x, rectangle_endpoint_y)
-                self.gray_image = cv2.rectangle(self.gray_image, (rectangle_startpoint_x,
-                                                                  rectangle_startpoint_y),
-                                                (rectangle_endpoint_x, rectangle_endpoint_y),
-                                                (250, 255, 0), 2)
-        height, width = self.gray_image.shape[:2]
-        image_for_pixmap = QtGui.QImage(self.gray_image, width, height, QtGui.QImage.Format_Grayscale8)
-        #self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(1280, 720))
-        self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(self.PIXMAP_WIDTH, self.PIXMAP_HEIGHT))
+                self.gray_image = cv2.drawMarker(self.gray_image, (self.disk_x_loc, self.disk_y_loc), (255, 255, 0),
+                                                 markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,
+                                                 line_type=cv2.LINE_AA)
+                for disk in self.disk_list:
+                    self.gray_image = cv2.drawMarker(self.gray_image, tuple(disk), (255, 255, 0),
+                                                     markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,
+                                                     line_type=cv2.LINE_AA)
+                for target in self.target_list:
+                    self.gray_image = cv2.drawMarker(self.gray_image, tuple(target), (255, 255, 0),
+                                                     markerType=cv2.MARKER_DIAMOND, markerSize=20, thickness=1,
+                                                     line_type=cv2.LINE_AA)
+                self.gray_image = cv2.drawMarker(self.gray_image, (self.laser_x_loc, self.laser_y_loc), (0, 255, 0),
+                                                 markerType=cv2.MARKER_STAR, markerSize=20, thickness=1,
+                                                 line_type=cv2.LINE_AA)
+                self.gray_image = cv2.drawMarker(self.gray_image, (self.sfl_x_loc, self.sfl_y_loc), (0, 255, 0),
+                                                 markerType=cv2.MARKER_CROSS, markerSize=20, thickness=1,
+                                                 line_type=cv2.LINE_AA)
+                self.gray_image = cv2.circle(self.gray_image, (self.sfl_x_loc, self.sfl_y_loc), self.sfl_radius,
+                                             (0, 255, 0), 2)
+                x_scale = self.cam_width_value / self.PIXMAP_WIDTH
+                y_scale = self.cam_height_value / self.PIXMAP_HEIGHT
+                if self.draw_roi:
+                    rectangle_startpoint_x = int(x_scale * self.origin.x())
+                    rectangle_startpoint_y = int(y_scale * self.origin.y())
+                    rectangle_endpoint_x = int(x_scale * self.endpoint.x())
+                    rectangle_endpoint_y = int(y_scale * self.endpoint.y())
+                    self.camera_worker.roi_origin = (rectangle_startpoint_x, rectangle_startpoint_y)
+                    self.camera_worker.roi_endpoint = (rectangle_endpoint_x, rectangle_endpoint_y)
+                    self.gray_image = cv2.rectangle(self.gray_image, (rectangle_startpoint_x,
+                                                                      rectangle_startpoint_y),
+                                                    (rectangle_endpoint_x, rectangle_endpoint_y),
+                                                    (250, 255, 0), 2)
+            height, width = self.gray_image.shape[:2]
+            image_for_pixmap = QtGui.QImage(self.gray_image, width, height, QtGui.QImage.Format_Grayscale8)
+            #self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(1280, 720))
+            self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(self.PIXMAP_WIDTH, self.PIXMAP_HEIGHT))
+        except Exception as ex:
+            print("obtain image: ", ex)
 
     def camera_changed(self):
         """

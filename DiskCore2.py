@@ -5,19 +5,19 @@ import math
 from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 
 
-class DiskCore2(QThread):
+class DiskCore(QThread):
     # REGION_OFFSET = 10
 
     STEPPER_CONST = 6.6666666
     # signals
     gray_image_request = pyqtSignal()
     steppers_request = pyqtSignal(int, int)
-    coords_update = pyqtSignal(int, int, int, int)
+    coords_update = pyqtSignal(list, list)
     laser_shot = pyqtSignal()
     auto_done = pyqtSignal()
 
     def __init__(self, laser, laser_time, offset, magnification, target_list, disk_list):
-        super(DiskCore2, self).__init__()
+        super(DiskCore, self).__init__()
         self.image_to_process = None
         self.disk_locs = None
         self.status = True
@@ -48,14 +48,18 @@ class DiskCore2(QThread):
         steps_y = 0
         target = [0, 0]
         # logic for disk moving
+        print("thread started")
         while self.auto_mode:
             self.MAG_STEPPER_CONST = self.STEPPER_CONST * 4 / self.mag
             for disk_idx, disk in enumerate(self.disk_list):
                 self.auto_mode = True
                 self.target_disk_x = disk[0]
                 self.target_disk_y = disk[1]
+                print("target list: ", self.target_list)
+                print("target: ", self.target_list[disk_idx])
                 target[0] = self.target_list[disk_idx][0]
                 target[1] = self.target_list[disk_idx][1]
+                print("disk loop started")
                 while self.auto_mode:
                     print(self.auto_step)
                     if self.auto_step == -1:
@@ -80,7 +84,7 @@ class DiskCore2(QThread):
 
                         previous_position_x = disk[0]
                         previous_position_y = disk[1]
-                        [x, y] = self.nearest_disk([disk[0], disk[0]], self.disk_locs)
+                        [x, y] = self.nearest_disk([disk[0], disk[1]], self.disk_locs)
                         if abs(x - previous_position_x) > 30 * self.mag or abs(y - previous_position_y) > 30 * self.mag:
                             print('wtf')
                             x = previous_position_x
@@ -120,15 +124,23 @@ class DiskCore2(QThread):
                         # TODO move steppers and wait
                         steps_x, steps_y = self.get_steps(shooting_x, shooting_y)
                         self.move_servo(steps_x, steps_y)
+                        print("move servo passed")
 
                     elif self.auto_step == 4:
-                        # TODO recompute coordinates of goal, disk and update
-                        print('steps', steps_x, steps_y)
-                        self.recompute_goal(steps_x, steps_y)
-                        self.recompute_disk(steps_x, steps_y)
-                        self.coords_update.emit(target[0], target[1], disk[0], disk[1])
-                        self.auto_step = 5
+                        try:
+                            # TODO recompute coordinates of goal, disk and update
+                            print('steps', steps_x, steps_y)
+                            self.recompute_goal(steps_x, steps_y)
 
+                            print("recompute goal done")
+                            self.recompute_disk(steps_x, steps_y)
+                            print("recompute disk done")
+                            self.coords_update.emit(self.disk_list, self.target_list)
+                            print("signal emit done")
+
+                            self.auto_step = 5
+                        except Exception as ex:
+                            print(ex)
                     elif self.auto_step == 5:
                         # TODO shoot with laser and wait
                         f = open("moving_stats.txt", "a")
@@ -137,8 +149,16 @@ class DiskCore2(QThread):
                             f.close()
                         except Exception as exp:
                             print(exp)
-                        self.laser_shot.emit()
+                        print("saving done")
+                        try:
+                            self.laser_shot.emit()
+                        except Exception as ex:
+                            print(ex)
+
+                        print("laser shot emit")
+                        print("laser blink time: ", self.laser_blink_time)
                         time.sleep(self.laser_blink_time / 1000 + 0.6)
+                        print("sleep done")
                         self.auto_step = -1
 
                     time.sleep(0.1)
@@ -191,16 +211,18 @@ class DiskCore2(QThread):
             k = dy / dx
         q = goal[1] - k * goal[0]
         # direction_vector = [dx, dy]
-        desired_x1 = disk[0] + self.region_offset / math.sqrt(1 + k ** 2)
+        desired_x1 = disk[0] - self.region_offset / math.sqrt(1 + k ** 2)
         desired_y1 = k * desired_x1 + q
-        desired_x2 = disk[0] - self.region_offset / math.sqrt(1 + k ** 2)
+        desired_x2 = disk[0] + self.region_offset / math.sqrt(1 + k ** 2)
         desired_y2 = k * desired_x2 + q
         if math.sqrt((desired_x1 - goal[0]) ** 2
                      + (desired_y1 - goal[1]) ** 2) > math.sqrt((desired_x2 - goal[0]) ** 2
                                                                 + (desired_y2 - goal[1]) ** 2):
+            print("tree1")
             desired_x = desired_x1
             desired_y = desired_y1
         else:
+            print("tree2")
             desired_x = desired_x2
             desired_y = desired_y2
         # if abs(dx) < 3:
@@ -222,7 +244,7 @@ class DiskCore2(QThread):
 
     def move_servo(self, x, y):
         self.steppers_request.emit(x, y)
-        time_to_sleep = (abs(x) + abs(y)) * 0.001 + 1
+        time_to_sleep = (abs(x) + abs(y)) * 0.001 + 5
         print("time to sleep", time_to_sleep)
         time.sleep(time_to_sleep)
         self.auto_step = 4
@@ -236,15 +258,26 @@ class DiskCore2(QThread):
         return steps_x, steps_y
 
     def recompute_goal(self, stepper_x, stepper_y):
-        for target in self.target_list:
-            target[0] = (target[0] - stepper_x / self.MAG_STEPPER_CONST)
-            target[1] = (target[1] - stepper_x / self.MAG_STEPPER_CONST)
-            # self.goal_x = (self.goal_x - stepper_x / self.MAG_STEPPER_CONST)
-            # self.goal_y = (self.goal_y + stepper_y / self.MAG_STEPPER_CONST)
+        try:
+            print("pre recompute:", self.target_list)
+            for idx, target in enumerate(self.target_list):
+                self.target_list[idx][0] = (target[0] - stepper_x / self.MAG_STEPPER_CONST)
+                self.target_list[idx][1] = (target[1] + stepper_y / self.MAG_STEPPER_CONST)
+                # self.goal_x = (self.goal_x - stepper_x / self.MAG_STEPPER_CONST)
+                # self.goal_y = (self.goal_y + stepper_y / self.MAG_STEPPER_CONST)
+            print("post recompute target:", self.target_list)
+        except Exception as ex:
+            print(ex)
 
     def recompute_disk(self, stepper_x, stepper_y):
-        for disk in self.disk_list:
-            disk[0] = (disk[0] - stepper_x / self.MAG_STEPPER_CONST)
-            disk[1] = (disk[1] - stepper_y / self.MAG_STEPPER_CONST)
-        # self.target_disk_x = (self.target_disk_x - stepper_x / self.MAG_STEPPER_CONST)
-        # self.target_disk_y = (self.target_disk_y + stepper_y / self.MAG_STEPPER_CONST)
+        try:
+            print("pre recompute disk: ", self.disk_list)
+            for idx, disk in enumerate(self.disk_list):
+
+                self.disk_list[idx][0] = (disk[0] - stepper_x / self.MAG_STEPPER_CONST)
+                self.disk_list[idx][1] = (disk[1] + stepper_y / self.MAG_STEPPER_CONST)
+            # self.target_disk_x = (self.target_disk_x - stepper_x / self.MAG_STEPPER_CONST)
+            # self.target_disk_y = (self.target_disk_y + stepper_y / self.MAG_STEPPER_CONST)
+            print("post recompute disk: ", self.disk_list)
+        except Exception as ex:
+            print(ex)
