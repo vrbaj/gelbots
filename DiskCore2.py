@@ -139,6 +139,10 @@ class DiskCore(QThread):
                             print("signal emit done")
 
                             self.auto_step = 5
+                            disk[0] = self.disk_list[disk_idx][0]
+                            disk[1] = self.disk_list[disk_idx][1]
+                            target[0] = self.target_list[disk_idx][0]
+                            target[1] = self.target_list[disk_idx][1]
                         except Exception as ex:
                             print(ex)
                     elif self.auto_step == 5:
@@ -211,9 +215,9 @@ class DiskCore(QThread):
             k = dy / dx
         q = goal[1] - k * goal[0]
         # direction_vector = [dx, dy]
-        desired_x1 = disk[0] - self.region_offset / math.sqrt(1 + k ** 2)
+        desired_x1 = disk[0] + self.region_offset / math.sqrt(1 + k ** 2)
         desired_y1 = k * desired_x1 + q
-        desired_x2 = disk[0] + self.region_offset / math.sqrt(1 + k ** 2)
+        desired_x2 = disk[0] - self.region_offset / math.sqrt(1 + k ** 2)
         desired_y2 = k * desired_x2 + q
         if math.sqrt((desired_x1 - goal[0]) ** 2
                      + (desired_y1 - goal[1]) ** 2) > math.sqrt((desired_x2 - goal[0]) ** 2

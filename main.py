@@ -12,7 +12,7 @@ import time, datetime
 import numpy as np
 import CameraWorker
 import RaspiWorker
-import DiskCore2 as DiskCore
+import DiskCore as DiskCore
 import configparser
 import keyboard
 
@@ -1084,14 +1084,14 @@ class ExampleWindow(QMainWindow):
         self.raspi_comm.start()
 
         # start Disk Core thread
-        # self.disk_core = DiskCore.DiskCore([self.disk_x_loc, self.disk_y_loc],
-        #                                    [self.laser_x_loc, self.laser_y_loc],
-        #                                    [self.goal_x_loc, self.goal_y_loc],
-        #                                    self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset,
-        #                                    self.mag_value, self.target_list, self.disk_list)
-        self.disk_core = DiskCore.DiskCore([self.laser_x_loc, self.laser_y_loc],
+        self.disk_core = DiskCore.DiskCore([self.disk_x_loc, self.disk_y_loc],
+                                           [self.laser_x_loc, self.laser_y_loc],
+                                           [self.goal_x_loc, self.goal_y_loc],
                                            self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset,
                                            self.mag_value, self.target_list, self.disk_list)
+        # self.disk_core = DiskCore.DiskCore([self.laser_x_loc, self.laser_y_loc],
+        #                                    self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset,
+        #                                    self.mag_value, self.target_list, self.disk_list)
 
         self.disk_core.gray_image_request.connect(self.core_image_request)
         self.disk_core.steppers_request.connect(self.move_steppers)
@@ -1464,36 +1464,36 @@ class ExampleWindow(QMainWindow):
     def automode_finished(self):
         pass
 
-    def update_coords(self, disk_list, target_list):
-        print("update coords")
-        self.disk_list = []
-        self.target_list = []
-        for item in disk_list:
-            int_coords = []
-            for coord in item:
-                int_coords.append(int(coord))
-            self.disk_list.append(int_coords)
-        for item in target_list:
-            int_coords = []
-            for coord in item:
-                int_coords.append(int(coord))
-            self.target_list.append(int_coords)
-        print(self.disk_list)
-        print(self.target_list)
-        print("update coords done")
+    # def update_coords(self, disk_list, target_list):
+    #     print("update coords")
+    #     self.disk_list = []
+    #     self.target_list = []
+    #     for item in disk_list:
+    #         int_coords = []
+    #         for coord in item:
+    #             int_coords.append(int(coord))
+    #         self.disk_list.append(int_coords)
+    #     for item in target_list:
+    #         int_coords = []
+    #         for coord in item:
+    #             int_coords.append(int(coord))
+    #         self.target_list.append(int_coords)
+    #     print(self.disk_list)
+    #     print(self.target_list)
+    #     print("update coords done")
 
-    # def update_coords(self, goal_x, goal_y, disk_x, disk_y):
-    #     print("enter update coords")
-    #     print(goal_x)
-    #     self.goal_x_loc = goal_x
-    #     self.goal_y_loc = goal_y
-    #     self.disk_x_loc = disk_x
-    #     self.disk_y_loc = disk_y
-    #
-    #     self.goalCoordXInput.setText(str(goal_x))
-    #     self.goalCoordYInput.setText(str(goal_y))
-    #     self.diskCoordXInput.setText(str(disk_x))
-    #     self.diskCoordYInput.setText(str(disk_y))
+    def update_coords(self, goal_x, goal_y, disk_x, disk_y):
+        print("enter update coords")
+        print(goal_x)
+        self.goal_x_loc = goal_x
+        self.goal_y_loc = goal_y
+        self.disk_x_loc = disk_x
+        self.disk_y_loc = disk_y
+
+        self.goalCoordXInput.setText(str(goal_x))
+        self.goalCoordYInput.setText(str(goal_y))
+        self.diskCoordXInput.setText(str(disk_x))
+        self.diskCoordYInput.setText(str(disk_y))
 
     def move_steppers(self, x, y):
         print("asdasdasdasda")
