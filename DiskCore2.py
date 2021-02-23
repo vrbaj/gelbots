@@ -46,14 +46,16 @@ class DiskCore2(QThread):
         shooting_y = 0
         steps_x = 0
         steps_y = 0
+        target = [0, 0]
         # logic for disk moving
         while self.auto_mode:
             self.MAG_STEPPER_CONST = self.STEPPER_CONST * 4 / self.mag
             for disk_idx, disk in enumerate(self.disk_list):
+                self.auto_mode = True
                 self.target_disk_x = disk[0]
                 self.target_disk_y = disk[1]
-                self.goal_x = self.target_list[disk_idx][0]
-                self.goal_y = self.target_list[disk_idx][1]
+                target[0] = self.target_list[disk_idx][0]
+                target[1] = self.target_list[disk_idx][1]
                 while self.auto_mode:
                     print(self.auto_step)
                     if self.auto_step == -1:
@@ -76,34 +78,34 @@ class DiskCore2(QThread):
 
                     elif self.auto_step == 1:
 
-                        previous_position_x = self.target_disk_x
-                        previous_position_y = self.target_disk_y
-                        [x, y] = self.nearest_disk([self.target_disk_x, self.target_disk_y], self.disk_locs)
+                        previous_position_x = disk[0]
+                        previous_position_y = disk[1]
+                        [x, y] = self.nearest_disk([disk[0], disk[0]], self.disk_locs)
                         if abs(x - previous_position_x) > 30 * self.mag or abs(y - previous_position_y) > 30 * self.mag:
                             print('wtf')
                             x = previous_position_x
                             y = previous_position_y
 
-                        self.target_disk_x = x
-                        self.target_disk_y = y
+                        disk[0] = x
+                        disk[1] = y
                         f = open("moving_stats.txt", "a")
                         try:
-                            f.write("autostep 1: " + str([self.target_disk_x, self.target_disk_y]) + ";" + str(
+                            f.write("autostep 1: " + str([disk[0], disk[1]]) + ";" + str(
                                 self.region_offset) + "\n")
                             f.close()
                         except Exception as exp:
                             print(exp)
-                        if abs(self.goal_x - x) < 5 and abs(self.goal_y - y) < 5:
+                        if abs(target[0] - x) < 5 and abs(target[1] - y) < 5:
                             self.auto_mode = False
-                        elif abs(self.target_disk_x - x) > 15 or abs(self.target_disk_y - y) > 15:
+                        elif abs(disk[0] - x) > 15 or abs(disk[1] - y) > 15:
                             self.auto_step = -1
                         else:
                             self.auto_step = 2
 
                     elif self.auto_step == 2:
                         # TODO estimate shooting region
-                        shooting_x, shooting_y = self.estimate_shooting_region([self.target_disk_x, self.target_disk_y],
-                                                                               [self.goal_x, self.goal_y])
+                        shooting_x, shooting_y = self.estimate_shooting_region([disk[0], disk[1]],
+                                                                               [target[0], target[1]])
                         f = open("moving_stats.txt", "a")
                         try:
                             f.write("shooting reg." + str([shooting_x, shooting_y]) + ";" + "\n")
@@ -124,14 +126,14 @@ class DiskCore2(QThread):
                         print('steps', steps_x, steps_y)
                         self.recompute_goal(steps_x, steps_y)
                         self.recompute_disk(steps_x, steps_y)
-                        self.coords_update.emit(self.goal_x, self.goal_y, self.target_disk_x, self.target_disk_y)
+                        self.coords_update.emit(target[0], target[1], disk[0], disk[1])
                         self.auto_step = 5
 
                     elif self.auto_step == 5:
                         # TODO shoot with laser and wait
                         f = open("moving_stats.txt", "a")
                         try:
-                            f.write("autostep 5: " + str([self.target_disk_x, self.target_disk_y]) + ";" + "\n")
+                            f.write("autostep 5: " + str([disk[0], disk[1]]) + ";" + "\n")
                             f.close()
                         except Exception as exp:
                             print(exp)
