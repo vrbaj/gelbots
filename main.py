@@ -15,6 +15,7 @@ import RaspiWorker
 import DiskCore as DiskCore
 import configparser
 import keyboard
+import FormationOptim
 
 
 class FormationWindow(QMainWindow):
@@ -66,6 +67,26 @@ class FormationWindow(QMainWindow):
         self.remove_target_button.setToolTip("Click to remove selected target coordinates")
         self.remove_target_button.setText("Remove target")
         self.remove_target_button.clicked.connect(self.remove_target)
+
+        self.optimize_button = QPushButton(self)
+        self.optimize_button.setGeometry(QRect(200, 460, 100, 30))
+        self.optimize_button.setToolTip("Click to optimize formation making")
+        self.optimize_button.setText("Optimize")
+        self.optimize_button.clicked.connect(self.optimize_order)
+
+    def optimize_order(self):
+        disk_order, target_order = FormationOptim.optimize_formation(self.disksList, self.targetsList, 30)
+        print(self.disksList, self.targetsList)
+        print("order: ", disk_order, "target order: ", target_order)
+        self.disksModel.clear()
+        self.targetsModel.clear()
+        for item in disk_order:
+            qt_item = QtGui.QStandardItem(str(self.disksList[item]))
+            self.disksModel.appendRow(qt_item)
+        for item in target_order:
+            qt_item = QtGui.QStandardItem(str(self.targetsList[item]))
+            self.targetsModel.appendRow(qt_item)
+        self.change_params.emit(self.disksList, self.targetsList)
 
     def remove_disk(self):
         index_list = []
