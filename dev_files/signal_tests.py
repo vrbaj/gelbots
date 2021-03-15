@@ -1,29 +1,7 @@
-import sys
-import socket
-import copy
-import os
-import cv2_worker
-import cv2
-import subprocess
-import time
-import datetime
-import numpy as np
-
-from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QComboBox, QLineEdit, QPushButton
-from PyQt5.QtCore import QSize, QRect, Qt
-from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
-from PyQt5.QtCore import QThread, pyqtSignal, QObject
-
-import TTT as TTT
+from dev_files import TTT as TTT
 
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import *
 import sys
-import time
-
-
-
 
 
 class MainWindow(QtWidgets.QMainWindow):

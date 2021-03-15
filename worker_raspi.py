@@ -1,5 +1,4 @@
 from PyQt5.QtCore import QThread, pyqtSignal
-from datetime import datetime
 import time
 import socket
 
@@ -40,8 +39,6 @@ class RaspiWorker(QThread):
                         self.quit_flag = True
                         self.signal_comm_err.emit()
                 time.sleep(0.05)
-                # TODO check queue and send to raspi. if red_button empty queue and send terminate all thread to raspi
-                # TODO message to stop only the laser infinity blinking
         self.k.close()
         self.quit()
         self.wait()

@@ -36,7 +36,7 @@ while(cap.isOpened()):
 
         cv2.imshow('original', frame)
         cv2.imshow('Motion Tracker', outmask)
-        cv2.imwrite(os.path.join('vid_detection_dyn', 'frame' + str(frame_index).zfill(5) + '.png'), frame)
+        cv2.imwrite(os.path.join('../vid_detection_dyn', 'frame' + str(frame_index).zfill(5) + '.png'), frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 

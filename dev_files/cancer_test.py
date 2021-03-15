@@ -73,7 +73,7 @@ while(cap.isOpened()):
         cv2.imshow("real", frame)
         cv2.imshow("subtracted", subtracted)
         cv2.imshow('blurred', gray)
-        cv2.imwrite(os.path.join('vid_detection', 'frame' + str(frame_index).zfill(5) + '.png'), frame)
+        cv2.imwrite(os.path.join('../vid_detection', 'frame' + str(frame_index).zfill(5) + '.png'), frame)
 
 
     if cv2.waitKey(1) & 0xFF == ord('q'):

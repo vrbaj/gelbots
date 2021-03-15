@@ -1,684 +1,24 @@
-import sys, socket, copy, os
-from typing import List, Any
-
-import cv2_worker
+import sys
 from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QComboBox,\
-    QLineEdit, QPushButton, QFrame, QFileDialog, QCheckBox, QRubberBand, QInputDialog
-from PyQt5.QtCore import QSize, QRect, Qt, pyqtSignal, QPoint
-from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator, QFont
+from PyQt5.QtWidgets import QMainWindow, QLabel, QWidget, QComboBox,\
+    QLineEdit, QPushButton, QFrame, QCheckBox, QRubberBand
+from PyQt5.QtCore import QSize, QRect, Qt, QPoint
+from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
 import cv2
-import time, datetime
+import time
 import numpy as np
-import CameraWorker
-import RaspiWorker
-import DiskCore as DiskCore
+import worker_camera
+import worker_raspi
+import disk_core as disk_core
 import configparser
 import keyboard
-import FormationOptim
+import window_formation
+import window_sfl
+import window_laser
+import window_video
 
 
-class FormationWindow(QMainWindow):
-    change_params = pyqtSignal(list, list)
-
-    def __init__(self):
-        super(FormationWindow, self).__init__()
-        self.disksList = []
-        self.targetsList = []
-
-        self.setFixedSize(QSize(300, 500))
-        self.setWindowTitle("Formation settings")
-        self.disk_label = QLabel(self)
-        self.disk_label.setGeometry(QRect(10, 0, 80, 20))
-        self.disk_label.setText("Disks")
-        self.disksListView = QtWidgets.QListView(self)
-        self.disksListView.setGeometry(QRect(10, 25, 80, 400))
-        self.disksModel = QtGui.QStandardItemModel()
-        self.disksListView.setModel(self.disksModel)
-
-        self.target_label = QLabel(self)
-        self.target_label.setGeometry(QRect(100, 0, 80, 20))
-        self.target_label.setText("Targets")
-        self.targetsListView = QtWidgets.QListView(self)
-        self.targetsListView.setGeometry(QRect(100, 25, 80, 400))
-        self.targetsModel = QtGui.QStandardItemModel()
-        self.targetsListView.setModel(self.targetsModel)
-
-        self.add_disk_button = QPushButton(self)
-        self.add_disk_button.setGeometry(QRect(200, 300, 100, 30))
-        self.add_disk_button.setToolTip("Click to add disk coordinates")
-        self.add_disk_button.setText("Add disk")
-        self.add_disk_button.clicked.connect(self.add_disk_text)
-
-        self.remove_disk_button = QPushButton(self)
-        self.remove_disk_button.setGeometry(QRect(200, 380, 100, 30))
-        self.remove_disk_button.setToolTip("Click to remove selected disk coordinates")
-        self.remove_disk_button.setText("Remove disk")
-        self.remove_disk_button.clicked.connect(self.remove_disk)
-
-        self.add_target_button = QPushButton(self)
-        self.add_target_button.setGeometry(QRect(200, 340, 100, 30))
-        self.add_target_button.setToolTip("Click to add target coordinates")
-        self.add_target_button.setText("Add target")
-        self.add_target_button.clicked.connect(self.add_taget_text)
-
-        self.remove_target_button = QPushButton(self)
-        self.remove_target_button.setGeometry(QRect(200, 420, 100, 30))
-        self.remove_target_button.setToolTip("Click to remove selected target coordinates")
-        self.remove_target_button.setText("Remove target")
-        self.remove_target_button.clicked.connect(self.remove_target)
-
-        self.optimize_button = QPushButton(self)
-        self.optimize_button.setGeometry(QRect(200, 460, 100, 30))
-        self.optimize_button.setToolTip("Click to optimize formation making")
-        self.optimize_button.setText("Optimize")
-        self.optimize_button.clicked.connect(self.optimize_order)
-
-    def optimize_order(self):
-        disk_order, target_order = FormationOptim.optimize_formation(self.disksList, self.targetsList, 30)
-        print(self.disksList, self.targetsList)
-        print("order: ", disk_order, "target order: ", target_order)
-        self.disksModel.clear()
-        self.targetsModel.clear()
-        for item in disk_order:
-            qt_item = QtGui.QStandardItem(str(self.disksList[item]))
-            self.disksModel.appendRow(qt_item)
-        for item in target_order:
-            qt_item = QtGui.QStandardItem(str(self.targetsList[item]))
-            self.targetsModel.appendRow(qt_item)
-        self.change_params.emit(self.disksList, self.targetsList)
-
-    def remove_disk(self):
-        index_list = []
-        for model_index in self.disksListView.selectionModel().selectedRows():
-            index = QtCore.QPersistentModelIndex(model_index)
-            index_list.append(index)
-        for index in index_list:
-            self.disksModel.removeRow(index.row())
-        self.get_targets_disks()
-
-    def remove_target(self):
-        index_list = []
-        for model_index in self.targetsListView.selectionModel().selectedRows():
-            index = QtCore.QPersistentModelIndex(model_index)
-            index_list.append(index)
-        for index in index_list:
-            self.targetsModel.removeRow(index.row())
-        self.get_targets_disks()
-
-    def add_disk(self, disk):
-        item = QtGui.QStandardItem(disk)
-        self.disksModel.appendRow(item)
-        self.get_targets_disks()
-
-    def get_targets_disks(self):
-        self.disksList = []
-        self.targetsList = []
-        for index in range(self.disksModel.rowCount()):
-            item = self.disksModel.item(index)
-            raw_list = list(map(int, item.text().strip('][').split(', ')))
-            self.disksList.append(raw_list)
-        for index in range(self.targetsModel.rowCount()):
-            item = self.targetsModel.item(index)
-            raw_list = list(map(int, item.text().strip('][').split(', ')))
-            self.targetsList.append(raw_list)
-        self.change_params.emit(self.disksList, self.targetsList)
-
-    def add_target(self, disk):
-        item = QtGui.QStandardItem(disk)
-        self.targetsModel.appendRow(item)
-        self.get_targets_disks()
-
-    def add_disk_text(self):
-        text, ok_pressed = QInputDialog.getText(self, "Input disk coordinates [x, y]", "Coordinates [x, y]:", QLineEdit.Normal, "")
-        if ok_pressed and text != '':
-            item = QtGui.QStandardItem(text)
-            self.disksModel.appendRow(item)
-        self.get_targets_disks()
-
-    def add_taget_text(self):
-        text, ok_pressed = QInputDialog.getText(self, "Input target coodinates [x, y]", "Coordinatex [x, y]:", QLineEdit.Normal, "")
-        if ok_pressed and text != '':
-            item = QtGui.QStandardItem(text)
-            self.targetsModel.appendRow(item)
-        self.get_targets_disks()
-    # check box add coordinates to list of targets
-    # list of target positions
-    # input text for coordinates
-    # start fomration making
-    # +/-/modify buttons for removing coords from the list
-
-
-class sflSettingsWindow(QMainWindow):
-    change_params = pyqtSignal(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)
-    pulse_signal = pyqtSignal()
-    flush_switch_signal = pyqtSignal()
-    light_switch_signal = pyqtSignal()
-    stamping_switch_signal = pyqtSignal(str)
-    sfl_switch_signal = pyqtSignal()
-
-    # key_press_signal = pyqtSignal(int)
-
-    def __init__(self, flush_on, flush_off, light_on, light_off, pulse, radius,
-                 stamping_dx, stamping_dy, stamping_x_delay, stamping_y_delay, stamping_light_on,
-                 stamping_light_off, stamping_flush_on, stamping_flush_off, stamping_x_steps,
-                 stamping_y_steps, stamping_batch_size):
-        super(sflSettingsWindow, self).__init__()
-        self.sfl_flush_on = flush_on
-        self.sfl_flush_off = flush_off
-        self.sfl_light_on = light_on
-        self.sfl_light_off = light_off
-        self.sfl_pulse = pulse
-        self.sfl_radius = radius
-        self.stamping_dx = stamping_dx
-        self.stamping_dy = stamping_dy
-        self.stamping_x_delay = stamping_x_delay
-        self.stamping_y_delay = stamping_y_delay
-        self.stamping_light_on = stamping_light_on
-        self.stamping_light_off = stamping_light_off
-        self.stamping_flush_on = stamping_flush_on
-        self.stamping_flush_off = stamping_flush_off
-        self.stamping_x_steps = stamping_x_steps
-        self.stamping_y_steps = stamping_y_steps
-        self.stamping_batch_size = stamping_batch_size
-
-        # set window properties
-        self.setMinimumSize(QSize(450, 500))
-        self.setWindowTitle("SFL settings")
-
-        self.onlyInt = QIntValidator()
-
-        self.sflPulseLabel = QLabel(self)
-        self.sflPulseLabel.setGeometry(QRect(10, 0, 80, 20))
-        self.sflPulseLabel.setText("Pulse:")
-
-        self.sflPulseInput = QLineEdit(self)
-        self.sflPulseInput.move(60, 0)
-        self.sflPulseInput.setFixedWidth(30)
-        self.sflPulseInput.setValidator(self.onlyInt)
-        self.sflPulseInput.setText(str(self.sfl_pulse))
-
-        #
-        self.sflLightOnLabel = QLabel(self)
-        self.sflLightOnLabel.setGeometry(QRect(10, 30, 50, 31))
-        self.sflLightOnLabel.setText("Light On:")
-
-        self.sflLightOnInput = QLineEdit(self)
-        self.sflLightOnInput.move(60, 30)
-        self.sflLightOnInput.setFixedWidth(30)
-        self.sflLightOnInput.setValidator(self.onlyInt)
-        self.sflLightOnInput.setText(str(self.sfl_light_on))
-
-        #
-        self.sflRadiusLabel = QLabel(self)
-        self.sflRadiusLabel.setGeometry(QRect(100, 30, 50, 30))
-        self.sflRadiusLabel.setText("Radius:")
-
-        self.sflRadiusInput = QLineEdit(self)
-        self.sflRadiusInput.move(140, 30)
-        self.sflRadiusInput.setFixedWidth(30)
-        self.sflRadiusInput.setValidator(self.onlyInt)
-        self.sflRadiusInput.setText(str(self.sfl_radius))
-
-        self.sflLightOffLabel = QLabel(self)
-        self.sflLightOffLabel.setGeometry(QRect(10, 60, 50, 31))
-        self.sflLightOffLabel.setText("Light Off:")
-
-        self.sflLightOffInput = QLineEdit(self)
-        self.sflLightOffInput.move(60, 60)
-        self.sflLightOffInput.setFixedWidth(30)
-        self.sflLightOffInput.setValidator(self.onlyInt)
-        self.sflLightOffInput.setText(str(self.sfl_light_off))
-
-
-        self.sflFlushOnLabel = QLabel(self)
-        self.sflFlushOnLabel.setGeometry(QRect(10, 90, 50, 31))
-        self.sflFlushOnLabel.setText("Flush On:")
-
-        self.sflFlushOnInput = QLineEdit(self)
-        self.sflFlushOnInput.move(60, 90)
-        self.sflFlushOnInput.setFixedWidth(30)
-        self.sflFlushOnInput.setValidator(self.onlyInt)
-        self.sflFlushOnInput.setText(str(self.sfl_flush_on))
-
-        self.sflFlushOffLabel = QLabel(self)
-        self.sflFlushOffLabel.setGeometry(QRect(10, 120, 50, 31))
-        self.sflFlushOffLabel.setText("Flush Off:")
-
-        self.sflFlushOffInput = QLineEdit(self)
-        self.sflFlushOffInput.move(60, 120)
-        self.sflFlushOffInput.setFixedWidth(30)
-        self.sflFlushOffInput.setValidator(self.onlyInt)
-        self.sflFlushOffInput.setText(str(self.sfl_flush_off))
-
-        self.stampingDxLabel = QLabel(self)
-        self.stampingDxLabel.setGeometry(QRect(200, 0, 100, 25))
-        self.stampingDxLabel.setText("Stamping dx:")
-        self.stampingDxInput = QLineEdit(self)
-        self.stampingDxInput.setGeometry(QRect(300, 0, 50, 25))
-        self.stampingDxInput.setValidator(self.onlyInt)
-        self.stampingDxInput.setText(str(self.stamping_dx))
-
-        self.stampingDyLabel = QLabel(self)
-        self.stampingDyLabel.setGeometry(QRect(200, 25, 100, 25))
-        self.stampingDyLabel.setText("Stamping dy:")
-        self.stampingDyInput = QLineEdit(self)
-        self.stampingDyInput.setGeometry(QRect(300, 25, 50, 25))
-        self.stampingDyInput.setValidator(self.onlyInt)
-        self.stampingDyInput.setText(str(self.stamping_dy))
-
-        self.stampingX_DelayLabel = QLabel(self)
-        self.stampingX_DelayLabel.setGeometry(QRect(200, 50, 100, 25))
-        self.stampingX_DelayLabel.setText("Stamping X delay:")
-        self.stampingX_DelayInput = QLineEdit(self)
-        self.stampingX_DelayInput.setGeometry(QRect(300, 50, 50, 25))
-        self.stampingX_DelayInput.setValidator(self.onlyInt)
-        self.stampingX_DelayInput.setText(str(self.stamping_x_delay))
-
-        self.stampingY_DelayLabel = QLabel(self)
-        self.stampingY_DelayLabel.setGeometry(QRect(200, 75, 100, 25))
-        self.stampingY_DelayLabel.setText("Stamping Y delay:")
-        self.stampingY_DelayInput = QLineEdit(self)
-        self.stampingY_DelayInput.setGeometry(QRect(300, 75, 50, 25))
-        self.stampingY_DelayInput.setValidator(self.onlyInt)
-        self.stampingY_DelayInput.setText(str(self.stamping_y_delay))
-
-        self.stampingLightOnLabel = QLabel(self)
-        self.stampingLightOnLabel.setGeometry(QRect(200, 100, 100, 25))
-        self.stampingLightOnLabel.setText("Stamping light ON:")
-        self.stampingLightOnInput = QLineEdit(self)
-        self.stampingLightOnInput.setGeometry(QRect(300, 100, 50, 25))
-        self.stampingLightOnInput.setValidator(self.onlyInt)
-        self.stampingLightOnInput.setText(str(self.stamping_light_on))
-
-        self.stampingLightOffLabel = QLabel(self)
-        self.stampingLightOffLabel.setGeometry(QRect(200, 125, 100, 25))
-        self.stampingLightOffLabel.setText("Stamping light OFF:")
-        self.stampingLightOffInput = QLineEdit(self)
-        self.stampingLightOffInput.setGeometry(QRect(300, 125, 50, 25))
-        self.stampingLightOffInput.setValidator(self.onlyInt)
-        self.stampingLightOffInput.setText(str(self.stamping_light_off))
-
-        self.stampingFlushOnLabel = QLabel(self)
-        self.stampingFlushOnLabel.setGeometry(QRect(200, 150, 100, 25))
-        self.stampingFlushOnLabel.setText("Stamping flush ON:")
-        self.stampingFlushOnInput = QLineEdit(self)
-        self.stampingFlushOnInput.setGeometry(QRect(300, 150, 50, 25))
-        self.stampingFlushOnInput.setValidator(self.onlyInt)
-        self.stampingFlushOnInput.setText(str(self.stamping_flush_on))
-
-        self.stampingFlushOffLabel = QLabel(self)
-        self.stampingFlushOffLabel.setGeometry(QRect(200, 175, 100, 25))
-        self.stampingFlushOffLabel.setText("Stamping flush OFF:")
-        self.stampingFlushOffInput = QLineEdit(self)
-        self.stampingFlushOffInput.setGeometry(QRect(300, 175, 50, 25))
-        self.stampingFlushOffInput.setValidator(self.onlyInt)
-        self.stampingFlushOffInput.setText(str(self.stamping_flush_off))
-
-        self.stampingXStepsLabel = QLabel(self)
-        self.stampingXStepsLabel.setGeometry(QRect(200, 200, 100, 25))
-        self.stampingXStepsLabel.setText("Stamping X steps:")
-        self.stampingXStepsInput = QLineEdit(self)
-        self.stampingXStepsInput.setGeometry(QRect(300, 200, 50, 25))
-        self.stampingXStepsInput.setValidator(self.onlyInt)
-        self.stampingXStepsInput.setText(str(self.stamping_x_steps))
-
-        self.stampingYStepsLabel = QLabel(self)
-        self.stampingYStepsLabel.setGeometry(QRect(200, 225, 100, 25))
-        self.stampingYStepsLabel.setText("Stamping Y steps:")
-        self.stampingYStepsInput = QLineEdit(self)
-        self.stampingYStepsInput.setGeometry(QRect(300, 225, 50, 25))
-        self.stampingYStepsInput.setValidator(self.onlyInt)
-        self.stampingYStepsInput.setText(str(self.stamping_y_steps))
-
-        self.stampingBatchSizeLabel = QLabel(self)
-        self.stampingBatchSizeLabel.setGeometry(QRect(200, 250, 100, 25))
-        self.stampingBatchSizeLabel.setText("Stamping Batch size:")
-        self.stampingBatchSizeInput = QLineEdit(self)
-        self.stampingBatchSizeInput.setGeometry(QRect(300, 250, 50, 25))
-        self.stampingBatchSizeInput.setValidator(self.onlyInt)
-        self.stampingBatchSizeInput.setText(str(self.stamping_batch_size))
-
-        # Apply button
-        self.stampingButton = QPushButton(self)
-        self.stampingButton.setGeometry(QRect(200, 300, 100, 30))
-        self.stampingButton.setToolTip("Click to start stamping")
-        self.stampingButton.setText("Stamping ON")
-        self.stampingButton.clicked.connect(self.switch_stamping)
-
-        # sfl swithc button
-        self.sflButton = QPushButton('SFL ON', self)
-        self.sflButton.setToolTip('SFL ON')
-        self.sflButton.move(10, 160)
-        self.sflButton.setFixedHeight(40)
-        self.sflButton.clicked.connect(self.sfl_switch)
-
-        # sfl light switch button
-        self.sflLightButton = QPushButton('Light ON', self)
-        self.sflLightButton.setToolTip('Light ON')
-        self.sflLightButton.move(10, 210)
-        self.sflLightButton.setFixedHeight(40)
-        self.sflLightButton.clicked.connect(self.light_switch)
-
-        # sfl flush switch button
-        self.sflFlushButton = QPushButton('Flush ON', self)
-        self.sflFlushButton.setToolTip('Flush ON')
-        self.sflFlushButton.move(10, 260)
-        self.sflFlushButton.setFixedHeight(40)
-        self.sflFlushButton.clicked.connect(self.flush_switch)
-
-        # sfl pulse button
-        self.sflPulseButton = QPushButton('Pulse', self)
-        self.sflPulseButton.setToolTip('Pulse')
-        self.sflPulseButton.move(10, 310)
-        self.sflPulseButton.setFixedHeight(40)
-        self.sflPulseButton.clicked.connect(self.pulse)
-
-        # Apply button
-        self.validateButton = QPushButton(self)
-        self.validateButton.setGeometry(QRect(10, 360, 60, 30))
-        self.validateButton.setToolTip("Click to save settings")
-        self.validateButton.setText("Apply")
-        self.validateButton.clicked.connect(self.validate_settings)
-
-        # key press event
-        # self.keyPressEvent = self.keyPressEvent
-
-
-        # def keyPressEvent(self, e):
-        #     print(e.key())
-        #     self.key_press_signal.emit(e.key())
-
-
-    def validate_settings(self):
-        self.sfl_pulse = int(self.sflPulseInput.text())
-        self.sfl_flush_on = int(self.sflFlushOnInput.text())
-        self.sfl_flush_off = int(self.sflFlushOffInput.text())
-        self.sfl_light_on = int(self.sflLightOnInput.text())
-        self.sfl_light_off = int(self.sflLightOffInput.text())
-        self.sfl_radius = int(self.sflRadiusInput.text())
-        self.stamping_dx = int(self.stampingDxInput.text())
-        self.stamping_dy = int(self.stampingDyInput.text())
-        self.stamping_x_delay = int(self.stampingX_DelayInput.text())
-        self.stamping_y_delay = int(self.stampingY_DelayInput.text())
-        self.stamping_light_on = int(self.stampingLightOnInput.text())
-        self.stamping_light_off = int(self.stampingLightOffInput.text())
-        self.stamping_flush_on = int(self.stampingFlushOnInput.text())
-        self.stamping_flush_off = int(self.stampingFlushOffInput.text())
-        self.stamping_x_steps = int(self.stampingXStepsInput.text())
-        self.stamping_y_steps = int(self.stampingYStepsInput.text())
-        self.stamping_batch_size = int(self.stampingBatchSizeInput.text())
-
-        self.change_params.emit(self.sfl_light_on, self.sfl_light_off, self.sfl_flush_on, self.sfl_flush_off,
-                                self.sfl_pulse, self.sfl_radius, self.stamping_dx, self.stamping_dy, self.stamping_x_delay,
-                                                     self.stamping_y_delay, self.stamping_light_on,
-                                                     self.stamping_light_off, self.stamping_flush_on,
-                                                     self.stamping_flush_off, self.stamping_x_steps,
-                                                     self.stamping_y_steps, self.stamping_batch_size)
-        print("emited")
-
-    def pulse(self):
-        self.pulse_signal.emit()
-
-    def flush_switch(self):
-        self.flush_switch_signal.emit()
-
-    def light_switch(self):
-        self.light_switch_signal.emit()
-
-    def sfl_switch(self):
-        self.sfl_switch_signal.emit()
-
-    def switch_stamping(self):
-        if self.stampingButton.text() == "Stamping ON":
-            self.stamping_switch_signal.emit("start")
-            self.stampingButton.setText("Stamping OFF")
-        else:
-            self.stamping_switch_signal.emit("end")
-            self.stampingButton.setText("Stamping ON")
-
-
-class LaserSettingsWindow(QMainWindow):
-    change_params = pyqtSignal(int, int, int, int, int, int)
-    laser_control_signal = pyqtSignal(str)
-
-    def __init__(self, pulse_number, on_time, off_time, x, y, offset):
-        super(LaserSettingsWindow, self).__init__()
-        # set variables
-        # self.save_interval = interval
-        # self.save_namespace = namespace
-        # self.save_path = path
-        self.offset = offset
-        self.laser_pulse_n = pulse_number
-        self.laser_on_time = on_time
-        self.laser_off_time = off_time
-        self.laser_x_loc = x
-        self.laser_y_loc = y
-        # set window properties
-        self.setMinimumSize(QSize(250, 300))
-        self.setWindowTitle("Laser settings")
-
-        self.onlyInt = QIntValidator()
-
-        # LASER
-        # Create pulse number label
-        self.pulseNumberLabel = QLabel(self)
-        self.pulseNumberLabel.setGeometry(QRect(10, 0, 80, 20))
-        self.pulseNumberLabel.setText("Pulse n.:")
-
-        # Create pulse number input box
-        self.pulseNumberInput = QLineEdit(self)
-        self.pulseNumberInput.setGeometry(QRect(60, 0, 40, 20))
-        self.pulseNumberInput.setText(str(self.laser_pulse_n))
-        self.pulseNumberInput.setValidator(self.onlyInt)
-
-
-        # Create laser on label
-        self.laserOnLabel = QLabel(self)
-        self.laserOnLabel.setGeometry(QRect(10, 30, 80, 20))
-        self.laserOnLabel.setText("On.:")
-
-        # Create laser on input box
-        self.laserOnInput = QLineEdit(self)
-        self.laserOnInput.setGeometry(QRect(60, 30, 40, 20))
-        self.laserOnInput.setText(str(self.laser_on_time))
-        self.laserOnInput.setValidator(self.onlyInt)
-
-
-        # Create laser off label
-        self.laserOffLabel = QLabel(self)
-        self.laserOffLabel.setGeometry(QRect(10, 60, 80, 20))
-        self.laserOffLabel.setText("Off.:")
-
-        # Create laser off input box
-        self.laserOffInput = QLineEdit(self)
-        self.laserOffInput.setGeometry(QRect(60, 60, 40, 20))
-        self.laserOffInput.setText(str(self.laser_off_time))
-        self.laserOffInput.setValidator(self.onlyInt)
-
-        # Create laser x loc label
-        self.laserLocXLabel = QLabel(self)
-        self.laserLocXLabel.setGeometry(QRect(10, 90, 80, 20))
-        self.laserLocXLabel.setText("X:")
-
-        # Create laser x coordinate input box
-        self.laserCoordXInput = QLineEdit(self)
-        self.laserCoordXInput.setGeometry(QRect(60, 90, 40, 20))
-        self.laserCoordXInput.setValidator(self.onlyInt)
-        self.laserCoordXInput.setText(str(self.laser_x_loc))
-
-        # Create laser y loc label
-        self.laserLocYLabel = QLabel(self)
-        self.laserLocYLabel.setGeometry(QRect(10, 120, 80, 20))
-        self.laserLocYLabel.setText("Y:")
-
-        # Create laser y coordinate input box
-        self.laserCoordYInput = QLineEdit(self)
-        self.laserCoordYInput.setGeometry(QRect(60, 120, 40, 20))
-        self.laserCoordYInput.setValidator(self.onlyInt)
-        self.laserCoordYInput.setText(str(self.laser_y_loc))
-
-        # Create laser offset label
-        self.laserOffsetLabel = QLabel(self)
-        self.laserOffsetLabel.setGeometry(QRect(10, 150, 80, 20))
-        self.laserOffsetLabel.setText("Offset:")
-
-        # Create laser y coordinate input box
-        self.laserOffsetInput = QLineEdit(self)
-        self.laserOffsetInput.setGeometry(QRect(60, 150, 40, 20))
-        self.laserOffsetInput.setValidator(self.onlyInt)
-        self.laserOffsetInput.setText(str(self.offset))
-
-        # laser blink button
-        self.blinkLaserButton = QPushButton("Blink On", self)
-        self.blinkLaserButton.setToolTip("Unlimited laser blink")
-        self.blinkLaserButton.setGeometry(QRect(10, 180, 230, 40))
-        self.blinkLaserButton.setFixedHeight(22)
-        self.blinkLaserButton.clicked.connect(self.blink_laser)
-
-        # laser switch button
-        self.switchLaserButton = QPushButton("Laser ON", self)
-        self.switchLaserButton.setToolTip("Laser switch")
-        self.switchLaserButton.setGeometry(QRect(10, 210, 230, 40))
-        self.switchLaserButton.setFixedHeight(22)
-        self.switchLaserButton.clicked.connect(self.switch_laser)
-
-        # Apply button
-        self.validateButton = QPushButton(self)
-        self.validateButton.setGeometry(QRect(10, 240, 230, 40))
-        self.validateButton.setToolTip("Click to save settings")
-        self.validateButton.setFont(QFont('Times', 20))
-        self.validateButton.setText("Apply")
-        self.validateButton.clicked.connect(self.validate_settings)
-
-    def validate_settings(self):
-        self.laser_pulse_n = int(self.pulseNumberInput.text())
-        self.laser_on_time = int(self.laserOnInput.text())
-        self.laser_off_time = int(self.laserOffInput.text())
-        self.laser_x_loc = int(self.laserCoordXInput.text())
-        self.laser_y_loc = int(self.laserCoordYInput.text())
-        self.offset = int(self.laserOffsetInput.text())
-        self.change_params.emit(self.laser_pulse_n, self.laser_on_time, self.laser_off_time, self.laser_x_loc,
-                                self.laser_y_loc, self.offset)
-
-
-    def blink_laser(self):
-        if self.blinkLaserButton.text() == "Blink On":
-            time_on = int(self.laser_on_time)
-            time_off = int(self.laser_off_time)
-            self.laser_control_signal.emit("k" + "," + str(time_on) + "," + str(time_off))
-            self.blinkLaserButton.setText("Blink Off")
-        else:
-            self.blinkLaserButton.setText("Blink On")
-            self.laser_control_signal.emit("t")
-
-    def switch_laser(self):
-        if self.switchLaserButton.text() == "Laser ON":
-            self.laser_control_signal.emit("s")
-            self.switchLaserButton.setText("Laser OFF")
-        else:
-            self.laser_control_signal.emit("l")
-            self.switchLaserButton.setText("Laser ON")
-
-
-class VideoSettingsWindow(QMainWindow):
-    closed = pyqtSignal(int, str, str)
-
-    def __init__(self, interval, namespace, path):
-        super(VideoSettingsWindow, self).__init__()
-        # set variables
-        self.save_interval = interval
-        self.save_namespace = namespace
-        self.save_path = path
-
-        # check box to save ROI
-        self.roiCheckbox = QCheckBox(self)
-        self.roiCheckbox.setText("save roi")
-        self.roiCheckbox.setToolTip("Click to save only ROI")
-        self.roiCheckbox.setGeometry(QRect(200, 30, 100, 25))
-        self.roiCheckbox.setLayoutDirection(Qt.RightToLeft)
-
-        # set window properties
-        self.setMinimumSize(QSize(800, 120))
-        self.setWindowTitle("Video settings")
-        self.some_bullshit = "wtf"
-        self.onlyInt = QIntValidator()
-
-        # Interval label
-        self.intervalLabel = QLabel(self)
-        self.intervalLabel.setGeometry(QRect(10, 5, 80, 31))
-        self.intervalLabel.setText("Saving interval:")
-
-        # Create width input box
-        self.intervalInput = QLineEdit(self)
-        self.intervalInput.setGeometry(QRect(90, 10, 30, 20))
-        self.intervalInput.setText(str(self.save_interval))
-        self.intervalInput.setValidator(self.onlyInt)
-
-        # Interval seconds label
-        self.secondsLabel = QLabel(self)
-        self.secondsLabel.setGeometry(QRect(125, 5, 80, 31))
-        self.secondsLabel.setText("[s]")
-
-        # Namespace label
-        self.namespaceLabel = QLabel(self)
-        self.namespaceLabel.setGeometry(QRect(30, 35, 80, 31))
-        self.namespaceLabel.setText("Files name:")
-
-        # Create namespace input box
-        self.namespaceInput = QLineEdit(self)
-        self.namespaceInput.setGeometry(QRect(90, 40, 85, 20))
-        self.namespaceInput.setText(self.save_namespace)
-
-        # Path label
-        self.pathLabel = QLabel(self)
-        self.pathLabel.setGeometry(QRect(50, 65, 80, 31))
-        self.pathLabel.setText("Path:")
-
-        # Path button
-        self.pathButton = QPushButton(self)
-        self.pathButton.setGeometry(QRect(90, 70, 30, 20))
-        self.pathButton.setToolTip("Click to choose directory")
-        self.pathButton.setText("...")
-        self.pathButton.clicked.connect(self.get_video_path)
-
-        # Path actual label
-        self.pathActualLabel = QLabel(self)
-        self.pathActualLabel.setGeometry(QRect(130, 65, 650, 31))
-        self.pathActualLabel.setText(self.save_path)
-
-        # Apply button
-        self.validateButton = QPushButton(self)
-        self.validateButton.setGeometry(QRect(739, 90, 60, 30))
-        self.validateButton.setToolTip("Click to save settings")
-        self.validateButton.setText("Apply")
-        self.validateButton.clicked.connect(self.validate_settings)
-
-        # set ROI button
-        self.roiButton = QPushButton(self)
-        self.roiButton.setGeometry(QRect(739, 40, 60, 30))
-        self.roiButton.setToolTip("Click to set ROI for saving video")
-        self.roiButton.setText("ROI")
-        self.roiButton.clicked.connect(self.roi_pushed)
-        self.roi_enabled = False
-
-    def roi_pushed(self):
-        self.roi_enabled = True
-        print(self.roi_enabled)
-
-    def get_video_path(self):
-        file = str(QFileDialog.getExistingDirectory(self, "Select directory"))
-        self.save_path = file
-        self.pathActualLabel.setText(file)
-
-    def validate_settings(self):
-        self.save_interval = int(self.intervalInput.text())
-        self.save_namespace = str(self.namespaceInput.text())
-        self.save_path = str(self.save_path)
-        self.closed.emit(self.save_interval, self.save_namespace, self.save_path)
-
-
-class ExampleWindow(QMainWindow):
+class GelbotsWindow(QMainWindow):
     CONFIG_FILE_NAME = "config.ini"
     PIXMAP_HEIGHT = 720
     PIXMAP_WIDTH = 1280
@@ -933,8 +273,6 @@ class ExampleWindow(QMainWindow):
         self.runCameraButton.setFixedHeight(22)
         self.runCameraButton.clicked.connect(self.run_camera)
 
-
-
         # status label of raspi
         self.raspiStatus = QLabel(central_widget)
         self.raspiStatus.setGeometry(QRect(1500, 5, 80, 30))
@@ -1094,23 +432,18 @@ class ExampleWindow(QMainWindow):
         self.laserButton.setFixedHeight(22)
         self.laserButton.clicked.connect(self.laser_switch)
 
-
-
-        # key events
-        # self.keyPressEvent = self.keyPressEvent
-
         # start Raspi communication thread
-        self.raspi_comm = RaspiWorker.RaspiWorker()
+        self.raspi_comm = worker_raspi.RaspiWorker()
         self.raspi_comm.signal_comm_err.connect(self.raspi_fail)
         self.raspi_comm.start()
 
         # start Disk Core thread
-        self.disk_core = DiskCore.DiskCore([self.disk_x_loc, self.disk_y_loc],
-                                           [self.laser_x_loc, self.laser_y_loc],
-                                           [self.goal_x_loc, self.goal_y_loc],
-                                           self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset,
-                                           self.mag_value, self.target_list, self.disk_list)
-        # self.disk_core = DiskCore.DiskCore([self.laser_x_loc, self.laser_y_loc],
+        self.disk_core = disk_core.DiskCore([self.disk_x_loc, self.disk_y_loc],
+                                            [self.laser_x_loc, self.laser_y_loc],
+                                            [self.goal_x_loc, self.goal_y_loc],
+                                            self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset,
+                                            self.mag_value, self.target_list, self.disk_list)
+        # self.disk_core = disk_core.disk_core([self.laser_x_loc, self.laser_y_loc],
         #                                    self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset,
         #                                    self.mag_value, self.target_list, self.disk_list)
 
@@ -1125,7 +458,7 @@ class ExampleWindow(QMainWindow):
         self.endpoint = QPoint()
 
         # formation window
-        self.formation_window = FormationWindow()
+        self.formation_window = window_formation.FormationWindow()
         self.formation_window_button = QPushButton("Formation editor", self)
         self.formation_window_button.setToolTip("Click to setup formation")
         self.formation_window_button.move(1750, 300)
@@ -1142,22 +475,25 @@ class ExampleWindow(QMainWindow):
         self.formation_window.change_params.connect(self.formation_change)
 
         # video settings window
-        self.video_settings_window = VideoSettingsWindow(self.save_interval, self.save_namespace, self.save_path)
+        self.video_settings_window = window_video.VideoSettingsWindow(self.save_interval, self.save_namespace,
+                                                                      self.save_path)
         self.video_settings_window.closed.connect(self.video_settings_close)
 
         # laser settings window
-        self.laser_settings_window = LaserSettingsWindow(self.laser_pulse_n, self.laser_on_time, self.laser_off_time,
-                                                         self.laser_x_loc, self.laser_y_loc, self.offset)
+        self.laser_settings_window = window_laser.LaserSettingsWindow(self.laser_pulse_n, self.laser_on_time,
+                                                                      self.laser_off_time, self.laser_x_loc,
+                                                                      self.laser_y_loc, self.offset)
         self.laser_settings_window.change_params.connect(self.laser_settings_changed)
         self.laser_settings_window.laser_control_signal.connect(self.laser_control)
 
-        self.sfl_settings_window = sflSettingsWindow(self.sfl_flush_on, self.sfl_flush_off, self.sfl_light_on,
-                                                     self.sfl_light_off, self.sfl_pulse, self.sfl_radius,
-                                                     self.stamping_dx, self.stamping_dy, self.stamping_x_delay,
-                                                     self.stamping_y_delay, self.stamping_light_on,
-                                                     self.stamping_light_off, self.stamping_flush_on,
-                                                     self.stamping_flush_off, self.stamping_x_steps,
-                                                     self.stamping_y_steps, self.stamping_batch_size)
+        self.sfl_settings_window = window_sfl.SflSettingsWindow(self.sfl_flush_on, self.sfl_flush_off,
+                                                                self.sfl_light_on, self.sfl_light_off, self.sfl_pulse,
+                                                                self.sfl_radius, self.stamping_dx, self.stamping_dy,
+                                                                self.stamping_x_delay, self.stamping_y_delay,
+                                                                self.stamping_light_on, self.stamping_light_off,
+                                                                self.stamping_flush_on, self.stamping_flush_off,
+                                                                self.stamping_x_steps, self.stamping_y_steps,
+                                                                self.stamping_batch_size)
         self.sfl_settings_window.change_params.connect(self.sfl_settings_changed)
 
         self.sfl_settings_window.sfl_switch_signal.connect(self.sfl_switch)
@@ -1168,7 +504,7 @@ class ExampleWindow(QMainWindow):
         # signal from sfl window
         # self.sfl_settings_window.key_press_signal.connect(self.sfl_key)
 
-        # check box for magnificience
+        # check box for magnification
         self.magLabel = QLabel(self)
         self.magLabel.setText("Magnification")
         self.magLabel.setGeometry(QRect(10, 30, 80, 25))
@@ -1221,9 +557,9 @@ class ExampleWindow(QMainWindow):
     def start_formation(self):
         pass
 
-    def formation_change(self, disksList, targetsList):
-        self.disk_list = disksList
-        self.target_list = targetsList
+    def formation_change(self, disks_list, targets_list):
+        self.disk_list = disks_list
+        self.target_list = targets_list
         print("disks> ", self.disk_list)
         print("targets> ", self.target_list)
 
@@ -1241,7 +577,6 @@ class ExampleWindow(QMainWindow):
                                                 str(self.stamping_batch_size))
         elif command == "end":
             self.raspi_comm.requests_queue.append("c")
-
 
     def keyboardEventReceived(self, event):
         keyboard_pressed = event.name
@@ -1281,8 +616,6 @@ class ExampleWindow(QMainWindow):
         elif keyboard_pressed == "e":
             self.raspi_comm.requests_queue.append("l")
 
-
-
     def sfl_key(self, pressed_key):
         print(pressed_key)
         if pressed_key == 65:
@@ -1321,26 +654,20 @@ class ExampleWindow(QMainWindow):
         elif pressed_key == 69:
             self.raspi_comm.requests_queue.append("l")
 
-
     def mag_click(self, mag):
         mag_text = mag.text()
         if mag_text == "4x":
             self.mag_value = 4
-            print("4x")
             self.disk_core.mag = 4
-
         elif mag_text == "10x":
             self.mag_value = 10
             self.disk_core.mag = 10
-            print("10x")
         elif mag_text == "20x":
             self.mag_value = 20
             self.disk_core.mag = 20
-            print("20x")
         elif mag_text == "40x":
             self.mag_value = 40
             self.disk_core.mag = 40
-            print("40x")
         self.config.set("camera", "mag", self.mag_value)
         self.update_config_file()
 
@@ -1395,7 +722,6 @@ class ExampleWindow(QMainWindow):
 
         self.update_config_file()
 
-
     def laser_settings_changed(self, n, on, off, x, y, offset):
         self.laser_pulse_n = n
         self.laser_on_time = on
@@ -1414,7 +740,6 @@ class ExampleWindow(QMainWindow):
 
     def pulse(self):
         self.raspi_comm.requests_queue.append("a" + "," + str(self.sfl_light_on) + "," + str(self.sfl_pulse))
-
 
     def sfl_pulse_edited(self):
         self.sfl_pulse = int(self.sflPulseInput.text())
@@ -1662,15 +987,20 @@ class ExampleWindow(QMainWindow):
             self.formation_window.add_target(str([x_image, y_image]))
 
     def video_settings_close(self, save_interval, save_namespace, save_path):
-        self.save_interval = save_interval
-        self.save_namespace = save_namespace
-        self.save_path = save_path
+        try:
+            self.save_interval = save_interval
+            self.save_namespace = save_namespace
+            self.save_path = save_path
+
+            self.camera_worker.grab_period = save_interval
+            self.camera_worker.grab_directory = save_path
+            self.camera_worker.grab_namespace = save_namespace
+        except Exception as exp:
+            print("Error in video_settings_close: ", exp)
+
         self.config.set("video", "interval", save_interval)
         self.config.set("video", "namespace", save_namespace)
         self.config.set("video", "path", save_path)
-        self.camera_worker.grab_period = save_interval
-        self.camera_worker.grab_directory = save_path
-        self.camera_worker.grab_namespace = save_namespace
         self.update_config_file()
 
     def save_video_settings(self):
@@ -1704,10 +1034,9 @@ class ExampleWindow(QMainWindow):
     def init_raspi(self, event):
         self.raspiStatus.setStyleSheet("background-color:green;")
         if not self.raspi_comm.raspi_status:
-            self.raspi_comm = RaspiWorker.RaspiWorker()
+            self.raspi_comm = worker_raspi.RaspiWorker()
             self.raspi_comm.signal_comm_err.connect(self.raspi_fail)
             self.raspi_comm.start()
-
 
     def blink_laser_n(self):
         print("main.py blink_laser_n")
@@ -1943,11 +1272,12 @@ class ExampleWindow(QMainWindow):
         if self.cameraComboBox.count() > 0:
             if self.runCameraButton.text() == "Run camera":
                 self.cameraComboBox.setEnabled(False)
-                self.camera_worker = CameraWorker.CameraWorker(self.cameraComboBox.currentIndex(), self.cam_width_value,
-                                                               self.cam_height_value, self.cam_fps_value,
-                                                               self.cam_exposure_value, self.cam_gain_value,
-                                                               self.cam_brightness_value, self.save_interval,
-                                                               self.save_namespace, self.save_path)
+                self.camera_worker = worker_camera.CameraWorker(self.cameraComboBox.currentIndex(),
+                                                                self.cam_width_value,
+                                                                self.cam_height_value, self.cam_fps_value,
+                                                                self.cam_exposure_value, self.cam_gain_value,
+                                                                self.cam_brightness_value, self.save_interval,
+                                                                self.save_namespace, self.save_path)
                 self.camera_worker.image_ready.connect(self.obtain_image)
                 self.camera_worker.start()
                 self.runCameraButton.setText("Stop camera")
@@ -2008,7 +1338,7 @@ class ExampleWindow(QMainWindow):
                                                     (250, 255, 0), 2)
             height, width = self.gray_image.shape[:2]
             image_for_pixmap = QtGui.QImage(self.gray_image, width, height, QtGui.QImage.Format_Grayscale8)
-            #self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(1280, 720))
+            # self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(1280, 720))
             self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(self.PIXMAP_WIDTH, self.PIXMAP_HEIGHT))
         except Exception as ex:
             print("obtain image: ", ex)
@@ -2039,7 +1369,6 @@ class ExampleWindow(QMainWindow):
 
     def update_config_file(self):
         try:
-            print("updating config")
             with open(self.CONFIG_FILE_NAME, "w") as configfile:
                 self.config.write(configfile)
         except Exception as ex:
@@ -2057,7 +1386,6 @@ class ExampleWindow(QMainWindow):
                                               QPoint(event.pos().x()+10, event.pos().y()+60)))
 
     def mouseReleaseEvent(self, event):
-
         if event.button() == QtCore.Qt.LeftButton and self.video_settings_window.roi_enabled:
             self.rubberBand.hide()
             self.endpoint = QPoint(event.pos())
@@ -2066,11 +1394,9 @@ class ExampleWindow(QMainWindow):
             self.draw_roi = True
 
 
-
-
 if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
-    mainWin = ExampleWindow()
+    mainWin = GelbotsWindow()
     mainWin.show()
     sys.exit(app.exec_())

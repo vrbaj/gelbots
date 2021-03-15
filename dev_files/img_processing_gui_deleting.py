@@ -1,11 +1,9 @@
-import sys, socket, copy, os
 import cv2_worker
-from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QComboBox, QLineEdit, QPushButton
-from PyQt5.QtCore import QSize, QRect, Qt
-from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtWidgets import QMainWindow, QLabel, QPushButton
+from PyQt5.QtCore import QRect
+from PyQt5.QtGui import QPixmap
 import cv2
-import subprocess
 import time, datetime
 import numpy as np
 

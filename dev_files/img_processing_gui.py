@@ -1,8 +1,8 @@
 import sys, socket, copy, os
 import cv2_worker
 from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QComboBox, QLineEdit, QPushButton
-from PyQt5.QtCore import QSize, QRect, Qt
+from PyQt5.QtWidgets import QMainWindow, QLabel, QWidget, QComboBox, QLineEdit, QPushButton
+from PyQt5.QtCore import QSize, QRect
 from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
 import cv2
 import subprocess
@@ -305,7 +305,7 @@ class ExampleWindow(QMainWindow):
 
         # Set laser loc from previous
         try:
-            f = open("laser_loc.txt", "r")
+            f = open("../laser_loc.txt", "r")
             self.laser_loc = eval(f.readline())
             print(self.laser_loc)
             self.laserCoordInput.setText(str(self.laser_loc)[1:-1])
@@ -508,7 +508,7 @@ class ExampleWindow(QMainWindow):
     def set_laser_loc(self):
         self.laser_loc = eval(self.laserCoordInput.text())
         self.logger.setPlainText("laser loc: {} ".format(str(self.laser_loc)))
-        f = open("laser_loc.txt", "w")
+        f = open("../laser_loc.txt", "w")
         f.write(str(self.laser_loc))
         f.close()
 
