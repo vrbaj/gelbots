@@ -20,6 +20,7 @@ class RaspiWorker(QThread):
         try:
             self.k.connect((self.RASPI_IP, self.RASPI_PORT))
         except OSError as ex:
+            print("port not ready: ", ex)
             self.quit_flag = True
             self.raspi_status = False
             self.signal_comm_err.emit()
@@ -34,6 +35,7 @@ class RaspiWorker(QThread):
                     try:
                         self.k.sendall(bytes(request_to_process + ";", "UTF-8"))
                     except (Exception, socket.error) as ex:
+                        print("raspi disconnected: ", ex)
                         self.raspi_status = False
                         self.k.close()
                         self.quit_flag = True

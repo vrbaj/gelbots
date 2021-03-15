@@ -25,7 +25,7 @@ class GelbotsWindow(QMainWindow):
 
     def __init__(self):
         QMainWindow.__init__(self)
-        self.hook = keyboard.on_press(self.keyboardEventReceived)
+        self.hook = keyboard.on_press(self.keyboard_event_received)
         self.draw_roi = False
         # variables
         self.image_to_display = []
@@ -42,7 +42,6 @@ class GelbotsWindow(QMainWindow):
         self.checker_memory = False
         self.target_list = []
         self.disk_list = []
-        # TODO load default settings of all values that can be set via this GUI
         try:
             self.config = configparser.RawConfigParser()
         except Exception as ex:
@@ -441,10 +440,12 @@ class GelbotsWindow(QMainWindow):
         self.disk_core = disk_core.DiskCore([self.disk_x_loc, self.disk_y_loc],
                                             [self.laser_x_loc, self.laser_y_loc],
                                             [self.goal_x_loc, self.goal_y_loc],
-                                            self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset,
-                                            self.mag_value, self.target_list, self.disk_list)
+                                            self.laser_pulse_n * (self.laser_on_time + self.laser_off_time),
+                                            self.offset, self.mag_value, self.target_list, self.disk_list)
+
         # self.disk_core = disk_core.disk_core([self.laser_x_loc, self.laser_y_loc],
-        #                                    self.laser_pulse_n * (self.laser_on_time + self.laser_off_time), self.offset,
+        #                                    self.laser_pulse_n * (self.laser_on_time + self.laser_off_time),
+        #                                    self.offset,
         #                                    self.mag_value, self.target_list, self.disk_list)
 
         self.disk_core.gray_image_request.connect(self.core_image_request)
@@ -570,21 +571,19 @@ class GelbotsWindow(QMainWindow):
         print(command)
         if command == "start":
             self.raspi_comm.requests_queue.append("b," + str(self.stamping_dx) + "," + str(self.stamping_dy) + "," +
-                                                str(self.stamping_x_steps) + "," + str(self.stamping_y_steps) + "," +
-                                                str(self.stamping_x_delay) + "," + str(self.stamping_y_delay) + "," +
-                                                str(self.stamping_light_on) + "," + str(self.stamping_light_off) + "," +
-                                                str(self.stamping_flush_on) + "," + str(self.stamping_flush_off) + "," +
-                                                str(self.stamping_batch_size))
+                                                  str(self.stamping_x_steps) + "," + str(self.stamping_y_steps) + "," +
+                                                  str(self.stamping_x_delay) + "," + str(self.stamping_y_delay) + "," +
+                                                  str(self.stamping_light_on) + "," + str(self.stamping_light_off) +
+                                                  "," + str(self.stamping_flush_on) + "," +
+                                                  str(self.stamping_flush_off) + "," + str(self.stamping_batch_size))
         elif command == "end":
             self.raspi_comm.requests_queue.append("c")
 
-    def keyboardEventReceived(self, event):
+    def keyboard_event_received(self, event):
         keyboard_pressed = event.name
         if keyboard_pressed == "a":
             # move left
             self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
-
-            # TODO recompute goal and target disk coord
             self.disk_core.recompute_goal(-self.steppers_x, 0)
             self.disk_core.recompute_disk(-self.steppers_x, 0)
             self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
@@ -621,8 +620,6 @@ class GelbotsWindow(QMainWindow):
         if pressed_key == 65:
             # move left
             self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
-
-            # TODO recompute goal and target disk coord
             self.disk_core.recompute_goal(-self.steppers_x, 0)
             self.disk_core.recompute_disk(-self.steppers_x, 0)
             self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
@@ -811,7 +808,7 @@ class GelbotsWindow(QMainWindow):
         pass
 
     # def update_coords(self, disk_list, target_list):
-    #     print("update coords")
+    #     print("update coordinates")
     #     self.disk_list = []
     #     self.target_list = []
     #     for item in disk_list:
@@ -826,10 +823,10 @@ class GelbotsWindow(QMainWindow):
     #         self.target_list.append(int_coords)
     #     print(self.disk_list)
     #     print(self.target_list)
-    #     print("update coords done")
+    #     print("update coordinates done")
 
     def update_coords(self, goal_x, goal_y, disk_x, disk_y):
-        print("enter update coords")
+        print("enter update coordinates")
         print(goal_x)
         self.goal_x_loc = goal_x
         self.goal_y_loc = goal_y
@@ -1299,7 +1296,7 @@ class GelbotsWindow(QMainWindow):
             self.camera_worker.mutex.unlock()
             self.gray_image = cv2.cvtColor(self.image_to_display, cv2.COLOR_BGR2GRAY)
             if self.draw_marks_enabled:
-                # TODO wrap draw markers into function that will check the coords (if it is inside of img)
+                # TODO wrap draw markers into function that will check the coordinates (if it is inside of img)
                 pass
                 self.gray_image = cv2.drawMarker(self.gray_image, (self.goal_x_loc, self.goal_y_loc), (0, 255, 255),
                                                  markerType=cv2.MARKER_DIAMOND, markerSize=20, thickness=1,

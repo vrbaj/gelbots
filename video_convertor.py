@@ -1,14 +1,14 @@
 import cv2
-import numpy as np
 import os
-import glob
+
 
 img_array = []
-files_to_proces = os.listdir(os.path.join("vid_detection"))
-print(type(files_to_proces))
-files_to_proces.sort()
-print(files_to_proces)
-for idx, filename in enumerate(files_to_proces): # enumerate(os.listdir(os.path.join("videos"))):
+files_to_process = os.listdir(os.path.join("vid_detection"))
+print(type(files_to_process))
+files_to_process.sort()
+print(files_to_process)
+size = (0, 0)
+for idx, filename in enumerate(files_to_process):  # enumerate(os.listdir(os.path.join("videos"))):
     print(filename)
     img = cv2.imread(os.path.join("vid_detection_dyn", str(filename)))
 

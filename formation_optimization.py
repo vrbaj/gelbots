@@ -166,7 +166,7 @@ def disks_positions(n, disk_radius, area_size):
         overlap = False
         for idx, coordinates in enumerate(coordinates_list):
             for coordinates2 in coordinates_list[idx + 1:-1]:
-                # print("coords>", coordinates, " and ", coordinates2)
+                # print("coordinates>", coordinates, " and ", coordinates2)
                 if get_eucl_distance(coordinates, coordinates2) < disk_radius:
                     coordinates_list[idx] = [random.randint(disk_radius, area_size - disk_radius),
                                              random.randint(disk_radius, area_size - disk_radius)]

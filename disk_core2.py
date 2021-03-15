@@ -190,17 +190,18 @@ class DiskCore(QThread):
             print(time.time() - start_time)
         return disk_locs
 
-    def nearest_disk(self, coords, locs):
+    @staticmethod
+    def nearest_disk(coordinates, list_centers):
         """
         function to find nearest disk to given coordinates
-        :param coords: list of coordinates
-        :param locs: list of disk centers
+        :param coordinates: list of coordinates
+        :param list_centers: list of disk centers
         :return: location of nearest disk [x, y]
         """
         nearest_disk = None
         min_distance = 99999.0
-        for disk in locs:
-            distance = sum((a * 1.0 - b * 1.0) ** 2 for a, b in zip(coords, disk)) ** .5
+        for disk in list_centers:
+            distance = sum((a * 1.0 - b * 1.0) ** 2 for a, b in zip(coordinates, disk)) ** .5
             if distance < min_distance:
                 nearest_disk = disk
                 min_distance = distance

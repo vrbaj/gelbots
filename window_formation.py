@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QMainWindow, QLabel, QLineEdit, QPushButton, QInputDialog
-from PyQt5.QtCore import QSize, QRect, Qt, pyqtSignal
+from PyQt5.QtCore import QSize, QRect, pyqtSignal
 
 import formation_optimization
 
@@ -47,7 +47,7 @@ class FormationWindow(QMainWindow):
         self.add_target_button.setGeometry(QRect(200, 340, 100, 30))
         self.add_target_button.setToolTip("Click to add target coordinates")
         self.add_target_button.setText("Add target")
-        self.add_target_button.clicked.connect(self.add_taget_text)
+        self.add_target_button.clicked.connect(self.add_target_text)
 
         self.remove_target_button = QPushButton(self)
         self.remove_target_button.setGeometry(QRect(200, 420, 100, 30))
@@ -117,20 +117,17 @@ class FormationWindow(QMainWindow):
         self.get_targets_disks()
 
     def add_disk_text(self):
-        text, ok_pressed = QInputDialog.getText(self, "Input disk coordinates [x, y]", "Coordinates [x, y]:", QLineEdit.Normal, "")
+        text, ok_pressed = QInputDialog.getText(self, "Input disk coordinates [x, y]", "Coordinates [x, y]:",
+                                                QLineEdit.Normal, "")
         if ok_pressed and text != '':
             item = QtGui.QStandardItem(text)
             self.disksModel.appendRow(item)
         self.get_targets_disks()
 
-    def add_taget_text(self):
-        text, ok_pressed = QInputDialog.getText(self, "Input target coodinates [x, y]", "Coordinatex [x, y]:", QLineEdit.Normal, "")
+    def add_target_text(self):
+        text, ok_pressed = QInputDialog.getText(self, "Input target coordinates [x, y]", "Coordinates [x, y]:",
+                                                QLineEdit.Normal, "")
         if ok_pressed and text != '':
             item = QtGui.QStandardItem(text)
             self.targetsModel.appendRow(item)
         self.get_targets_disks()
-    # check box add coordinates to list of targets
-    # list of target positions
-    # input text for coordinates
-    # start fomration making
-    # +/-/modify buttons for removing coords from the list
