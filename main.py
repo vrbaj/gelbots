@@ -9,7 +9,7 @@ import time
 import numpy as np
 import worker_camera
 import worker_raspi
-import disk_core as disk_core
+import disk_core2 as disk_core
 import configparser
 import keyboard
 import window_formation
@@ -200,56 +200,56 @@ class GelbotsWindow(QMainWindow):
         self.brightnessInput.editingFinished.connect(self.brightness_edited)
 
         # Create disk x loc label
-        self.diskLocXLabel = QLabel(central_widget)
-        self.diskLocXLabel.setGeometry(QRect(410, 30, 80, 31))
-        self.diskLocXLabel.setText("Disk X:")
+        # self.diskLocXLabel = QLabel(central_widget)
+        # self.diskLocXLabel.setGeometry(QRect(410, 30, 80, 31))
+        # self.diskLocXLabel.setText("Disk X:")
 
         # Create disk x coordinate input box
-        self.diskCoordXInput = QLineEdit(central_widget)
-        self.diskCoordXInput.move(445, 35)
-        self.diskCoordXInput.setFixedWidth(30)
-        self.diskCoordXInput.setValidator(self.onlyInt)
-        self.diskCoordXInput.setText(str(self.disk_x_loc))
-        self.diskCoordXInput.editingFinished.connect(self.disk_x_loc_edited)
+        # self.diskCoordXInput = QLineEdit(central_widget)
+        # self.diskCoordXInput.move(445, 35)
+        # self.diskCoordXInput.setFixedWidth(30)
+        # self.diskCoordXInput.setValidator(self.onlyInt)
+        # self.diskCoordXInput.setText(str(self.disk_x_loc))
+        # self.diskCoordXInput.editingFinished.connect(self.disk_x_loc_edited)
 
         # Create disk y loc label
-        self.diskLocYLabel = QLabel(central_widget)
-        self.diskLocYLabel.setGeometry(QRect(480, 30, 80, 31))
-        self.diskLocYLabel.setText("Y:")
+        # self.diskLocYLabel = QLabel(central_widget)
+        # self.diskLocYLabel.setGeometry(QRect(480, 30, 80, 31))
+        # self.diskLocYLabel.setText("Y:")
 
         # Create disk y coordinate input box
-        self.diskCoordYInput = QLineEdit(central_widget)
-        self.diskCoordYInput.move(510, 35)
-        self.diskCoordYInput.setFixedWidth(30)
-        self.diskCoordYInput.setValidator(self.onlyInt)
-        self.diskCoordYInput.setText(str(self.disk_y_loc))
-        self.diskCoordYInput.editingFinished.connect(self.disk_y_loc_edited)
+        # self.diskCoordYInput = QLineEdit(central_widget)
+        # self.diskCoordYInput.move(510, 35)
+        # self.diskCoordYInput.setFixedWidth(30)
+        # self.diskCoordYInput.setValidator(self.onlyInt)
+        # self.diskCoordYInput.setText(str(self.disk_y_loc))
+        # self.diskCoordYInput.editingFinished.connect(self.disk_y_loc_edited)
 
         # Create goal x loc label
-        self.goalLocXLabel = QLabel(central_widget)
-        self.goalLocXLabel.setGeometry(QRect(550, 30, 80, 31))
-        self.goalLocXLabel.setText("Goal X:")
+        # self.goalLocXLabel = QLabel(central_widget)
+        # self.goalLocXLabel.setGeometry(QRect(550, 30, 80, 31))
+        # self.goalLocXLabel.setText("Goal X:")
 
         # Create goal x coordinate input box
-        self.goalCoordXInput = QLineEdit(central_widget)
-        self.goalCoordXInput.move(585, 35)
-        self.goalCoordXInput.setFixedWidth(30)
-        self.goalCoordXInput.setValidator(self.onlyInt)
-        self.goalCoordXInput.setText(str(self.goal_x_loc))
-        self.goalCoordXInput.editingFinished.connect(self.goal_x_loc_edited)
+        # self.goalCoordXInput = QLineEdit(central_widget)
+        # self.goalCoordXInput.move(585, 35)
+        # self.goalCoordXInput.setFixedWidth(30)
+        # self.goalCoordXInput.setValidator(self.onlyInt)
+        # self.goalCoordXInput.setText(str(self.goal_x_loc))
+        # self.goalCoordXInput.editingFinished.connect(self.goal_x_loc_edited)
 
         # Create goal y loc label
-        self.goalLocYLabel = QLabel(central_widget)
-        self.goalLocYLabel.setGeometry(QRect(625, 30, 80, 31))
-        self.goalLocYLabel.setText("Y:")
+        # self.goalLocYLabel = QLabel(central_widget)
+        # self.goalLocYLabel.setGeometry(QRect(625, 30, 80, 31))
+        # self.goalLocYLabel.setText("Y:")
 
         # Create goal y coordinate input box
-        self.goalCoordYInput = QLineEdit(central_widget)
-        self.goalCoordYInput.move(640, 35)
-        self.goalCoordYInput.setFixedWidth(30)
-        self.goalCoordYInput.setValidator(self.onlyInt)
-        self.goalCoordYInput.setText(str(self.goal_y_loc))
-        self.goalCoordYInput.editingFinished.connect(self.goal_y_loc_edited)
+        # self.goalCoordYInput = QLineEdit(central_widget)
+        # self.goalCoordYInput.move(640, 35)
+        # self.goalCoordYInput.setFixedWidth(30)
+        # self.goalCoordYInput.setValidator(self.onlyInt)
+        # self.goalCoordYInput.setText(str(self.goal_y_loc))
+        # self.goalCoordYInput.editingFinished.connect(self.goal_y_loc_edited)
 
         # add pix
         self.imageDisplay = QLabel(self)
@@ -347,20 +347,20 @@ class GelbotsWindow(QMainWindow):
         self.moveLaserCheckbox.stateChanged.connect(self.laser_checkbox_click)
 
         # check box to select disk
-        self.setDiskCheckbox = QCheckBox(self)
-        self.setDiskCheckbox.setText("Select disk")
-        self.setDiskCheckbox.setToolTip("Click to image to to select target disk")
-        self.setDiskCheckbox.setGeometry(QRect(750, 30, 100, 25))
-        self.setDiskCheckbox.setLayoutDirection(Qt.RightToLeft)
-        self.setDiskCheckbox.stateChanged.connect(self.disk_checkbox_click)
+        # self.setDiskCheckbox = QCheckBox(self)
+        # self.setDiskCheckbox.setText("Select disk")
+        # self.setDiskCheckbox.setToolTip("Click to image to to select target disk")
+        # self.setDiskCheckbox.setGeometry(QRect(750, 30, 100, 25))
+        # self.setDiskCheckbox.setLayoutDirection(Qt.RightToLeft)
+        # self.setDiskCheckbox.stateChanged.connect(self.disk_checkbox_click)
 
         # check box to set goal
-        self.setGoalCheckbox = QCheckBox(self)
-        self.setGoalCheckbox.setText("Set target")
-        self.setGoalCheckbox.setToolTip("Click to image to set goal")
-        self.setGoalCheckbox.setGeometry(QRect(750, 5, 100, 25))
-        self.setGoalCheckbox.setLayoutDirection(Qt.RightToLeft)
-        self.setGoalCheckbox.stateChanged.connect(self.goal_checkbox_click)
+        # self.setGoalCheckbox = QCheckBox(self)
+        # self.setGoalCheckbox.setText("Set target")
+        # self.setGoalCheckbox.setToolTip("Click to image to set goal")
+        # self.setGoalCheckbox.setGeometry(QRect(750, 5, 100, 25))
+        # self.setGoalCheckbox.setLayoutDirection(Qt.RightToLeft)
+        # self.setGoalCheckbox.stateChanged.connect(self.goal_checkbox_click)
 
         # check box to add disk to formation
         self.setDiskFormationCheckbox = QCheckBox(self)
@@ -437,16 +437,16 @@ class GelbotsWindow(QMainWindow):
         self.raspi_comm.start()
 
         # start Disk Core thread
-        self.disk_core = disk_core.DiskCore([self.disk_x_loc, self.disk_y_loc],
-                                            [self.laser_x_loc, self.laser_y_loc],
-                                            [self.goal_x_loc, self.goal_y_loc],
-                                            self.laser_pulse_n * (self.laser_on_time + self.laser_off_time),
-                                            self.offset, self.mag_value, self.target_list, self.disk_list)
+        # self.disk_core = disk_core.DiskCore([self.disk_x_loc, self.disk_y_loc],
+        #                                     [self.laser_x_loc, self.laser_y_loc],
+        #                                     [self.goal_x_loc, self.goal_y_loc],
+        #                                     self.laser_pulse_n * (self.laser_on_time + self.laser_off_time),
+        #                                     self.offset, self.mag_value, self.target_list, self.disk_list)
 
-        # self.disk_core = disk_core.disk_core([self.laser_x_loc, self.laser_y_loc],
-        #                                    self.laser_pulse_n * (self.laser_on_time + self.laser_off_time),
-        #                                    self.offset,
-        #                                    self.mag_value, self.target_list, self.disk_list)
+        self.disk_core = disk_core.DiskCore([self.laser_x_loc, self.laser_y_loc],
+                                           self.laser_pulse_n * (self.laser_on_time + self.laser_off_time),
+                                           self.offset,
+                                           self.mag_value, self.target_list, self.disk_list)
 
         self.disk_core.gray_image_request.connect(self.core_image_request)
         self.disk_core.steppers_request.connect(self.move_steppers)
@@ -466,11 +466,11 @@ class GelbotsWindow(QMainWindow):
         self.formation_window_button.setFixedHeight(22)
         self.formation_window_button.clicked.connect(self.show_formation_window)
 
-        self.formation_start_button = QPushButton("Start formation", self)
-        self.formation_start_button.setToolTip("Click to establish formation")
-        self.formation_start_button.move(1750, 350)
-        self.formation_start_button.setFixedHeight(22)
-        self.formation_start_button.clicked.connect(self.start_formation)
+        # self.formation_start_button = QPushButton("Start formation", self)
+        # self.formation_start_button.setToolTip("Click to establish formation")
+        # self.formation_start_button.move(1750, 350)
+        # self.formation_start_button.setFixedHeight(22)
+        # self.formation_start_button.clicked.connect(self.start_formation)
 
         # self.formation_window.show()
         self.formation_window.change_params.connect(self.formation_change)
@@ -581,71 +581,66 @@ class GelbotsWindow(QMainWindow):
 
     def keyboard_event_received(self, event):
         keyboard_pressed = event.name
+        print("target list pre", self.target_list)
         if keyboard_pressed == "a":
             # move left
             self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
             self.disk_core.recompute_goal(-self.steppers_x, 0)
             self.disk_core.recompute_disk(-self.steppers_x, 0)
-            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
-                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+            self.disk_core.coords_update.emit(self.disk_list, self.target_list)
 
         elif keyboard_pressed == "d":
             # move right
             self.raspi_comm.requests_queue.append("x" + str(self.steppers_x))
             self.disk_core.recompute_goal(self.steppers_x, 0)
             self.disk_core.recompute_disk(self.steppers_x, 0)
-            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
-                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+            self.disk_core.coords_update.emit(self.disk_list, self.target_list)
         elif keyboard_pressed == "s":
             # move top
             self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
             self.disk_core.recompute_goal(0, -self.steppers_y)
             self.disk_core.recompute_disk(0, -self.steppers_y)
-            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
-                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+            self.disk_core.coords_update.emit(self.disk_list, self.target_list)
         elif keyboard_pressed == "w":
             # move down
             self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
             self.disk_core.recompute_goal(0, self.steppers_y)
             self.disk_core.recompute_disk(0, self.steppers_y)
-            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
-                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+            self.disk_core.coords_update.emit(self.disk_list, self.target_list)
         elif keyboard_pressed == "q":
             self.raspi_comm.requests_queue.append("s")
         elif keyboard_pressed == "e":
             self.raspi_comm.requests_queue.append("l")
+        print("target list post", self.target_list)
 
     def sfl_key(self, pressed_key):
         print(pressed_key)
+
         if pressed_key == 65:
             # move left
             self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
             self.disk_core.recompute_goal(-self.steppers_x, 0)
             self.disk_core.recompute_disk(-self.steppers_x, 0)
-            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
-                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+            self.disk_core.coords_update.emit(self.disk_list, self.target_list)
 
         elif pressed_key == 68:
             # move right
             self.raspi_comm.requests_queue.append("x" + str(self.steppers_x))
             self.disk_core.recompute_goal(self.steppers_x, 0)
             self.disk_core.recompute_disk(self.steppers_x, 0)
-            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
-                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+            self.disk_core.coords_update.emit(self.disk_list, self.target_list)
         elif pressed_key == 83:
             # move top
             self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
             self.disk_core.recompute_goal(0, -self.steppers_y)
             self.disk_core.recompute_disk(0, -self.steppers_y)
-            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
-                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+            self.disk_core.coords_update.emit(self.disk_list, self.target_list)
         elif pressed_key == 87:
             # move down
             self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
             self.disk_core.recompute_goal(0, self.steppers_y)
             self.disk_core.recompute_disk(0, self.steppers_y)
-            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
-                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+            self.disk_core.coords_update.emit(self.disk_list, self.target_list)
         elif pressed_key == 81:
             self.raspi_comm.requests_queue.append("s")
         elif pressed_key == 69:
@@ -807,36 +802,36 @@ class GelbotsWindow(QMainWindow):
     def automode_finished(self):
         pass
 
-    # def update_coords(self, disk_list, target_list):
-    #     print("update coordinates")
-    #     self.disk_list = []
-    #     self.target_list = []
-    #     for item in disk_list:
-    #         int_coords = []
-    #         for coord in item:
-    #             int_coords.append(int(coord))
-    #         self.disk_list.append(int_coords)
-    #     for item in target_list:
-    #         int_coords = []
-    #         for coord in item:
-    #             int_coords.append(int(coord))
-    #         self.target_list.append(int_coords)
+    def update_coords(self, disk_list, target_list):
+        print("update coordinates")
+        self.disk_list = []
+        self.target_list = []
+        for item in disk_list:
+            int_coords = []
+            for coord in item:
+                int_coords.append(int(coord))
+            self.disk_list.append(int_coords)
+        for item in target_list:
+            int_coords = []
+            for coord in item:
+                int_coords.append(int(coord))
+            self.target_list.append(int_coords)
     #     print(self.disk_list)
     #     print(self.target_list)
     #     print("update coordinates done")
 
-    def update_coords(self, goal_x, goal_y, disk_x, disk_y):
-        print("enter update coordinates")
-        print(goal_x)
-        self.goal_x_loc = goal_x
-        self.goal_y_loc = goal_y
-        self.disk_x_loc = disk_x
-        self.disk_y_loc = disk_y
-
-        self.goalCoordXInput.setText(str(goal_x))
-        self.goalCoordYInput.setText(str(goal_y))
-        self.diskCoordXInput.setText(str(disk_x))
-        self.diskCoordYInput.setText(str(disk_y))
+    # def update_coords(self, goal_x, goal_y, disk_x, disk_y):
+    #     print("enter update coordinates")
+    #     print(goal_x)
+    #     self.goal_x_loc = goal_x
+    #     self.goal_y_loc = goal_y
+    #     self.disk_x_loc = disk_x
+    #     self.disk_y_loc = disk_y
+    #
+    #     self.goalCoordXInput.setText(str(goal_x))
+    #     self.goalCoordYInput.setText(str(goal_y))
+    #     self.diskCoordXInput.setText(str(disk_x))
+    #     self.diskCoordYInput.setText(str(disk_y))
 
     def move_steppers(self, x, y):
         print("asdasdasdasda")
@@ -1048,43 +1043,47 @@ class GelbotsWindow(QMainWindow):
         self.raspi_comm.terminate()
 
     def keyPressEvent(self, e):
-        print(e.key())
+        print("keyPressEvent> ", e.key())
         self.message_text.setPlainText("event " + str(e.key()))
-        if e.key() == 65:
-            # move left
-            self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
+        print("target list pre", self.target_list)
+        self.disk_core.target_list = self.target_list
+        self.disk_core.disk_list = self.disk_list
+        try:
+            if e.key() == 65:
+                # move left
+                self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
 
-            # TODO recompute goal and target disk coord
-            self.disk_core.recompute_goal(-self.steppers_x, 0)
-            self.disk_core.recompute_disk(-self.steppers_x, 0)
-            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
-                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
+                # TODO recompute goal and target disk coord
+                self.disk_core.recompute_goal(-self.steppers_x, 0)
+                self.disk_core.recompute_disk(-self.steppers_x, 0)
+                self.disk_core.coords_update.emit(self.disk_list, self.target_list)
 
-        elif e.key() == 68:
-            # move right
-            self.raspi_comm.requests_queue.append("x" + str(self.steppers_x))
-            self.disk_core.recompute_goal(self.steppers_x, 0)
-            self.disk_core.recompute_disk(self.steppers_x, 0)
-            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
-                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
-        elif e.key() == 83:
-            # move top
-            self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
-            self.disk_core.recompute_goal(0, -self.steppers_y)
-            self.disk_core.recompute_disk(0, -self.steppers_y)
-            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
-                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
-        elif e.key() == 87:
-            # move down
-            self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
-            self.disk_core.recompute_goal(0, self.steppers_y)
-            self.disk_core.recompute_disk(0, self.steppers_y)
-            self.disk_core.coords_update.emit(self.disk_core.goal_x, self.disk_core.goal_y,
-                                              self.disk_core.target_disk_x, self.disk_core.target_disk_y)
-        elif e.key() == 81:
-            self.raspi_comm.requests_queue.append("s")
-        elif e.key() == 69:
-            self.raspi_comm.requests_queue.append("l")
+            elif e.key() == 68:
+                # move right
+                self.raspi_comm.requests_queue.append("x" + str(self.steppers_x))
+                self.disk_core.recompute_goal(self.steppers_x, 0)
+                self.disk_core.recompute_disk(self.steppers_x, 0)
+                self.disk_core.coords_update.emit(self.disk_list, self.target_list)
+            elif e.key() == 83:
+                # move top
+                self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
+                self.disk_core.recompute_goal(0, -self.steppers_y)
+                self.disk_core.recompute_disk(0, -self.steppers_y)
+                self.disk_core.coords_update.emit(self.disk_list, self.target_list)
+            elif e.key() == 87:
+                # move down
+                self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
+                self.disk_core.recompute_goal(0, self.steppers_y)
+                self.disk_core.recompute_disk(0, self.steppers_y)
+                self.disk_core.coords_update.emit(self.disk_list, self.target_list)
+            elif e.key() == 81:
+                self.raspi_comm.requests_queue.append("s")
+            elif e.key() == 69:
+                self.raspi_comm.requests_queue.append("l")
+        except Exception as ex:
+            print(ex)
+        print("target list post", self.target_list)
+
 
     def goal_x_loc_edited(self):
         """Function to set the goal coord"""
@@ -1298,12 +1297,12 @@ class GelbotsWindow(QMainWindow):
             if self.draw_marks_enabled:
                 # TODO wrap draw markers into function that will check the coordinates (if it is inside of img)
                 pass
-                self.gray_image = cv2.drawMarker(self.gray_image, (self.goal_x_loc, self.goal_y_loc), (0, 255, 255),
-                                                 markerType=cv2.MARKER_DIAMOND, markerSize=20, thickness=1,
-                                                 line_type=cv2.LINE_AA)
-                self.gray_image = cv2.drawMarker(self.gray_image, (self.disk_x_loc, self.disk_y_loc), (255, 255, 0),
-                                                 markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,
-                                                 line_type=cv2.LINE_AA)
+                # self.gray_image = cv2.drawMarker(self.gray_image, (self.goal_x_loc, self.goal_y_loc), (0, 255, 255),
+                #                                  markerType=cv2.MARKER_DIAMOND, markerSize=20, thickness=1,
+                #                                  line_type=cv2.LINE_AA)
+                # self.gray_image = cv2.drawMarker(self.gray_image, (self.disk_x_loc, self.disk_y_loc), (255, 255, 0),
+                #                                  markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,
+                #                                  line_type=cv2.LINE_AA)
                 for disk in self.disk_list:
                     self.gray_image = cv2.drawMarker(self.gray_image, tuple(disk), (255, 255, 0),
                                                      markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,

@@ -62,7 +62,7 @@ class FormationWindow(QMainWindow):
         self.optimize_button.clicked.connect(self.optimize_order)
 
     def optimize_order(self):
-        disk_order, target_order = formation_optimization.optimize_formation(self.disksList, self.targetsList, 30)
+        disk_order, target_order = formation_optimization.optimize_formation(self.disksList, self.targetsList, 60)
         print(self.disksList, self.targetsList)
         print("order: ", disk_order, "target order: ", target_order)
         self.disksModel.clear()
