@@ -131,3 +131,14 @@ class FormationWindow(QMainWindow):
             item = QtGui.QStandardItem(text)
             self.targetsModel.appendRow(item)
         self.get_targets_disks()
+
+    def refill_lists(self):
+        try:
+            self.disksModel.clear()
+            self.targetsModel.clear()
+            for index in range(len(self.disksList)):
+                self.disksModel.appendRow(QtGui.QStandardItem(str(self.disksList[index])))
+            for index in range(len(self.targetsList)):
+                self.targetsModel.appendRow(QtGui.QStandardItem(str(self.targetsList[index])))
+        except Exception as ex:
+            print(ex)

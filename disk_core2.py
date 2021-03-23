@@ -264,28 +264,29 @@ class DiskCore(QThread):
         return steps_x, steps_y
 
     def recompute_goal(self, stepper_x, stepper_y):
+
         try:
-            print("pre recompute:", self.target_list)
+
             for idx, target in enumerate(self.target_list):
                 self.target_list[idx][0] = (target[0] - stepper_x / self.MAG_STEPPER_CONST)
                 self.target_list[idx][1] = (target[1] + stepper_y / self.MAG_STEPPER_CONST)
                 # self.goal_x = (self.goal_x - stepper_x / self.MAG_STEPPER_CONST)
                 # self.goal_y = (self.goal_y + stepper_y / self.MAG_STEPPER_CONST)
-            #self.coords_update.emit(self.disk_list, self.target_list)
-            print("post recompute target:", self.target_list)
+
+            # self.coords_update.emit(self.disk_list, self.target_list)
         except Exception as ex:
             print(ex)
 
     def recompute_disk(self, stepper_x, stepper_y):
         try:
-            print("pre recompute disk: ", self.disk_list)
+
             for idx, disk in enumerate(self.disk_list):
 
                 self.disk_list[idx][0] = (disk[0] - stepper_x / self.MAG_STEPPER_CONST)
                 self.disk_list[idx][1] = (disk[1] + stepper_y / self.MAG_STEPPER_CONST)
-            #self.coords_update.emit(self.disk_list, self.target_list)
             # self.target_disk_x = (self.target_disk_x - stepper_x / self.MAG_STEPPER_CONST)
             # self.target_disk_y = (self.target_disk_y + stepper_y / self.MAG_STEPPER_CONST)
-            print("post recompute disk: ", self.disk_list)
+
+            # self.coords_update.emit(self.disk_list, self.target_list)
         except Exception as ex:
             print(ex)
