@@ -583,13 +583,11 @@ class GelbotsWindow(QMainWindow):
 
     def keyboard_event_received(self, event):
         keyboard_pressed = event.name
-        print("target list pre", self.target_list)
         if keyboard_pressed == "a":
             # move left
             self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
             self.disk_core.recompute_goal(-self.steppers_x, 0)
             self.disk_core.recompute_disk(-self.steppers_x, 0)
-            # self.disk_core.coords_update.emit(self.disk_list, self.target_list)
             self.disk_list = deepcopy(self.disk_core.disk_list)
             self.target_list = deepcopy(self.disk_core.target_list)
             self.update_coords(self.disk_list, self.target_list)
@@ -622,40 +620,6 @@ class GelbotsWindow(QMainWindow):
             self.raspi_comm.requests_queue.append("s")
         elif keyboard_pressed == "e":
             self.raspi_comm.requests_queue.append("l")
-        print("target list post", self.target_list)
-
-    # def sfl_key(self, pressed_key):
-    #     print(pressed_key)
-        #
-        # if pressed_key == 65:
-        #     # move left
-        #     self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
-        #     self.disk_core.recompute_goal(-self.steppers_x, 0)
-        #     self.disk_core.recompute_disk(-self.steppers_x, 0)
-        #     self.disk_core.coords_update.emit(self.disk_list, self.target_list)
-        #
-        # elif pressed_key == 68:
-        #     # move right
-        #     self.raspi_comm.requests_queue.append("x" + str(self.steppers_x))
-        #     self.disk_core.recompute_goal(self.steppers_x, 0)
-        #     self.disk_core.recompute_disk(self.steppers_x, 0)
-        #     self.disk_core.coords_update.emit(self.disk_list, self.target_list)
-        # elif pressed_key == 83:
-        #     # move top
-        #     self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
-        #     self.disk_core.recompute_goal(0, -self.steppers_y)
-        #     self.disk_core.recompute_disk(0, -self.steppers_y)
-        #     self.disk_core.coords_update.emit(self.disk_list, self.target_list)
-        # elif pressed_key == 87:
-        #     # move down
-        #     self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
-        #     self.disk_core.recompute_goal(0, self.steppers_y)
-        #     self.disk_core.recompute_disk(0, self.steppers_y)
-        #     self.disk_core.coords_update.emit(self.disk_list, self.target_list)
-        # elif pressed_key == 81:
-        #     self.raspi_comm.requests_queue.append("s")
-        # elif pressed_key == 69:
-        #     self.raspi_comm.requests_queue.append("l")
 
     def mag_click(self, mag):
         mag_text = mag.text()
