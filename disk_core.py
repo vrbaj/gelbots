@@ -18,7 +18,7 @@ class DiskCore(QThread):
 
     def __init__(self, disk, laser, goal, laser_time, offset, magnification, target_list, disk_list):
         super(DiskCore, self).__init__()
-        self.wait_time = 3.6  # seconds
+        self.wait_time = 5  # seconds
         self.image_to_process = None
         self.disk_locs = None
         self.status = True

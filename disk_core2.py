@@ -18,7 +18,7 @@ class DiskCore(QThread):
 
     def __init__(self, laser, laser_time, offset, magnification, target_list, disk_list):
         super(DiskCore, self).__init__()
-        self.wait_time = 3.6  # seconds
+        self.wait_time =2.5 # seconds
         self.image_to_process = None
         self.disk_locs = None
         self.status = True
@@ -53,7 +53,10 @@ class DiskCore(QThread):
         while self.auto_mode:
             self.MAG_STEPPER_CONST = self.STEPPER_CONST * 4 / self.mag
             for disk_idx, disk in enumerate(self.disk_list):
-                self.auto_mode = True
+                if not self.auto_mode:
+                    break
+                # self.auto_mode = True
+                not_finished = True
                 self.target_disk_x = disk[0]
                 self.target_disk_y = disk[1]
                 print("target list: ", self.target_list)
@@ -61,8 +64,10 @@ class DiskCore(QThread):
                 target[0] = self.target_list[disk_idx][0]
                 target[1] = self.target_list[disk_idx][1]
                 print("disk loop started")
-                while self.auto_mode:
+                while not_finished:  # self.auto_mode:
                     print(self.auto_step)
+                    if not self.auto_mode:
+                        break
                     if self.auto_step == -1:
 
                         self.auto_step = 0
@@ -101,7 +106,8 @@ class DiskCore(QThread):
                         except Exception as exp:
                             print(exp)
                         if abs(target[0] - x) < 5 and abs(target[1] - y) < 5:
-                            self.auto_mode = False
+                            # self.auto_mode = False
+                            not_finished = False
                         elif abs(disk[0] - x) > 15 or abs(disk[1] - y) > 15:
                             self.auto_step = -1
                         else:
