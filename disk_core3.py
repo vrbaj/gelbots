@@ -69,11 +69,28 @@ class DiskCore(QThread):
 
 
                 # find disk locations and start patht planning
-                self.image_to_process = []
+                self.image_to_process = None
                 self.disk_locs = []
                 self.path = []
                 self.gray_image_request.emit()
-                self.disk_locs = self.find_disks(self.image_to_process)
+                image_acq = True
+                # STEP 0: Obtain image
+
+                while image_acq:
+                    print('I crashed')
+                    if self.image_to_process is not None:
+                        # find disk locations
+                        self.disk_locs = self.find_disks(self.image_to_process)
+                        print('Disks found')
+                        print(self.disk_locs[1])
+                        if len(self.disk_locs) == 0:
+                            # TODO return to initial position or acquire next image?
+                            self.image_to_process = None
+                            self.gray_image_request.emit()
+                        else:
+                            image_acq = False
+                    time.sleep(0.1)
+
 
                 height = np.size(self.image_to_process, 0)
                 width = np.size(self.image_to_process, 1)
@@ -87,14 +104,18 @@ class DiskCore(QThread):
 
                 K = 0
                 if K:
-                    resolution = 5.0
+                    resolution = 10
+                    print("Start Astar")
                     a_star = astar.AStarPlanner(area_x, area_y, self.disk_locs, resolution, robot_radius)
+                    print("Find path")
                     self.path = a_star.planning(start, goal)
+                    print("path found")
+
                 else:
-                    expand_dis = 20
-                    resolution = 5
+                    expand_dis = 5
+                    resolution = 1
                     goal_sample_rate = 5
-                    max_iter = 2500
+                    max_iter = 600
                     connect_circle_dist = 100.0
                     search_until_max_iter = True
 
