@@ -73,11 +73,10 @@ class DiskCore(QThread):
                 self.disk_locs = []
                 self.path = []
                 self.gray_image_request.emit()
-                image_acq = True
+                image_empty = True
                 # STEP 0: Obtain image
 
-                while image_acq:
-                    print('I crashed')
+                while image_empty:
                     if self.image_to_process is not None:
                         # find disk locations
                         self.disk_locs = self.find_disks(self.image_to_process)
@@ -88,7 +87,7 @@ class DiskCore(QThread):
                             self.image_to_process = None
                             self.gray_image_request.emit()
                         else:
-                            image_acq = False
+                            image_empty = False
                     time.sleep(0.1)
 
 
@@ -100,11 +99,11 @@ class DiskCore(QThread):
                 start = self.nearest_disk([disk[0], disk[1]], self.disk_locs)
                 self.disk_locs.remove(start)
                 start = list(start)
-                robot_radius = 27.0
+                robot_radius = 70.0
 
-                K = 0
+                K = 1
                 if K:
-                    resolution = 10
+                    resolution = 15
                     print("Start Astar")
                     a_star = astar.AStarPlanner(area_x, area_y, self.disk_locs, resolution, robot_radius)
                     print("Find path")
@@ -112,11 +111,11 @@ class DiskCore(QThread):
                     print("path found")
 
                 else:
-                    expand_dis = 5
-                    resolution = 1
+                    expand_dis = 20
+                    resolution = 5
                     goal_sample_rate = 5
-                    max_iter = 600
-                    connect_circle_dist = 100.0
+                    max_iter = 3000
+                    connect_circle_dist = 20.0
                     search_until_max_iter = True
 
                     rrt_star = rrtstar.RRTStar(
@@ -133,6 +132,17 @@ class DiskCore(QThread):
                         connect_circle_dist,
                         search_until_max_iter)
                     self.path = rrt_star.planning(animation=False)
+                if self.path is None:
+                    print("Cannot find path")
+                    break
+                # Code for printing the path found in the extra window.
+                # helpy_im = self.image_to_process
+                # path = np.array(self.path)
+                # path = path.astype('int32')
+                # helpy_im = cv2.polylines(helpy_im, [path], False, (0, 0, 0), 2)
+                # helpy_im = cv2.resize(helpy_im, (1280, 720))
+                # cv2.imshow("Disk locations", helpy_im)
+                # cv2.waitKey(0)
 
 
 
