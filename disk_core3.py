@@ -80,8 +80,6 @@ class DiskCore(QThread):
                     if self.image_to_process is not None:
                         # find disk locations
                         self.disk_locs = self.find_disks(self.image_to_process)
-                        print('Disks found')
-                        print(self.disk_locs[1])
                         if len(self.disk_locs) == 0:
                             # TODO return to initial position or acquire next image?
                             self.image_to_process = None
@@ -103,21 +101,26 @@ class DiskCore(QThread):
 
                 K = 1
                 if K:
-                    resolution = 15
+                    resolution = 30
                     print("Start Astar")
+
+                    start_time = time.clock()
                     a_star = astar.AStarPlanner(area_x, area_y, self.disk_locs, resolution, robot_radius)
+                    print(time.clock() - start_time)
+
                     print("Find path")
+                    start_time = time.clock()
                     self.path = a_star.planning(start, goal)
+                    print(time.clock() - start_time)
                     print("path found")
 
                 else:
-                    expand_dis = 20
+                    expand_dis = 30
                     resolution = 5
-                    goal_sample_rate = 5
-                    max_iter = 3000
+                    goal_sample_rate = 10
+                    max_iter = 2000
                     connect_circle_dist = 20.0
                     search_until_max_iter = True
-
                     rrt_star = rrtstar.RRTStar(
                         start,
                         goal,
@@ -131,27 +134,37 @@ class DiskCore(QThread):
                         max_iter,
                         connect_circle_dist,
                         search_until_max_iter)
+                    print("Initialize planning with RRTstar")
+                    start_time = time.clock()
                     self.path = rrt_star.planning(animation=False)
+                    print(time.clock() - start_time)
                 if self.path is None:
                     print("Cannot find path")
                     break
                 # Code for printing the path found in the extra window.
-                # helpy_im = self.image_to_process
-                # path = np.array(self.path)
-                # path = path.astype('int32')
-                # helpy_im = cv2.polylines(helpy_im, [path], False, (0, 0, 0), 2)
-                # helpy_im = cv2.resize(helpy_im, (1280, 720))
-                # cv2.imshow("Disk locations", helpy_im)
-                # cv2.waitKey(0)
+                self.path.reverse()
+                # for sub in self.path:
+                #     print(sub)
+                helpy_im = self.image_to_process
+                path = np.array(self.path)
+                path = path.astype('int32')
+                helpy_im = cv2.polylines(helpy_im, [path], False, (0, 0, 0), 2)
+                helpy_im = cv2.resize(helpy_im, (1280, 720))
+                cv2.imwrite('C:/Users/sfl2/PycharmProjects/img.png', helpy_im)
+                cv2.imshow("Disk locations", helpy_im)
+                cv2.waitKey(0)
 
 
 
                 print("disk loop started")
                 # do the loop for every sub_goal in path.
                 for id_t, target in enumerate(self.path):
+                    print('SUBTARGET CHANGED \n\n-----------------\n')
                     not_finished = True
                     while not_finished:  # self.auto_mode:
                         print(self.auto_step)
+                        print('This is the target sutff')
+                        print(target)
                         if not self.auto_mode:
                             break
                         if self.auto_step == -1:
@@ -191,7 +204,7 @@ class DiskCore(QThread):
                                 f.close()
                             except Exception as exp:
                                 print(exp)
-                            if abs(target[0] - x) < 5 and abs(target[1] - y) < 5:
+                            if abs(target[0] - x) < 10 and abs(target[1] - y) < 10:
                                 # self.auto_mode = False
                                 not_finished = False
                             elif abs(disk[0] - x) > 15 or abs(disk[1] - y) > 15:
@@ -275,7 +288,7 @@ class DiskCore(QThread):
         circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 1, 40,
                                    param1=50, param2=30, minRadius=scaled_min_radius, maxRadius=scaled_max_radius)
         if circles is not None:
-            circles = np.uint16(np.around(circles))
+            circles = np.int32(np.around(circles))
             for i in circles[0, :]:
                 # find center
                 # if 50 < i[2] < 80:
