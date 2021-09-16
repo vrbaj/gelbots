@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QMainWindow, QLabel, QWidget, QComboBox,\
 from PyQt5.QtCore import QSize, QRect, Qt, QPoint
 from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
 
+
 import time
 import numpy as np
 import worker_camera
