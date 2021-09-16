@@ -1,10 +1,11 @@
 import sys
+import cv2
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QMainWindow, QLabel, QWidget, QComboBox,\
     QLineEdit, QPushButton, QFrame, QCheckBox, QRubberBand
 from PyQt5.QtCore import QSize, QRect, Qt, QPoint
 from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
-import cv2
+
 import time
 import numpy as np
 import worker_camera
@@ -21,8 +22,9 @@ from copy import deepcopy
 
 class GelbotsWindow(QMainWindow):
     CONFIG_FILE_NAME = "config.ini"
-    PIXMAP_HEIGHT = 720
-    PIXMAP_WIDTH = 1280
+
+    PIXMAP_HEIGHT = int(1.111111*720)
+    PIXMAP_WIDTH = int(1280)
 
     def __init__(self):
         QMainWindow.__init__(self)
@@ -775,7 +777,7 @@ class GelbotsWindow(QMainWindow):
             self.laserButton.setText("Laser ON")
 
     def automode_finished(self):
-        pass
+        self.formation_window.automode_status = False
 
     def update_coords(self, disk_list, target_list):
         print("update coordinates")
@@ -825,24 +827,31 @@ class GelbotsWindow(QMainWindow):
 
     def automode(self):
         if self.autoModeButton.text() == "Auto ON":
-            self.autoModeButton.setText("Auto OFF")
-            self.automode_enabled = True
-            self.disk_core.auto_mode = True
-            self.disk_core.auto_step = -1
-            self.disk_core.target_disk_x = self.disk_x_loc
-            self.disk_core.target_disk_y = self.disk_y_loc
-            self.disk_core.laser_x = self.laser_x_loc
-            self.disk_core.laser_y = self.laser_y_loc
-            self.disk_core.goal_x = self.goal_x_loc
-            self.disk_core.goal_y = self.goal_y_loc
-            self.disk_core.target_list = self.target_list
-            self.disk_core.disk_list = self.disk_list
-
-            self.disk_core.start()
+            if len(self.disk_list) == len(self.target_list):
+                self.autoModeButton.setText("Auto OFF")
+                self.automode_enabled = True
+                self.disk_core.auto_mode = True
+                self.disk_core.auto_step = -1
+                self.disk_core.target_disk_x = self.disk_x_loc
+                self.disk_core.target_disk_y = self.disk_y_loc
+                self.disk_core.laser_x = self.laser_x_loc
+                self.disk_core.laser_y = self.laser_y_loc
+                self.disk_core.goal_x = self.goal_x_loc
+                self.disk_core.goal_y = self.goal_y_loc
+                self.disk_core.target_list = self.target_list
+                self.disk_core.disk_list = self.disk_list
+                self.formation_window.automode_status = True
+                self.disk_core.start()
+            else:
+                error_dialog = QtWidgets.QErrorMessage()
+                error_dialog.showMessage("The number of targets has to be same as number of disks!")
+                error_dialog.setWindowTitle("Error")
+                error_dialog.exec_()
         else:
             self.autoModeButton.setText("Auto ON")
             self.automode_enabled = False
             self.disk_core.auto_mode = False
+            self.formation_window.automode_status = False
 
     def core_image_request(self):
         self.disk_core.image_to_process = np.copy(self.gray_image)
@@ -952,10 +961,10 @@ class GelbotsWindow(QMainWindow):
             print("add disk formation 1 ")
             if len(locs) > 0:
                 nearest_disk = self.disk_core.nearest_disk([x_image, y_image], locs)
-            print("add disk formation 2")
-            self.disk_list.append([nearest_disk[0], nearest_disk[1]])
-            print("add disk formation 3")
-            self.formation_window.add_disk(str([nearest_disk[0], nearest_disk[1]]))
+                print("add disk formation 2")
+                self.disk_list.append([nearest_disk[0], nearest_disk[1]])
+                print("add disk formation 3")
+                self.formation_window.add_disk(str([nearest_disk[0], nearest_disk[1]]))
         elif self.add_target_formation:
             self.target_list.append([x_image, y_image])
             self.disk_core.target_list.append([x_image, y_image])

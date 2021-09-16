@@ -1,7 +1,7 @@
 import random
 import math
 import numpy as np
-import skimage.draw
+# import skimage.draw
 import copy
 
 
@@ -180,15 +180,16 @@ def get_eucl_distance(a, b):
 
 
 def create_map(disks_coords, formation_coords, area_size, disk_radius):
-    state_map = np.zeros((area_size, area_size))
-    for disk in disks_coords:
-        # state_map[disk[0], disk[1]] = 100
-        rr, cc = skimage.draw.disk(tuple(disk), disk_radius)
-        state_map[rr, cc] = 100
-    for target in formation_coords:
-        print(target)
-        rr, cc, val = skimage.draw.circle_perimeter_aa(target[0], target[1], disk_radius)
-        state_map[rr, cc] = 50
+    state_map = []
+    # state_map = np.zeros((area_size, area_size))
+    # for disk in disks_coords:
+    #     # state_map[disk[0], disk[1]] = 100
+    #     rr, cc = skimage.draw.disk(tuple(disk), disk_radius)
+    #     state_map[rr, cc] = 100
+    # for target in formation_coords:
+    #     print(target)
+    #     rr, cc, val = skimage.draw.circle_perimeter_aa(target[0], target[1], disk_radius)
+    #     state_map[rr, cc] = 50
     return state_map
 
 

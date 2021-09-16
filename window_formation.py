@@ -12,6 +12,7 @@ class FormationWindow(QMainWindow):
         super(FormationWindow, self).__init__()
         self.disksList = []
         self.targetsList = []
+        self.automode_status = False
 
         self.setFixedSize(QSize(300, 500))
         self.setWindowTitle("Formation settings")
@@ -62,18 +63,24 @@ class FormationWindow(QMainWindow):
         self.optimize_button.clicked.connect(self.optimize_order)
 
     def optimize_order(self):
-        disk_order, target_order = formation_optimization.optimize_formation(self.disksList, self.targetsList, 60)
-        print(self.disksList, self.targetsList)
-        print("order: ", disk_order, "target order: ", target_order)
-        self.disksModel.clear()
-        self.targetsModel.clear()
-        for item in disk_order:
-            qt_item = QtGui.QStandardItem(str(self.disksList[item]))
-            self.disksModel.appendRow(qt_item)
-        for item in target_order:
-            qt_item = QtGui.QStandardItem(str(self.targetsList[item]))
-            self.targetsModel.appendRow(qt_item)
-        self.change_params.emit(self.disksList, self.targetsList)
+        if not self.automode_status:
+            disk_order, target_order = formation_optimization.optimize_formation(self.disksList, self.targetsList, 60)
+            print(self.disksList, self.targetsList)
+            print("order: ", disk_order, "target order: ", target_order)
+            self.disksModel.clear()
+            self.targetsModel.clear()
+            for item in disk_order:
+                qt_item = QtGui.QStandardItem(str(self.disksList[item]))
+                self.disksModel.appendRow(qt_item)
+            for item in target_order:
+                qt_item = QtGui.QStandardItem(str(self.targetsList[item]))
+                self.targetsModel.appendRow(qt_item)
+            self.change_params.emit(self.disksList, self.targetsList)
+        else:
+            error_dialog = QtWidgets.QErrorMessage()
+            error_dialog.showMessage("It is not possible to optimize in automode!")
+            error_dialog.setWindowTitle("Error")
+            error_dialog.exec_()
 
     def remove_disk(self):
         index_list = []
