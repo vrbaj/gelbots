@@ -10,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../RRT/")
 
 show_animation = False
 
+
 class RRTStar:
     """
     Class for RRT Star planning
@@ -41,7 +42,7 @@ class RRTStar:
         Setting Parameter
         start:Start Position [x,y]
         goal:Goal Position [x,y]
-        obstacleList:obstacle Positions [[x,y,size],...]
+        obstacle_list:obstacle Positions [[x,y,size],...]
         randArea:Random Sampling Area [min,max]
         """
         self.start = self.Node(start[0], start[1])
@@ -77,10 +78,7 @@ class RRTStar:
             new_node = self.steer(self.node_list[nearest_ind], rnd,
                                   self.expand_dis)
             near_node = self.node_list[nearest_ind]
-            new_node.cost = near_node.cost + \
-                            math.hypot(new_node.x - near_node.x,
-                                       new_node.y - near_node.y)
-
+            new_node.cost = near_node.cost + math.hypot(new_node.x - near_node.x, new_node.y - near_node.y)
             if self.check_collision(new_node, self.obstacle_list):
                 near_inds = self.find_near_nodes(new_node)
                 node_with_updated_parent = self.choose_parent(
@@ -158,15 +156,15 @@ class RRTStar:
             rnd = self.Node(self.end.x, self.end.y)
         return rnd
 
-    def check_collision(self, node, obstacleList):
+    def check_collision(self, node, obstacle_list):
         """
-        Checks colisions. Only works for circles.
+        Checks collisions. Only works for circles.
         """
 
         if node is None:
             return False
 
-        for (ox, oy) in obstacleList:
+        for (ox, oy) in obstacle_list:
             dx_list = [ox - x for x in node.path_x]
             dy_list = [oy - y for y in node.path_y]
             d_list = [dx * dx + dy * dy for (dx, dy) in zip(dx_list, dy_list)]
