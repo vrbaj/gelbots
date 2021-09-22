@@ -24,7 +24,7 @@ from copy import deepcopy
 class GelbotsWindow(QMainWindow):
     CONFIG_FILE_NAME = "config.ini"
 
-    PIXMAP_HEIGHT = int(1.111111*720)
+    PIXMAP_HEIGHT = int(1 * 720)
     PIXMAP_WIDTH = int(1280)
 
     def __init__(self):
