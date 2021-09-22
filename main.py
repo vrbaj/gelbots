@@ -211,7 +211,7 @@ class GelbotsWindow(QMainWindow):
         # self.diskCoordXInput = QLineEdit(central_widget)
         # self.diskCoordXInput.move(445, 35)
         # self.diskCoordXInput.setFixedWidth(30)
-        # self.diskCoordXInput.setValidator(self.onlyInt)
+        # self.diskCoordXInput.setValidator(self.int_validator)
         # self.diskCoordXInput.setText(str(self.disk_x_loc))
         # self.diskCoordXInput.editingFinished.connect(self.disk_x_loc_edited)
 
@@ -224,7 +224,7 @@ class GelbotsWindow(QMainWindow):
         # self.diskCoordYInput = QLineEdit(central_widget)
         # self.diskCoordYInput.move(510, 35)
         # self.diskCoordYInput.setFixedWidth(30)
-        # self.diskCoordYInput.setValidator(self.onlyInt)
+        # self.diskCoordYInput.setValidator(self.int_validator)
         # self.diskCoordYInput.setText(str(self.disk_y_loc))
         # self.diskCoordYInput.editingFinished.connect(self.disk_y_loc_edited)
 
@@ -237,7 +237,7 @@ class GelbotsWindow(QMainWindow):
         # self.goalCoordXInput = QLineEdit(central_widget)
         # self.goalCoordXInput.move(585, 35)
         # self.goalCoordXInput.setFixedWidth(30)
-        # self.goalCoordXInput.setValidator(self.onlyInt)
+        # self.goalCoordXInput.setValidator(self.int_validator)
         # self.goalCoordXInput.setText(str(self.goal_x_loc))
         # self.goalCoordXInput.editingFinished.connect(self.goal_x_loc_edited)
 
@@ -250,7 +250,7 @@ class GelbotsWindow(QMainWindow):
         # self.goalCoordYInput = QLineEdit(central_widget)
         # self.goalCoordYInput.move(640, 35)
         # self.goalCoordYInput.setFixedWidth(30)
-        # self.goalCoordYInput.setValidator(self.onlyInt)
+        # self.goalCoordYInput.setValidator(self.int_validator)
         # self.goalCoordYInput.setText(str(self.goal_y_loc))
         # self.goalCoordYInput.editingFinished.connect(self.goal_y_loc_edited)
 
@@ -939,8 +939,8 @@ class GelbotsWindow(QMainWindow):
         elif self.set_laser_enabled:
             self.laser_x_loc = x_image
             self.laser_y_loc = y_image
-            self.laser_settings_window.laserCoordXInput.setText(str(x_image))
-            self.laser_settings_window.laserCoordYInput.setText(str(y_image))
+            self.laser_settings_window.laser_coordx_input.setText(str(x_image))
+            self.laser_settings_window.laser_coordy_input.setText(str(y_image))
             self.config.set("laser", "x_loc", self.laser_x_loc)
             self.config.set("laser", "y_loc", self.laser_y_loc)
             self.update_config_file()

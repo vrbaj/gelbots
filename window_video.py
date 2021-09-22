@@ -7,7 +7,7 @@ class VideoSettingsWindow(QMainWindow):
     closed = pyqtSignal(int, str, str)
 
     def __init__(self, interval, namespace, path):
-        super(VideoSettingsWindow, self).__init__()
+        super().__init__()
         # set variables
         self.save_interval = interval
         self.save_namespace = namespace

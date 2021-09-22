@@ -1,18 +1,26 @@
+"""
+This module is implementing the window with laser settings and control.
+"""
+
 from PyQt5.QtWidgets import QMainWindow, QLabel, QLineEdit, QPushButton
 from PyQt5.QtCore import QSize, QRect, pyqtSignal
 from PyQt5.QtGui import QIntValidator, QFont
 
+from error_handling import ErrorLogger
+
 
 class LaserSettingsWindow(QMainWindow):
+    """
+    This class is implementing the Laser window that cointains all settings
+    related to laser and its control button (ON/OFF).
+    """
+
     change_params = pyqtSignal(int, int, int, int, int, int)
     laser_control_signal = pyqtSignal(str)
 
     def __init__(self, pulse_number, on_time, off_time, x, y, offset):
-        super(LaserSettingsWindow, self).__init__()
-        # set variables
-        # self.save_interval = interval
-        # self.save_namespace = namespace
-        # self.save_path = path
+        super().__init__()
+        self.logger = ErrorLogger()
         self.offset = offset
         self.laser_pulse_n = pulse_number
         self.laser_on_time = on_time
@@ -23,121 +31,141 @@ class LaserSettingsWindow(QMainWindow):
         self.setMinimumSize(QSize(250, 300))
         self.setWindowTitle("Laser settings")
 
-        self.onlyInt = QIntValidator()
+        self.int_validator = QIntValidator()
 
         # LASER
         # Create pulse number label
-        self.pulseNumberLabel = QLabel(self)
-        self.pulseNumberLabel.setGeometry(QRect(10, 0, 80, 20))
-        self.pulseNumberLabel.setText("Pulse n.:")
+        self.pulse_number_label = QLabel(self)
+        self.pulse_number_label.setGeometry(QRect(10, 0, 80, 20))
+        self.pulse_number_label.setText("Pulse n.:")
 
         # Create pulse number input box
-        self.pulseNumberInput = QLineEdit(self)
-        self.pulseNumberInput.setGeometry(QRect(60, 0, 40, 20))
-        self.pulseNumberInput.setText(str(self.laser_pulse_n))
-        self.pulseNumberInput.setValidator(self.onlyInt)
+        self.pulse_number_input = QLineEdit(self)
+        self.pulse_number_input.setGeometry(QRect(60, 0, 40, 20))
+        self.pulse_number_input.setText(str(self.laser_pulse_n))
+        self.pulse_number_input.setValidator(self.int_validator)
 
         # Create laser on label
-        self.laserOnLabel = QLabel(self)
-        self.laserOnLabel.setGeometry(QRect(10, 30, 80, 20))
-        self.laserOnLabel.setText("On.:")
+        self.laser_on_label = QLabel(self)
+        self.laser_on_label.setGeometry(QRect(10, 30, 80, 20))
+        self.laser_on_label.setText("On.:")
 
         # Create laser on input box
-        self.laserOnInput = QLineEdit(self)
-        self.laserOnInput.setGeometry(QRect(60, 30, 40, 20))
-        self.laserOnInput.setText(str(self.laser_on_time))
-        self.laserOnInput.setValidator(self.onlyInt)
+        self.laser_on_input = QLineEdit(self)
+        self.laser_on_input.setGeometry(QRect(60, 30, 40, 20))
+        self.laser_on_input.setText(str(self.laser_on_time))
+        self.laser_on_input.setValidator(self.int_validator)
 
         # Create laser off label
-        self.laserOffLabel = QLabel(self)
-        self.laserOffLabel.setGeometry(QRect(10, 60, 80, 20))
-        self.laserOffLabel.setText("Off.:")
+        self.laser_off_label = QLabel(self)
+        self.laser_off_label.setGeometry(QRect(10, 60, 80, 20))
+        self.laser_off_label.setText("Off.:")
 
         # Create laser off input box
-        self.laserOffInput = QLineEdit(self)
-        self.laserOffInput.setGeometry(QRect(60, 60, 40, 20))
-        self.laserOffInput.setText(str(self.laser_off_time))
-        self.laserOffInput.setValidator(self.onlyInt)
+        self.laser_off_input = QLineEdit(self)
+        self.laser_off_input.setGeometry(QRect(60, 60, 40, 20))
+        self.laser_off_input.setText(str(self.laser_off_time))
+        self.laser_off_input.setValidator(self.int_validator)
 
         # Create laser x loc label
-        self.laserLocXLabel = QLabel(self)
-        self.laserLocXLabel.setGeometry(QRect(10, 90, 80, 20))
-        self.laserLocXLabel.setText("X:")
+        self.laser_locx_label = QLabel(self)
+        self.laser_locx_label.setGeometry(QRect(10, 90, 80, 20))
+        self.laser_locx_label.setText("X:")
 
         # Create laser x coordinate input box
-        self.laserCoordXInput = QLineEdit(self)
-        self.laserCoordXInput.setGeometry(QRect(60, 90, 40, 20))
-        self.laserCoordXInput.setValidator(self.onlyInt)
-        self.laserCoordXInput.setText(str(self.laser_x_loc))
+        self.laser_coordx_input = QLineEdit(self)
+        self.laser_coordx_input.setGeometry(QRect(60, 90, 40, 20))
+        self.laser_coordx_input.setValidator(self.int_validator)
+        self.laser_coordx_input.setText(str(self.laser_x_loc))
 
         # Create laser y loc label
-        self.laserLocYLabel = QLabel(self)
-        self.laserLocYLabel.setGeometry(QRect(10, 120, 80, 20))
-        self.laserLocYLabel.setText("Y:")
+        self.laser_locy_label = QLabel(self)
+        self.laser_locy_label.setGeometry(QRect(10, 120, 80, 20))
+        self.laser_locy_label.setText("Y:")
 
         # Create laser y coordinate input box
-        self.laserCoordYInput = QLineEdit(self)
-        self.laserCoordYInput.setGeometry(QRect(60, 120, 40, 20))
-        self.laserCoordYInput.setValidator(self.onlyInt)
-        self.laserCoordYInput.setText(str(self.laser_y_loc))
+        self.laser_coordy_input = QLineEdit(self)
+        self.laser_coordy_input.setGeometry(QRect(60, 120, 40, 20))
+        self.laser_coordy_input.setValidator(self.int_validator)
+        self.laser_coordy_input.setText(str(self.laser_y_loc))
 
         # Create laser offset label
-        self.laserOffsetLabel = QLabel(self)
-        self.laserOffsetLabel.setGeometry(QRect(10, 150, 80, 20))
-        self.laserOffsetLabel.setText("Offset:")
+        self.laser_offset_label = QLabel(self)
+        self.laser_offset_label.setGeometry(QRect(10, 150, 80, 20))
+        self.laser_offset_label.setText("Offset:")
 
         # Create laser y coordinate input box
-        self.laserOffsetInput = QLineEdit(self)
-        self.laserOffsetInput.setGeometry(QRect(60, 150, 40, 20))
-        self.laserOffsetInput.setValidator(self.onlyInt)
-        self.laserOffsetInput.setText(str(self.offset))
+        self.laser_offset_input = QLineEdit(self)
+        self.laser_offset_input.setGeometry(QRect(60, 150, 40, 20))
+        self.laser_offset_input.setValidator(self.int_validator)
+        self.laser_offset_input.setText(str(self.offset))
 
         # laser blink button
-        self.blinkLaserButton = QPushButton("Blink On", self)
-        self.blinkLaserButton.setToolTip("Unlimited laser blink")
-        self.blinkLaserButton.setGeometry(QRect(10, 180, 230, 40))
-        self.blinkLaserButton.setFixedHeight(22)
-        self.blinkLaserButton.clicked.connect(self.blink_laser)
+        self.blink_laser_button = QPushButton("Blink On", self)
+        self.blink_laser_button.setToolTip("Unlimited laser blink")
+        self.blink_laser_button.setGeometry(QRect(10, 180, 230, 40))
+        self.blink_laser_button.setFixedHeight(22)
+        self.blink_laser_button.clicked.connect(self.blink_laser)
 
         # laser switch button
-        self.switchLaserButton = QPushButton("Laser ON", self)
-        self.switchLaserButton.setToolTip("Laser switch")
-        self.switchLaserButton.setGeometry(QRect(10, 210, 230, 40))
-        self.switchLaserButton.setFixedHeight(22)
-        self.switchLaserButton.clicked.connect(self.switch_laser)
+        self.switch_laser_button = QPushButton("Laser ON", self)
+        self.switch_laser_button.setToolTip("Laser switch")
+        self.switch_laser_button.setGeometry(QRect(10, 210, 230, 40))
+        self.switch_laser_button.setFixedHeight(22)
+        self.switch_laser_button.clicked.connect(self.switch_laser)
 
         # Apply button
-        self.validateButton = QPushButton(self)
-        self.validateButton.setGeometry(QRect(10, 240, 230, 40))
-        self.validateButton.setToolTip("Click to save settings")
-        self.validateButton.setFont(QFont('Times', 20))
-        self.validateButton.setText("Apply")
-        self.validateButton.clicked.connect(self.validate_settings)
+        self.validate_button = QPushButton(self)
+        self.validate_button.setGeometry(QRect(10, 240, 230, 40))
+        self.validate_button.setToolTip("Click to save settings")
+        self.validate_button.setFont(QFont('Times', 20))
+        self.validate_button.setText("Apply")
+        self.validate_button.clicked.connect(self.validate_settings)
 
     def validate_settings(self):
-        self.laser_pulse_n = int(self.pulseNumberInput.text())
-        self.laser_on_time = int(self.laserOnInput.text())
-        self.laser_off_time = int(self.laserOffInput.text())
-        self.laser_x_loc = int(self.laserCoordXInput.text())
-        self.laser_y_loc = int(self.laserCoordYInput.text())
-        self.offset = int(self.laserOffsetInput.text())
-        self.change_params.emit(self.laser_pulse_n, self.laser_on_time, self.laser_off_time, self.laser_x_loc,
-                                self.laser_y_loc, self.offset)
+        """
+        Function to collect data with laser settings from inputboxes.
+        The data are sent via signal to main.py.
+        :return:
+        """
+        try:
+            self.laser_pulse_n = int(self.pulse_number_input.text())
+            self.laser_on_time = int(self.laser_on_input.text())
+            self.laser_off_time = int(self.laser_off_input.text())
+            self.laser_x_loc = int(self.laser_coordx_input.text())
+            self.laser_y_loc = int(self.laser_coordy_input.text())
+            self.offset = int(self.laser_offset_input.text())
+            self.change_params.emit(self.laser_pulse_n, self.laser_on_time,
+                                    self.laser_off_time, self.laser_x_loc,
+                                    self.laser_y_loc, self.offset)
+        except ValueError:
+            self.logger.logger.exception("Error in Laser window validate settings")
+            #TODO raise window with error information so the user can check the data
 
     def blink_laser(self):
-        if self.blinkLaserButton.text() == "Blink On":
+        """
+        Function to emit signal with laser blinking settings. Signal is accepted in main.py
+        that sends and appropriate request to RPI via worker_raspi.py.
+        :return:
+        """
+        if self.blink_laser_button.text() == "Blink On":
             time_on = int(self.laser_on_time)
             time_off = int(self.laser_off_time)
             self.laser_control_signal.emit("k" + "," + str(time_on) + "," + str(time_off))
-            self.blinkLaserButton.setText("Blink Off")
+            self.blink_laser_button.setText("Blink Off")
         else:
-            self.blinkLaserButton.setText("Blink On")
+            self.blink_laser_button.setText("Blink On")
             self.laser_control_signal.emit("t")
 
     def switch_laser(self):
-        if self.switchLaserButton.text() == "Laser ON":
+        """
+        Function to emit signal to main.py about requested state of laser (ON/OFF).
+        Signal is accepted in main.py and the appropriate request is sent via worker_raspi.py.
+        :return:
+        """
+        if self.switch_laser_button.text() == "Laser ON":
             self.laser_control_signal.emit("s")
-            self.switchLaserButton.setText("Laser OFF")
+            self.switch_laser_button.setText("Laser OFF")
         else:
             self.laser_control_signal.emit("l")
-            self.switchLaserButton.setText("Laser ON")
+            self.switch_laser_button.setText("Laser ON")
