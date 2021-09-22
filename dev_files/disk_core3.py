@@ -2,8 +2,7 @@ import cv2
 import numpy as np
 import time
 import math
-import astar
-import rrtstar
+from dev_files import astar, rrtstar
 from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 
 
