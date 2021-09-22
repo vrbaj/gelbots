@@ -50,7 +50,6 @@ class GelbotsWindow(QMainWindow):
             self.config = configparser.RawConfigParser()
         except Exception as ex:
             print(ex)
-
         try:
             self.config.read(self.CONFIG_FILE_NAME)
             self.cam_width_value = self.config.getint("camera", "width", fallback=1920)

@@ -254,7 +254,7 @@ class RaspiControl:
                 conn, addr = s.accept()
                 while True:
                     try:
-                        data = conn.recv(100)
+                        data = conn.recv(150)
                         if len(data) > 0:
                             print(data)
                             data_decode = data.decode("UTF-8")

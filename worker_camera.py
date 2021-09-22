@@ -1,8 +1,10 @@
-from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 import time
-import cv2
-# from tifffile import imsave
 from datetime import datetime
+
+import cv2
+from PyQt5.QtCore import QThread, QMutex, pyqtSignal
+
+# from tifffile import imsave
 
 
 # opencv 4.1.0.25
@@ -43,14 +45,14 @@ class CameraWorker(QThread):
         try:
             self.camera = cv2.VideoCapture(camera, cv2.CAP_DSHOW)
             self.update_params()
-            ix = 0
-            while ix < 100:
-                self.camera.read()
-                ix = ix + 1
-            ret, self.back_ground = self.camera.read()
+            # ix = 0
+            # while ix < 100:
+            #     self.camera.read()
+            #     ix = ix + 1
+            # ret, self.back_ground = self.camera.read()
         except Exception as ex:
             print("Cam exp: ", ex)
-        self.backSub = cv2.createBackgroundSubtractorMOG2()
+        # self.background_subtractor = cv2.createBackgroundSubtractorMOG2()
 
     def run(self):
         while True:
@@ -103,7 +105,7 @@ class CameraWorker(QThread):
 
     def get_image(self):
         try:
-            ret, image2 = self.camera.read()
+            _, image2 = self.camera.read()
             # image2 = cv2.imread("1920x1080.png")
             # print("going to subb")
             # image = []

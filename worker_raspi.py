@@ -1,6 +1,6 @@
-from PyQt5.QtCore import QThread, pyqtSignal
 import time
 import socket
+from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class RaspiWorker(QThread):
@@ -25,22 +25,19 @@ class RaspiWorker(QThread):
             self.raspi_status = False
             self.signal_comm_err.emit()
 
-        while True:
-            if self.quit_flag:
-                break
-            else:
-                if len(self.requests_queue):
-                    request_to_process = self.requests_queue.pop(0)
-                    print("req:", request_to_process)
-                    try:
-                        self.k.sendall(bytes(request_to_process + ";", "UTF-8"))
-                    except (Exception, socket.error) as ex:
-                        print("raspi disconnected: ", ex)
-                        self.raspi_status = False
-                        self.k.close()
-                        self.quit_flag = True
-                        self.signal_comm_err.emit()
-                time.sleep(0.05)
+        while not self.quit_flag:
+            if self.requests_queue:
+                request_to_process = self.requests_queue.pop(0)
+                print("req:", request_to_process)
+                try:
+                    self.k.sendall(bytes(request_to_process + ";", "UTF-8"))
+                except (Exception, socket.error) as ex:
+                    print("raspi disconnected: ", ex)
+                    self.raspi_status = False
+                    self.k.close()
+                    self.quit_flag = True
+                    self.signal_comm_err.emit()
+            time.sleep(0.05)
         self.k.close()
         self.quit()
         self.wait()
