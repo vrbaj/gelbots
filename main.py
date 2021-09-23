@@ -18,6 +18,7 @@ import window_formation
 import window_sfl
 import window_laser
 import window_video
+from gelbots_dataclasses import LaserParams
 from copy import deepcopy
 
 
@@ -51,6 +52,9 @@ class GelbotsWindow(QMainWindow):
         except Exception as ex:
             print(ex)
         try:
+            #TODO LaserParams
+            #TODO this TRY bullshit to function
+            self.laser_params = LaserParams
             self.config.read(self.CONFIG_FILE_NAME)
             self.cam_width_value = self.config.getint("camera", "width", fallback=1920)
             self.cam_height_value = self.config.getint("camera", "height", fallback=1080)
@@ -60,12 +64,12 @@ class GelbotsWindow(QMainWindow):
             self.cam_brightness_value = float(str(self.config.get("camera", "brightness",
                                                                   fallback=0.5)).replace(",", "."))
             self.mag_value = self.config.getint("camera", "mag", fallback=4)
-            self.laser_pulse_n = self.config.getint("laser", "pulses", fallback=1)
-            self.laser_on_time = self.config.getint("laser", "on_time", fallback=1)
-            self.laser_off_time = self.config.getint("laser", "off_time", fallback=1)
-            self.laser_x_loc = self.config.getint("laser", "x_loc", fallback=0)
-            self.laser_y_loc = self.config.getint("laser", "y_loc", fallback=0)
-            self.offset = self.config.getint("laser", "offset", fallback=10)
+            self.laser_params.laser_pulse_n = self.config.getint("laser", "pulses", fallback=1)
+            self.laser_params.laser_on_time = self.config.getint("laser", "on_time", fallback=1)
+            self.laser_params.laser_off_time = self.config.getint("laser", "off_time", fallback=1)
+            self.laser_params.laser_x_loc = self.config.getint("laser", "x_loc", fallback=0)
+            self.laser_params.laser_y_loc = self.config.getint("laser", "y_loc", fallback=0)
+            self.laser_params.offset = self.config.getint("laser", "offset", fallback=10)
             self.disk_x_loc = self.config.getint("disk", "x_loc", fallback=0)
             self.disk_y_loc = self.config.getint("disk", "y_loc", fallback=0)
             self.goal_x_loc = self.config.getint("goal", "x_loc", fallback=0)
@@ -446,9 +450,9 @@ class GelbotsWindow(QMainWindow):
         #                                     self.laser_pulse_n * (self.laser_on_time + self.laser_off_time),
         #                                     self.offset, self.mag_value, self.target_list, self.disk_list)
 
-        self.disk_core = disk_core.DiskCore([self.laser_x_loc, self.laser_y_loc],
-                                           self.laser_pulse_n * (self.laser_on_time + self.laser_off_time),
-                                           self.offset,
+        self.disk_core = disk_core.DiskCore([self.laser_params.laser_x_loc, self.laser_params.laser_y_loc],
+                                           self.laser_params.laser_pulse_n * (self.laser_params.laser_on_time + self.laser_params.laser_off_time),
+                                           self.laser_params.offset,
                                            self.mag_value, self.target_list, self.disk_list)
 
         self.disk_core.gray_image_request.connect(self.core_image_request)
@@ -484,9 +488,10 @@ class GelbotsWindow(QMainWindow):
         self.video_settings_window.closed.connect(self.video_settings_close)
 
         # laser settings window
-        self.laser_settings_window = window_laser.LaserSettingsWindow(self.laser_pulse_n, self.laser_on_time,
-                                                                      self.laser_off_time, self.laser_x_loc,
-                                                                      self.laser_y_loc, self.offset)
+        # self.laser_settings_window = window_laser.LaserSettingsWindow(self.laser_pulse_n, self.laser_on_time,
+        #                                                               self.laser_off_time, self.laser_x_loc,
+        #                                                               self.laser_y_loc, self.offset)
+        self.laser_settings_window = window_laser.LaserSettingsWindow(self.laser_params)
         self.laser_settings_window.change_params.connect(self.laser_settings_changed)
         self.laser_settings_window.laser_control_signal.connect(self.laser_control)
 
@@ -692,19 +697,19 @@ class GelbotsWindow(QMainWindow):
         self.update_config_file()
 
     def laser_settings_changed(self, n, on, off, x, y, offset):
-        self.laser_pulse_n = n
-        self.laser_on_time = on
-        self.laser_off_time = off
-        self.laser_x_loc = x
-        self.laser_y_loc = y
-        self.offset = offset
-        self.config.set("laser", "pulses", self.laser_pulse_n)
-        self.config.set("laser", "on_time", self.laser_on_time)
-        self.config.set("laser", "off_time", self.laser_off_time)
-        self.config.set("laser", "x_loc", self.laser_x_loc)
-        self.config.set("laser", "y_loc", self.laser_y_loc)
-        self.config.set("laser", "offset", self.offset)
-        self.disk_core.region_offset = self.offset
+        self.laser_params.laser_pulse_n = n
+        self.laser_params.laser_on_time = on
+        self.laser_params.laser_off_time = off
+        self.laser_params.laser_x_loc = x
+        self.laser_params.laser_y_loc = y
+        self.laser_params.offset = offset
+        self.config.set("laser", "pulses", self.laser_params.laser_pulse_n)
+        self.config.set("laser", "on_time", self.laser_params.laser_on_time)
+        self.config.set("laser", "off_time", self.laser_params.laser_off_time)
+        self.config.set("laser", "x_loc", self.laser_params.laser_x_loc)
+        self.config.set("laser", "y_loc", self.laser_params.laser_y_loc)
+        self.config.set("laser", "offset", self.laser_params.offset)
+        self.disk_core.region_offset = self.laser_params.offset
         self.update_config_file()
 
     def pulse(self):
@@ -1024,9 +1029,9 @@ class GelbotsWindow(QMainWindow):
 
     def blink_laser_n(self):
         print("main.py blink_laser_n")
-        time_on = int(self.laser_on_time)
-        time_off = int(self.laser_off_time)
-        n = int(self.laser_pulse_n)
+        time_on = int(self.laser_params.laser_on_time)
+        time_off = int(self.laser_params.laser_off_time)
+        n = int(self.laser_params.laser_pulse_n)
         self.raspi_comm.requests_queue.append("q" + "," + str(time_on) + "," + str(time_off) + "," + str(n))
 
     def raspi_fail(self):
