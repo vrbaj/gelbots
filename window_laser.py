@@ -108,19 +108,39 @@ class LaserSettingsWindow(QMainWindow):
         self.blink_laser_button.clicked.connect(self.blink_laser)
 
         # laser switch button
-        self.switch_laser_button = QPushButton("Laser ON", self)
-        self.switch_laser_button.setToolTip("Laser switch")
-        self.switch_laser_button.setGeometry(QRect(10, 210, 230, 40))
-        self.switch_laser_button.setFixedHeight(22)
-        self.switch_laser_button.clicked.connect(self.switch_laser)
+        self.switch_laser_button = self.switch_laser
 
         # Apply button
-        self.validate_button = QPushButton(self)
-        self.validate_button.setGeometry(QRect(10, 240, 230, 40))
-        self.validate_button.setToolTip("Click to save settings")
-        self.validate_button.setFont(QFont('Times', 20))
-        self.validate_button.setText("Apply")
-        self.validate_button.clicked.connect(self.validate_settings)
+        self.validate_button = self.validate_settings
+
+    @property
+    def switch_laser_button(self):
+        return self.__switch_laser_button
+
+    @property
+    def validate_button(self):
+        return self.__validate_button
+
+    @validate_button.setter
+    def validate_button(self, validate_settings):
+        self.__validate_button = QPushButton(self)
+        self.__validate_button.setGeometry(QRect(10, 240, 230, 40))
+        self.__validate_button.setToolTip("Click to save settings")
+        self.__validate_button.setFont(QFont('Times', 20))
+        self.__validate_button.setText("Apply")
+        self.__validate_button.clicked.connect(validate_settings)
+
+    @switch_laser_button.setter
+    def switch_laser_button(self, switch_laser, **kwargs):
+        if "button_text" in kwargs.keys():
+            self.__switch_laser_button.setText(kwargs["button_text"])
+        else:
+            self.__switch_laser_button = QPushButton(self)
+            self.__switch_laser_button.setToolTip("Laser switch")
+            self.__switch_laser_button.setGeometry(QRect(10, 210, 230, 40))
+            self.__switch_laser_button.setFixedHeight(22)
+            self.__switch_laser_button.setText("Laser ON")
+            self.__switch_laser_button.clicked.connect(switch_laser)
 
     def validate_settings(self):
         """
