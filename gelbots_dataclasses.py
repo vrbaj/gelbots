@@ -30,6 +30,8 @@ class SflParams:
     sfl_light_off: int
     sfl_pulse: int
     sfl_radius: int
+    sfl_x_loc: int
+    sfl_y_loc: int
     stamping_dx: int
     stamping_dy: int
     stamping_x_delay: int
@@ -41,3 +43,4 @@ class SflParams:
     stamping_x_steps: int
     stamping_y_steps: int
     stamping_batch_size: int
+

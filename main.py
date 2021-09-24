@@ -18,7 +18,7 @@ import window_formation
 import window_sfl
 import window_laser
 import window_video
-from gelbots_dataclasses import LaserParams
+from gelbots_dataclasses import LaserParams, SflParams
 from copy import deepcopy
 
 
@@ -55,6 +55,7 @@ class GelbotsWindow(QMainWindow):
             #TODO LaserParams
             #TODO this TRY bullshit to function
             self.laser_params = LaserParams
+            self.sfl_params = SflParams
             self.config.read(self.CONFIG_FILE_NAME)
             self.cam_width_value = self.config.getint("camera", "width", fallback=1920)
             self.cam_height_value = self.config.getint("camera", "height", fallback=1080)
@@ -74,31 +75,31 @@ class GelbotsWindow(QMainWindow):
             self.disk_y_loc = self.config.getint("disk", "y_loc", fallback=0)
             self.goal_x_loc = self.config.getint("goal", "x_loc", fallback=0)
             self.goal_y_loc = self.config.getint("goal", "y_loc", fallback=0)
-            self.sfl_x_loc = self.config.getint("sfl", "x_loc", fallback=0)
-            self.sfl_y_loc = self.config.getint("sfl", "y_loc", fallback=0)
-            self.sfl_radius = self.config.getint("sfl", "radius", fallback=0)
+            self.sfl_params.sfl_x_loc = self.config.getint("sfl", "x_loc", fallback=0)
+            self.sfl_params.sfl_y_loc = self.config.getint("sfl", "y_loc", fallback=0)
+            self.sfl_params.sfl_radius = self.config.getint("sfl", "radius", fallback=0)
             self.steppers_x = self.config.getint("steppers", "x", fallback=10)
             self.steppers_y = self.config.getint("steppers", "y", fallback=10)
             self.save_interval = self.config.getint("video", "interval", fallback=1)
             self.save_namespace = self.config.get("video", "namespace", fallback="video")
             self.save_path = self.config.get("video", "path", fallback="c:/")
-            self.sfl_flush_on = self.config.getint("sfl", "flush_on", fallback=50)
-            self.sfl_flush_off = self.config.getint("sfl", "flush_off", fallback=500)
-            self.sfl_light_on = self.config.getint("sfl", "light_on", fallback=50)
-            self.sfl_light_off = self.config.getint("sfl", "light_off", fallback=500)
-            self.sfl_pulse = self.config.getint("sfl", "pulse", fallback=3000)
+            self.sfl_params.sfl_flush_on = self.config.getint("sfl", "flush_on", fallback=50)
+            self.sfl_params.sfl_flush_off = self.config.getint("sfl", "flush_off", fallback=500)
+            self.sfl_params.sfl_light_on = self.config.getint("sfl", "light_on", fallback=50)
+            self.sfl_params.sfl_light_off = self.config.getint("sfl", "light_off", fallback=500)
+            self.sfl_params.sfl_pulse = self.config.getint("sfl", "pulse", fallback=3000)
             # stamping settings
-            self.stamping_dx = self.config.getint("stamping", "dx", fallback=1)
-            self.stamping_dy = self.config.getint("stamping", "dy", fallback=1)
-            self.stamping_x_delay = self.config.getint("stamping", "x_delay", fallback=100)
-            self.stamping_y_delay = self.config.getint("stamping", "y_delay", fallback=100)
-            self.stamping_light_on = self.config.getint("stamping", "light_on", fallback=100)
-            self.stamping_light_off = self.config.getint("stamping", "light_off", fallback=100)
-            self.stamping_flush_on = self.config.getint("stamping", "flush_on", fallback=100)
-            self.stamping_flush_off = self.config.getint("stamping", "flush_off", fallback=100)
-            self.stamping_x_steps = self.config.getint("stamping", "x_steps", fallback=100)
-            self.stamping_y_steps = self.config.getint("stamping", "y_steps", fallback=100)
-            self.stamping_batch_size = self.config.getint("stamping", "batch_size", fallback=100)
+            self.sfl_params.stamping_dx = self.config.getint("stamping", "dx", fallback=1)
+            self.sfl_params.stamping_dy = self.config.getint("stamping", "dy", fallback=1)
+            self.sfl_params.stamping_x_delay = self.config.getint("stamping", "x_delay", fallback=100)
+            self.sfl_params.stamping_y_delay = self.config.getint("stamping", "y_delay", fallback=100)
+            self.sfl_params.stamping_light_on = self.config.getint("stamping", "light_on", fallback=100)
+            self.sfl_params.stamping_light_off = self.config.getint("stamping", "light_off", fallback=100)
+            self.sfl_params.stamping_flush_on = self.config.getint("stamping", "flush_on", fallback=100)
+            self.sfl_params.stamping_flush_off = self.config.getint("stamping", "flush_off", fallback=100)
+            self.sfl_params.stamping_x_steps = self.config.getint("stamping", "x_steps", fallback=100)
+            self.sfl_params.stamping_y_steps = self.config.getint("stamping", "y_steps", fallback=100)
+            self.sfl_params.stamping_batch_size = self.config.getint("stamping", "batch_size", fallback=100)
             print(self.sfl_radius)
         except Exception as ex:
             print(ex)
@@ -495,14 +496,7 @@ class GelbotsWindow(QMainWindow):
         self.laser_settings_window.change_params.connect(self.laser_settings_changed)
         self.laser_settings_window.laser_control_signal.connect(self.laser_control)
 
-        self.sfl_settings_window = window_sfl.SflSettingsWindow(self.sfl_flush_on, self.sfl_flush_off,
-                                                                self.sfl_light_on, self.sfl_light_off, self.sfl_pulse,
-                                                                self.sfl_radius, self.stamping_dx, self.stamping_dy,
-                                                                self.stamping_x_delay, self.stamping_y_delay,
-                                                                self.stamping_light_on, self.stamping_light_off,
-                                                                self.stamping_flush_on, self.stamping_flush_off,
-                                                                self.stamping_x_steps, self.stamping_y_steps,
-                                                                self.stamping_batch_size)
+        self.sfl_settings_window = window_sfl.SflSettingsWindow(self.sfl_params)
         self.sfl_settings_window.change_params.connect(self.sfl_settings_changed)
 
         self.sfl_settings_window.sfl_switch_signal.connect(self.sfl_switch)
