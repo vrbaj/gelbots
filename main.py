@@ -52,7 +52,6 @@ class GelbotsWindow(QMainWindow):
         except Exception as ex:
             print(ex)
         try:
-            #TODO LaserParams
             #TODO this TRY bullshit to function
             self.laser_params = LaserParams
             self.sfl_params = SflParams
@@ -100,7 +99,6 @@ class GelbotsWindow(QMainWindow):
             self.sfl_params.stamping_x_steps = self.config.getint("stamping", "x_steps", fallback=100)
             self.sfl_params.stamping_y_steps = self.config.getint("stamping", "y_steps", fallback=100)
             self.sfl_params.stamping_batch_size = self.config.getint("stamping", "batch_size", fallback=100)
-            print(self.sfl_radius)
         except Exception as ex:
             print(ex)
         print(self.config.sections())
