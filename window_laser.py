@@ -19,11 +19,9 @@ class LaserSettingsWindow(QMainWindow):
     # pylint: disable=too-many-instance-attributes
     # Eight is reasonable in this case.
 
-    # change_params = pyqtSignal(int, int, int, int, int, int)
     change_params = pyqtSignal(LaserParams)
     laser_control_signal = pyqtSignal(str)
 
-    # def __init__(self, pulse_number, on_time, off_time, x, y, offset):
     def __init__(self, laser_params: LaserParams):
         super().__init__()
         self.logger = ErrorLogger()
@@ -188,10 +186,19 @@ class LaserSettingsWindow(QMainWindow):
         :return:
         """
         if self.blink_laser_button.text() == "Blink On":
-            time_on = int(self.laser_params.laser_on_time)
-            time_off = int(self.laser_params.laser_off_time)
-            self.laser_control_signal.emit("k" + "," + str(time_on) + "," + str(time_off))
-            self.blink_laser_button.setText("Blink Off")
+            try:
+                time_on = int(self.laser_params.laser_on_time)
+                time_off = int(self.laser_params.laser_off_time)
+                self.laser_control_signal.emit("k" + "," + str(time_on) + "," + str(time_off))
+                self.blink_laser_button.setText("Blink Off")
+            except ValueError:
+                self.logger.logger.exception("Error in Laser window: Blink ON")
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("Error")
+                msg.setInformativeText("Laser params are not numbers")
+                msg.setWindowTitle("Error")
+                msg.exec_()
         else:
             self.blink_laser_button.setText("Blink On")
             self.laser_control_signal.emit("t")

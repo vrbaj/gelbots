@@ -722,30 +722,30 @@ class GelbotsWindow(QMainWindow):
         self.update_config_file()
 
     def flush_switch(self):
-        if self.sfl_settings_window.sflFlushButton.text() == "Flush ON":
-            self.sfl_settings_window.sflFlushButton.setText("Flush OFF")
+        if self.sfl_settings_window.sfl_flush_button.text() == "Flush ON":
+            self.sfl_settings_window.sfl_flush_button.setText("Flush OFF")
             self.raspi_comm.requests_queue.append("n")
         else:
             self.raspi_comm.requests_queue.append("m")
-            self.sfl_settings_window.sflFlushButton.setText("Flush ON")
+            self.sfl_settings_window.sfl_flush_button.setText("Flush ON")
 
     def light_switch(self):
-        if self.sfl_settings_window.sflLightButton.text() == "Light ON":
-            self.sfl_settings_window.sflLightButton.setText("Light OFF")
+        if self.sfl_settings_window.sfl_light_button.text() == "Light ON":
+            self.sfl_settings_window.sfl_light_button.setText("Light OFF")
             self.raspi_comm.requests_queue.append("j")
         else:
             self.raspi_comm.requests_queue.append("h")
-            self.sfl_settings_window.sflLightButton.setText("Light ON")
+            self.sfl_settings_window.sfl_light_button.setText("Light ON")
 
     def sfl_switch(self):
-        if self.sfl_settings_window.sflButton.text() == "SFL ON":
-            self.sfl_settings_window.sflButton.setText("SFL OFF")
+        if self.sfl_settings_window.sfl_switch_button.text() == "SFL ON":
+            self.sfl_settings_window.sfl_switch_button.setText("SFL OFF")
             self.raspi_comm.requests_queue.append("p" + "," + str(self.sfl_flush_on) + "," + str(self.sfl_flush_off) +
                                                   "," + str(self.sfl_light_on) + "," + str(self.sfl_light_off))
         else:
             self.raspi_comm.requests_queue.clear()
             self.raspi_comm.requests_queue.append("o")
-            self.sfl_settings_window.sflButton.setText("SFL ON")
+            self.sfl_settings_window.sfl_switch_button.setText("SFL ON")
 
             # TODO stop
 
