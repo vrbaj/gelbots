@@ -2,7 +2,7 @@
 This module is implementing the window with sfl settings and control.
 """
 
-from PyQt5.QtWidgets import QMainWindow, QLabel, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QMainWindow, QLabel, QLineEdit, QPushButton, QMessageBox
 from PyQt5.QtCore import QSize, QRect, pyqtSignal
 from PyQt5.QtGui import QIntValidator
 
@@ -18,7 +18,10 @@ class SflSettingsWindow(QMainWindow):
     # pylint: disable=too-many-instance-attributes
     # 42 is reasonable in this case.
 
-    change_params = pyqtSignal(SflParams)
+    # pylint: disable=too-many-statements
+    # 51 is reasonable in this case
+
+    change_params = pyqtSignal(object)
     pulse_signal = pyqtSignal()
     flush_switch_signal = pyqtSignal()
     light_switch_signal = pyqtSignal()
@@ -270,38 +273,72 @@ class SflSettingsWindow(QMainWindow):
         self.sfl_validate_button.clicked.connect(self.validate_settings)
 
     def validate_settings(self):
-        self.sfl_params.sfl_pulse = int(self.sfl_pulse_input.text())
-        self.sfl_params.sfl_flush_on = int(self.sfl_flush_on_input.text())
-        self.sfl_params.sfl_flush_off = int(self.sfl_flush_off_input.text())
-        self.sfl_params.sfl_light_on = int(self.sfl_light_on_input.text())
-        self.sfl_params.sfl_light_off = int(self.sfl_light_off_input.text())
-        self.sfl_params.sfl_radius = int(self.sfl_radius_input.text())
-        self.sfl_params.stamping_dx = int(self.stamping_dx_input.text())
-        self.sfl_params.stamping_dy = int(self.stamping_dy_input.text())
-        self.sfl_params.stamping_x_delay = int(self.stamping_x_delay_input.text())
-        self.sfl_params.stamping_y_delay = int(self.stamping_y_delay_input.text())
-        self.sfl_params.stamping_light_on = int(self.stamping_light_on_input.text())
-        self.sfl_params.stamping_light_off = int(self.stamping_light_off_input.text())
-        self.sfl_params.stamping_flush_on = int(self.stamping_flush_on_input.text())
-        self.sfl_params.stamping_flush_off = int(self.stamping_flush_off_input.text())
-        self.sfl_params.stamping_x_steps = int(self.stamping_x_steps_input.text())
-        self.sfl_params.stamping_y_steps = int(self.stamping_y_steps_input.text())
-        self.sfl_params.stamping_batch_size = int(self.stamping_batch_size_input.text())
-        self.change_params.emit(self.sfl_params)
+        """
+        This function converts the text from input boxes to numbers and emit
+        signal to main.py where is the config file overwritten.
+        :return:
+        """
+        try:
+            self.sfl_params.sfl_pulse = int(self.sfl_pulse_input.text())
+            self.sfl_params.sfl_flush_on = int(self.sfl_flush_on_input.text())
+            self.sfl_params.sfl_flush_off = int(self.sfl_flush_off_input.text())
+            self.sfl_params.sfl_light_on = int(self.sfl_light_on_input.text())
+            self.sfl_params.sfl_light_off = int(self.sfl_light_off_input.text())
+            self.sfl_params.sfl_radius = int(self.sfl_radius_input.text())
+            self.sfl_params.stamping_dx = int(self.stamping_dx_input.text())
+            self.sfl_params.stamping_dy = int(self.stamping_dy_input.text())
+            self.sfl_params.stamping_x_delay = int(self.stamping_x_delay_input.text())
+            self.sfl_params.stamping_y_delay = int(self.stamping_y_delay_input.text())
+            self.sfl_params.stamping_light_on = int(self.stamping_light_on_input.text())
+            self.sfl_params.stamping_light_off = int(self.stamping_light_off_input.text())
+            self.sfl_params.stamping_flush_on = int(self.stamping_flush_on_input.text())
+            self.sfl_params.stamping_flush_off = int(self.stamping_flush_off_input.text())
+            self.sfl_params.stamping_x_steps = int(self.stamping_x_steps_input.text())
+            self.sfl_params.stamping_y_steps = int(self.stamping_y_steps_input.text())
+            self.sfl_params.stamping_batch_size = int(self.stamping_batch_size_input.text())
+            self.change_params.emit(self.sfl_params)
+        except ValueError:
+            self.logger.logger.exception("Error in Sfl window validate settings")
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Error")
+            msg.setInformativeText("Sfl params are not numbers")
+            msg.setWindowTitle("Error")
+            msg.exec_()
 
     def pulse(self):
+        """
+        Function to emit signal to main.py to perform sfl pulse.
+        :return:
+        """
         self.pulse_signal.emit()
 
     def flush_switch(self):
+        """
+        Function to emit signal to main.py to switch flush.
+        :return:
+        """
         self.flush_switch_signal.emit()
 
     def light_switch(self):
+        """
+        Function to emit signal to main.py to switch light.
+        :return:
+        """
         self.light_switch_signal.emit()
 
     def sfl_switch(self):
+        """
+        Function to emit signal to main.py to start sfl.
+        :return:
+        """
         self.sfl_switch_signal.emit()
 
     def switch_stamping(self):
+        """
+        Function to emit signal to main.py to start sfl stamping mode.
+        :return:
+        """
         if self.sfl_stamping_button.text() == "Stamping ON":
             self.stamping_switch_signal.emit("start")
             self.sfl_stamping_button.setText("Stamping OFF")

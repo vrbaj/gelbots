@@ -571,12 +571,17 @@ class GelbotsWindow(QMainWindow):
     def stamping_switch(self, command):
         print(command)
         if command == "start":
-            self.raspi_comm.requests_queue.append("b," + str(self.stamping_dx) + "," + str(self.stamping_dy) + "," +
-                                                  str(self.stamping_x_steps) + "," + str(self.stamping_y_steps) + "," +
-                                                  str(self.stamping_x_delay) + "," + str(self.stamping_y_delay) + "," +
-                                                  str(self.stamping_light_on) + "," + str(self.stamping_light_off) +
-                                                  "," + str(self.stamping_flush_on) + "," +
-                                                  str(self.stamping_flush_off) + "," + str(self.stamping_batch_size))
+            self.raspi_comm.requests_queue.append("b," + str(self.sfl_params.stamping_dx) +
+                                                  "," + str(self.sfl_params.stamping_dy) +
+                                                  "," + str(self.sfl_params.stamping_x_steps) +
+                                                  "," + str(self.sfl_params.stamping_y_steps) +
+                                                  "," + str(self.sfl_params.stamping_x_delay) +
+                                                  "," + str(self.sfl_params.stamping_y_delay) +
+                                                  "," + str(self.sfl_params.stamping_light_on) +
+                                                  "," + str(self.sfl_params.stamping_light_off) +
+                                                  "," + str(self.sfl_params.stamping_flush_on) +
+                                                  "," + str(self.sfl_params.stamping_flush_off) +
+                                                  "," + str(self.sfl_params.stamping_batch_size))
         elif command == "end":
             self.raspi_comm.requests_queue.append("c")
 
@@ -643,52 +648,32 @@ class GelbotsWindow(QMainWindow):
     def laser_control(self, command):
         self.raspi_comm.requests_queue.append(command)
 
-    def sfl_settings_changed(self, light_on, light_off, flush_on, flush_off, pulse, radius,
-                             stamping_dx, stamping_dy, stamping_x_delay, stamping_y_delay, stamping_light_on,
-                             stamping_light_off, stamping_flush_on, stamping_flush_off, stamping_x_steps,
-                             stamping_y_steps, stamping_batch_size):
+    def sfl_settings_changed(self, sfl_params: SflParams):
+        print("entering sfl_settings_changed function")
+        self.sfl_params = sfl_params
 
-        self.sfl_light_on = light_on
-        self.sfl_light_off = light_off
-        self.sfl_flush_off = flush_off
-        self.sfl_flush_on = flush_on
-        self.sfl_pulse = pulse
-        self.sfl_radius = radius
+        self.config.set("sfl", "pulse", str(self.sfl_params.sfl_pulse))
+        self.config.set("sfl", "light_on", str(self.sfl_params.sfl_light_on))
+        self.config.set("sfl", "light_off", str(self.sfl_params.sfl_light_off))
+        self.config.set("sfl", "flush_on", str(self.sfl_params.sfl_flush_on))
+        self.config.set("sfl", "flush_off", str(self.sfl_params.sfl_flush_off))
+        self.config.set("sfl", "radius", str(self.sfl_params.sfl_radius))
 
-        self.stamping_dx = stamping_dx
-        self.stamping_dy = stamping_dy
-        self.stamping_x_delay = stamping_x_delay
-        self.stamping_y_delay = stamping_y_delay
-        self.stamping_light_on = stamping_light_on
-        self.stamping_light_off = stamping_light_off
-        self.stamping_flush_on = stamping_flush_on
-        self.stamping_flush_off = stamping_flush_off
-        self.stamping_x_steps = stamping_x_steps
-        self.stamping_y_steps = stamping_y_steps
-        self.stamping_batch_size = stamping_batch_size
-
-        self.config.set("sfl", "pulse", self.sfl_pulse)
-        self.config.set("sfl", "light_on", self.sfl_light_on)
-        self.config.set("sfl", "light_off", self.sfl_light_off)
-        self.config.set("sfl", "flush_on", self.sfl_flush_on)
-        self.config.set("sfl", "flush_off", self.sfl_flush_off)
-        self.config.set("sfl", "radius", self.sfl_radius)
-
-        self.config.set("stamping", "dx", self.stamping_dx)
-        self.config.set("stamping", "dy", self.stamping_dy)
-        self.config.set("stamping", "x_delay", self.stamping_x_delay)
-        self.config.set("stamping", "y_delay", self.stamping_y_delay)
-        self.config.set("stamping", "light_on", self.stamping_light_on)
-        self.config.set("stamping", "light_off", self.stamping_light_off)
-        self.config.set("stamping", "flush_on", self.stamping_flush_on)
-        self.config.set("stamping", "flush_off", self.stamping_flush_off)
-        self.config.set("stamping", "x_steps", self.stamping_x_steps)
-        self.config.set("stamping", "y_steps", self.stamping_y_steps)
-        self.config.set("stamping", "batch_size", self.stamping_batch_size)
+        self.config.set("stamping", "dx", str(self.sfl_params.stamping_dx))
+        self.config.set("stamping", "dy", str(self.sfl_params.stamping_dy))
+        self.config.set("stamping", "x_delay", str(self.sfl_params.stamping_x_delay))
+        self.config.set("stamping", "y_delay", str(self.sfl_params.stamping_y_delay))
+        self.config.set("stamping", "light_on", str(self.sfl_params.stamping_light_on))
+        self.config.set("stamping", "light_off", str(self.sfl_params.stamping_light_off))
+        self.config.set("stamping", "flush_on", str(self.sfl_params.stamping_flush_on))
+        self.config.set("stamping", "flush_off", str(self.sfl_params.stamping_flush_off))
+        self.config.set("stamping", "x_steps", str(self.sfl_params.stamping_x_steps))
+        self.config.set("stamping", "y_steps", str(self.sfl_params.stamping_y_steps))
+        self.config.set("stamping", "batch_size", str(self.sfl_params.stamping_batch_size))
 
         self.update_config_file()
 
-    def laser_settings_changed(self, n, on, off, x, y, offset):
+    def laser_settings_changed(self, laser_params: LaserParams):
         self.laser_params.laser_pulse_n = n
         self.laser_params.laser_on_time = on
         self.laser_params.laser_off_time = off
@@ -705,7 +690,9 @@ class GelbotsWindow(QMainWindow):
         self.update_config_file()
 
     def pulse(self):
-        self.raspi_comm.requests_queue.append("a" + "," + str(self.sfl_light_on) + "," + str(self.sfl_pulse))
+        self.raspi_comm.requests_queue.append("a" + "," +
+                                              str(self.sfl_params.sfl_light_on) +
+                                              "," + str(self.sfl_params.sfl_pulse))
 
     def sfl_pulse_edited(self):
         self.sfl_pulse = int(self.sflPulseInput.text())
@@ -732,8 +719,8 @@ class GelbotsWindow(QMainWindow):
     def sfl_switch(self):
         if self.sfl_settings_window.sfl_switch_button.text() == "SFL ON":
             self.sfl_settings_window.sfl_switch_button.setText("SFL OFF")
-            self.raspi_comm.requests_queue.append("p" + "," + str(self.sfl_flush_on) + "," + str(self.sfl_flush_off) +
-                                                  "," + str(self.sfl_light_on) + "," + str(self.sfl_light_off))
+            self.raspi_comm.requests_queue.append("p" + "," + str(self.sfl_params.sfl_flush_on) + "," + str(self.sfl_params.sfl_flush_off) +
+                                                  "," + str(self.sfl_params.sfl_light_on) + "," + str(self.sfl_params.sfl_light_off))
         else:
             self.raspi_comm.requests_queue.clear()
             self.raspi_comm.requests_queue.append("o")

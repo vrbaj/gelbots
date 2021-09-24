@@ -19,7 +19,7 @@ class LaserSettingsWindow(QMainWindow):
     # pylint: disable=too-many-instance-attributes
     # Eight is reasonable in this case.
 
-    change_params = pyqtSignal(LaserParams)
+    change_params = pyqtSignal(object)
     laser_control_signal = pyqtSignal(str)
 
     def __init__(self, laser_params: LaserParams):
