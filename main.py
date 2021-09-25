@@ -1274,7 +1274,7 @@ class GelbotsWindow(QMainWindow):
         try:
             self.camera_worker.mutex.lock()
             self.image_to_display = np.copy(self.camera_worker.raw_image)
-            if self.video_settings_window.roiCheckbox.isChecked():
+            if self.video_settings_window.roi_checkbox.isChecked():
                 self.camera_worker.save_roi = True
             else:
                 self.camera_worker.save_roi = False
