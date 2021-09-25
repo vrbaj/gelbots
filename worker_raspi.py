@@ -14,6 +14,7 @@ class RaspiWorker(QThread):
     RASPI_PI (IP address of RPI)
     RASPI_PORT (port number on which is RPI listening to receive commands)
     """
+
     signal_comm_err = pyqtSignal()
     RASPI_IP = "192.168.0.100"
     RASPI_PORT = 6543

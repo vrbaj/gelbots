@@ -6,7 +6,6 @@ from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 
 # from tifffile import imsave
 
-
 # opencv 4.1.0.25
 
 
