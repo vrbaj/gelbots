@@ -179,7 +179,6 @@ class LaserSettingsWindow(QMainWindow):
             msg.exec_()
 
     def blink_laser(self):
-        # TODO add decorators to handle general errors in both functions
         """
         Function to emit signal with laser blinking settings. Signal is accepted in main.py
         that sends and appropriate request to RPI via worker_raspi.py.

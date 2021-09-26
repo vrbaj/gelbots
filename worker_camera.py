@@ -1,3 +1,7 @@
+"""
+This module implements the camera worker, that is running in separate thread
+and grabbing images from camera and sets its parameters.
+"""
 import time
 from datetime import datetime
 
@@ -6,15 +10,13 @@ from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 
 # from tifffile import imsave
 
-# opencv 4.1.0.25
-
 
 class CameraWorker(QThread):
     image_ready = pyqtSignal()
 
     def __init__(self, camera, width, height, fps, exposure, gain, brightness, saving_interval,
                  saving_namespace, saving_path):
-        super(CameraWorker, self).__init__()
+        super().__init__()
         self.grab_flag = False  # saving frames to file
         self.quit_flag = False  # flag to kill worker
         self.change_params_flag = False  # flag to change camera settings
