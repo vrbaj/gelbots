@@ -109,101 +109,101 @@ class GelbotsWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
         # Set validators
-        self.onlyInt = QIntValidator()
-        self.onlyDbl = QDoubleValidator()
+        self.int_validator = QIntValidator()
+        self.double_validator = QDoubleValidator()
 
         # CAMERA
         # Create camera combo box label
-        self.cameraLabel = QLabel(central_widget)
-        self.cameraLabel.setGeometry(QRect(10, 5, 80, 31))
-        self.cameraLabel.setText("Camera:")
+        self.camera_label = QLabel(central_widget)
+        self.camera_label.setGeometry(QRect(10, 5, 80, 31))
+        self.camera_label.setText("Camera:")
 
         # Create combobox and add items.
-        self.cameraComboBox = QComboBox(central_widget)
-        self.cameraComboBox.setGeometry(QRect(60, 10, 40, 20))
-        self.cameraComboBox.setObjectName("cameraComboBox")
-        self.cameraComboBox.currentIndexChanged.connect(self.camera_changed)
+        self.camera_combo_box = QComboBox(central_widget)
+        self.camera_combo_box.setGeometry(QRect(60, 10, 40, 20))
+        self.camera_combo_box.setObjectName("cameraComboBox")
+        self.camera_combo_box.currentIndexChanged.connect(self.camera_changed)
 
         self.refresh_camera_list()
         self.camera_worker = None
 
         # Create width label
-        self.widthLabel = QLabel(central_widget)
-        self.widthLabel.setGeometry(QRect(120, 5, 80, 31))
-        self.widthLabel.setText("Width:")
+        self.camera_width_label = QLabel(central_widget)
+        self.camera_width_label.setGeometry(QRect(120, 5, 80, 31))
+        self.camera_width_label.setText("Width:")
 
         # Create width input box
-        self.widthInput = QLineEdit(central_widget)
-        self.widthInput.move(155, 10)
-        self.widthInput.setFixedWidth(30)
-        self.widthInput.setText(str(self.cam_width_value))
-        self.widthInput.setValidator(self.onlyInt)
-        self.widthInput.editingFinished.connect(self.width_edited)
+        self.camera_width_input = QLineEdit(central_widget)
+        self.camera_width_input.move(155, 10)
+        self.camera_width_input.setFixedWidth(30)
+        self.camera_width_input.setText(str(self.cam_width_value))
+        self.camera_width_input.setValidator(self.int_validator)
+        self.camera_width_input.editingFinished.connect(self.width_edited)
 
         # Create height label
-        self.heightLabel = QLabel(central_widget)
-        self.heightLabel.setGeometry(QRect(200, 5, 80, 31))
-        self.heightLabel.setText("Height:")
+        self.camera_height_label = QLabel(central_widget)
+        self.camera_height_label.setGeometry(QRect(200, 5, 80, 31))
+        self.camera_height_label.setText("Height:")
 
         # Create height input box
-        self.heightInput = QLineEdit(central_widget)
-        self.heightInput.move(235, 10)
-        self.heightInput.setFixedWidth(30)
-        self.heightInput.setText(str(self.cam_height_value))
-        self.heightInput.setValidator(self.onlyInt)
-        self.heightInput.editingFinished.connect(self.height_edited)
+        self.camera_height_input = QLineEdit(central_widget)
+        self.camera_height_input.move(235, 10)
+        self.camera_height_input.setFixedWidth(30)
+        self.camera_height_input.setText(str(self.cam_height_value))
+        self.camera_height_input.setValidator(self.int_validator)
+        self.camera_height_input.editingFinished.connect(self.height_edited)
 
         # Create FPS label
-        self.fpsLabel = QLabel(central_widget)
-        self.fpsLabel.setGeometry(QRect(280, 5, 80, 31))
-        self.fpsLabel.setText("FPS:")
+        self.camera_fps_label = QLabel(central_widget)
+        self.camera_fps_label.setGeometry(QRect(280, 5, 80, 31))
+        self.camera_fps_label.setText("FPS:")
 
         # Create fps input box
-        self.fpsInput = QLineEdit(central_widget)
-        self.fpsInput.move(305, 10)
-        self.fpsInput.setFixedWidth(30)
-        self.fpsInput.setText(str(self.cam_fps_value))
-        self.fpsInput.setValidator(self.onlyInt)
-        self.fpsInput.editingFinished.connect(self.fps_edited)
+        self.camera_fps_input = QLineEdit(central_widget)
+        self.camera_fps_input.move(305, 10)
+        self.camera_fps_input.setFixedWidth(30)
+        self.camera_fps_input.setText(str(self.cam_fps_value))
+        self.camera_fps_input.setValidator(self.int_validator)
+        self.camera_fps_input.editingFinished.connect(self.fps_edited)
 
         # Create exposure label
-        self.exposureLabel = QLabel(central_widget)
-        self.exposureLabel.setGeometry(QRect(350, 5, 80, 31))
-        self.exposureLabel.setText("Exposure:")
+        self.camera_exposure_label = QLabel(central_widget)
+        self.camera_exposure_label.setGeometry(QRect(350, 5, 80, 31))
+        self.camera_exposure_label.setText("Exposure:")
 
         # Create exposure input box
-        self.exposureInput = QLineEdit(central_widget)
-        self.exposureInput.move(400, 10)
-        self.exposureInput.setFixedWidth(30)
-        self.exposureInput.setText(str(self.cam_exposure_value))
-        self.exposureInput.setValidator(self.onlyInt)
-        self.exposureInput.editingFinished.connect(self.exposure_edited)
+        self.camera_exposure_input = QLineEdit(central_widget)
+        self.camera_exposure_input.move(400, 10)
+        self.camera_exposure_input.setFixedWidth(30)
+        self.camera_exposure_input.setText(str(self.cam_exposure_value))
+        self.camera_exposure_input.setValidator(self.int_validator)
+        self.camera_exposure_input.editingFinished.connect(self.exposure_edited)
 
         # Create gain label
-        self.gainLabel = QLabel(central_widget)
-        self.gainLabel.setGeometry(QRect(450, 5, 80, 31))
-        self.gainLabel.setText("Gain:")
+        self.camera_gain_label = QLabel(central_widget)
+        self.camera_gain_label.setGeometry(QRect(450, 5, 80, 31))
+        self.camera_gain_label.setText("Gain:")
 
         # Create gain input box
-        self.gainInput = QLineEdit(central_widget)
-        self.gainInput.move(480, 10)
-        self.gainInput.setFixedWidth(40)
-        self.gainInput.setText(str(self.cam_gain_value).replace(".", ","))
-        self.gainInput.setValidator(self.onlyDbl)
-        self.gainInput.editingFinished.connect(self.gain_edited)
+        self.camera_gain_input = QLineEdit(central_widget)
+        self.camera_gain_input.move(480, 10)
+        self.camera_gain_input.setFixedWidth(40)
+        self.camera_gain_input.setText(str(self.cam_gain_value).replace(".", ","))
+        self.camera_gain_input.setValidator(self.double_validator)
+        self.camera_gain_input.editingFinished.connect(self.gain_edited)
 
         # Create brightness label
-        self.brightnessLabel = QLabel(central_widget)
-        self.brightnessLabel.setGeometry(QRect(540, 5, 80, 31))
-        self.brightnessLabel.setText("Brightness:")
+        self.camera_brightness_label = QLabel(central_widget)
+        self.camera_brightness_label.setGeometry(QRect(540, 5, 80, 31))
+        self.camera_brightness_label.setText("Brightness:")
 
         # Create gain input box
-        self.brightnessInput = QLineEdit(central_widget)
-        self.brightnessInput.move(600, 10)
-        self.brightnessInput.setFixedWidth(30)
-        self.brightnessInput.setText(str(self.cam_brightness_value).replace(".", ","))
-        self.brightnessInput.setValidator(self.onlyDbl)
-        self.brightnessInput.editingFinished.connect(self.brightness_edited)
+        self.camera_brightness_input = QLineEdit(central_widget)
+        self.camera_brightness_input.move(600, 10)
+        self.camera_brightness_input.setFixedWidth(30)
+        self.camera_brightness_input.setText(str(self.cam_brightness_value).replace(".", ","))
+        self.camera_brightness_input.setValidator(self.double_validator)
+        self.camera_brightness_input.editingFinished.connect(self.brightness_edited)
 
         # Create disk x loc label
         # self.diskLocXLabel = QLabel(central_widget)
@@ -272,30 +272,30 @@ class GelbotsWindow(QMainWindow):
         self.message_text.setPlainText("Initialized..")
 
         # run camera button
-        self.runCameraButton = QPushButton('Run camera', self)
-        self.runCameraButton.setToolTip('This is an example button')
-        self.runCameraButton.move(650, 10)
-        self.runCameraButton.setFixedHeight(22)
-        self.runCameraButton.clicked.connect(self.run_camera)
+        self.run_camera_button = QPushButton('Run camera', self)
+        self.run_camera_button.setToolTip('This is an example button')
+        self.run_camera_button.move(650, 10)
+        self.run_camera_button.setFixedHeight(22)
+        self.run_camera_button.clicked.connect(self.run_camera)
 
         # status label of raspi
-        self.raspiStatus = QLabel(central_widget)
-        self.raspiStatus.setGeometry(QRect(1500, 5, 80, 30))
-        self.raspiStatus.setText("Raspberri")
-        self.raspiStatus.setAutoFillBackground(True)
-        self.raspiStatus.setStyleSheet("background-color:green;")
-        self.raspiStatus.setAlignment(Qt.AlignCenter)
-        self.raspiStatus.setFrameShape(QFrame.Panel)
-        self.raspiStatus.setFrameShadow(QFrame.Sunken)
-        self.raspiStatus.setLineWidth(2)
-        self.raspiStatus.mousePressEvent = self.init_raspi
+        self.raspi_status_label = QLabel(central_widget)
+        self.raspi_status_label.setGeometry(QRect(1500, 5, 80, 30))
+        self.raspi_status_label.setText("Raspberri")
+        self.raspi_status_label.setAutoFillBackground(True)
+        self.raspi_status_label.setStyleSheet("background-color:green;")
+        self.raspi_status_label.setAlignment(Qt.AlignCenter)
+        self.raspi_status_label.setFrameShape(QFrame.Panel)
+        self.raspi_status_label.setFrameShadow(QFrame.Sunken)
+        self.raspi_status_label.setLineWidth(2)
+        self.raspi_status_label.mousePressEvent = self.init_raspi
 
         # red button stop
-        self.redButton = QPushButton("Red button", self)
-        self.redButton.setToolTip("Click to stop all raspberry processes")
-        self.redButton.move(1000, 30)
-        self.redButton.setFixedHeight(22)
-        self.redButton.clicked.connect(self.red_button)
+        self.red_button = QPushButton("Red button", self)
+        self.red_button.setToolTip("Click to stop all raspberry processes")
+        self.red_button.move(1000, 30)
+        self.red_button.setFixedHeight(22)
+        self.red_button.clicked.connect(self.red_button)
 
         # steppers x param label
         self.steppersParamXLabel = QLabel(central_widget)
@@ -306,7 +306,7 @@ class GelbotsWindow(QMainWindow):
         self.steppersXInput = QLineEdit(central_widget)
         self.steppersXInput.move(1680, 10)
         self.steppersXInput.setFixedWidth(30)
-        self.steppersXInput.setValidator(self.onlyInt)
+        self.steppersXInput.setValidator(self.int_validator)
         self.steppersXInput.setText(str(self.steppers_x))
         self.steppersXInput.editingFinished.connect(self.steppers_x_edited)
 
@@ -319,23 +319,23 @@ class GelbotsWindow(QMainWindow):
         self.steppersYInput = QLineEdit(central_widget)
         self.steppersYInput.move(1680, 40)
         self.steppersYInput.setFixedWidth(30)
-        self.steppersYInput.setValidator(self.onlyInt)
+        self.steppersYInput.setValidator(self.int_validator)
         self.steppersYInput.setText(str(self.steppers_y))
         self.steppersYInput.editingFinished.connect(self.steppers_y_edited)
 
         # save video settings
-        self.saveVideoButton = QPushButton("Video settings", self)
-        self.saveVideoButton.setToolTip("Click to set video settings")
-        self.saveVideoButton.move(1300, 30)
-        self.saveVideoButton.setFixedHeight(22)
-        self.saveVideoButton.clicked.connect(self.save_video_settings)
+        self.save_video_button = QPushButton("Video settings", self)
+        self.save_video_button.setToolTip("Click to set video settings")
+        self.save_video_button.move(1300, 30)
+        self.save_video_button.setFixedHeight(22)
+        self.save_video_button.clicked.connect(self.save_video_settings)
 
         # laser settings window
-        self.laserSettingsButton = QPushButton("Laser settings", self)
-        self.laserSettingsButton.setToolTip("Click to set laser settings")
-        self.laserSettingsButton.move(1750, 150)
-        self.laserSettingsButton.setFixedHeight(22)
-        self.laserSettingsButton.clicked.connect(self.show_laser_settings)
+        self.laser_settings_button = QPushButton("Laser settings", self)
+        self.laser_settings_button.setToolTip("Click to set laser settings")
+        self.laser_settings_button.move(1750, 150)
+        self.laser_settings_button.setFixedHeight(22)
+        self.laser_settings_button.clicked.connect(self.show_laser_settings)
 
         # sfl settings window
         self.sflSettingsButton = QPushButton("SFL settings", self)
@@ -1000,7 +1000,7 @@ class GelbotsWindow(QMainWindow):
         self.raspi_comm.requests_queue.append("r")
 
     def init_raspi(self, event):
-        self.raspiStatus.setStyleSheet("background-color:green;")
+        self.raspi_status_label.setStyleSheet("background-color:green;")
         if not self.raspi_comm.raspi_status:
             self.raspi_comm = worker_raspi.RaspiWorker()
             self.raspi_comm.signal_comm_err.connect(self.raspi_fail)
@@ -1015,7 +1015,7 @@ class GelbotsWindow(QMainWindow):
 
     def raspi_fail(self):
         self.message_text.setPlainText("raspi went wrong")
-        self.raspiStatus.setStyleSheet("background-color:red;")
+        self.raspi_status_label.setStyleSheet("background-color:red;")
         self.raspi_comm.terminate()
 
     # def keyPressEvent(self, e):
@@ -1157,7 +1157,7 @@ class GelbotsWindow(QMainWindow):
         if self.cam_brightness_value is not None:
             try:
                 brightness_value = self.camera_worker.brightness
-                new_brightness_value = float(self.brightnessInput.text().replace(",", "."))
+                new_brightness_value = float(self.camera_brightness_input.text().replace(",", "."))
                 self.message_text.setPlainText(
                   "Brightness value changed from {} to {}".format(str(brightness_value), str(new_brightness_value)))
                 self.camera_worker.brightness = new_brightness_value
@@ -1175,7 +1175,7 @@ class GelbotsWindow(QMainWindow):
         if self.camera_worker is not None:
             try:
                 gain_value = self.camera_worker.gain
-                new_gain_value = float(self.gainInput.text().replace(",", "."))
+                new_gain_value = float(self.camera_gain_input.text().replace(",", "."))
                 self.message_text.setPlainText("Gain value changed from {} to {}".format(str(gain_value),
                                                                                          str(new_gain_value)))
                 self.camera_worker.gain = new_gain_value
@@ -1191,7 +1191,7 @@ class GelbotsWindow(QMainWindow):
         if self.camera_worker is not None:
             try:
                 exposure_value = self.camera_worker.exposure
-                new_exposure_value = int(self.exposureInput.text())
+                new_exposure_value = int(self.camera_exposure_input.text())
                 self.message_text.setPlainText("Exposure value changed from {} to {}".format(str(exposure_value),
                                                                                              str(new_exposure_value)))
                 self.camera_worker.exposure = new_exposure_value
@@ -1207,7 +1207,7 @@ class GelbotsWindow(QMainWindow):
         if self.camera_worker is not None:
             try:
                 fps_value = self.camera_worker.fps
-                new_fps_value = int(self.fpsInput.text())
+                new_fps_value = int(self.camera_fps_input.text())
                 self.message_text.setPlainText("FPS value changed from {} to {}".format(str(fps_value),
                                                                                         str(new_fps_value)))
                 self.camera_worker.fps = new_fps_value
@@ -1223,7 +1223,7 @@ class GelbotsWindow(QMainWindow):
         if self.camera_worker is not None:
             try:
                 width_value = self.camera_worker.width
-                new_width_value = int(self.widthInput.text())
+                new_width_value = int(self.camera_width_input.text())
                 self.message_text.setPlainText("Frame width value changed from {} to {}".format(str(width_value),
                                                                                                 str(new_width_value)))
                 self.camera_worker.width = new_width_value
@@ -1239,7 +1239,7 @@ class GelbotsWindow(QMainWindow):
         if self.camera_worker is not None:
             try:
                 height_value = self.camera_worker.height
-                new_height_value = int(self.heightInput.text())
+                new_height_value = int(self.camera_height_input.text())
                 self.message_text.setPlainText("Frame height value changed from {} to {}".format(str(height_value),
                                                                                                  str(new_height_value)))
                 self.camera_worker.height = new_height_value
@@ -1251,10 +1251,10 @@ class GelbotsWindow(QMainWindow):
                 print("ValueError")
 
     def run_camera(self):
-        if self.cameraComboBox.count() > 0:
-            if self.runCameraButton.text() == "Run camera":
-                self.cameraComboBox.setEnabled(False)
-                self.camera_worker = worker_camera.CameraWorker(self.cameraComboBox.currentIndex(),
+        if self.camera_combo_box.count() > 0:
+            if self.run_camera_button.text() == "Run camera":
+                self.camera_combo_box.setEnabled(False)
+                self.camera_worker = worker_camera.CameraWorker(self.camera_combo_box.currentIndex(),
                                                                 self.cam_width_value,
                                                                 self.cam_height_value, self.cam_fps_value,
                                                                 self.cam_exposure_value, self.cam_gain_value,
@@ -1262,12 +1262,12 @@ class GelbotsWindow(QMainWindow):
                                                                 self.save_namespace, self.save_path)
                 self.camera_worker.image_ready.connect(self.obtain_image)
                 self.camera_worker.start()
-                self.runCameraButton.setText("Stop camera")
+                self.run_camera_button.setText("Stop camera")
             else:
                 self.camera_worker.image_ready.disconnect(self.obtain_image)
                 self.camera_worker.quit_flag = True
-                self.cameraComboBox.setEnabled(True)
-                self.runCameraButton.setText("Run camera")
+                self.camera_combo_box.setEnabled(True)
+                self.run_camera_button.setText("Run camera")
 
     def obtain_image(self):
         """Function to get camera image from camera worker. The conversion to grayscale is done."""
@@ -1330,7 +1330,7 @@ class GelbotsWindow(QMainWindow):
         This function emits a signal to CameraWorker thread, that the working camera was changed.
         :return: No return
         """
-        print("emit signal to camera worker with index> ", self.cameraComboBox.currentIndex())
+        print("emit signal to camera worker with index> ", self.camera_combo_box.currentIndex())
 
     def refresh_camera_list(self):
         """
@@ -1347,7 +1347,7 @@ class GelbotsWindow(QMainWindow):
                 arr.append(index)
             cap.release()
         for idx, item in enumerate(arr):
-            self.cameraComboBox.addItem((str(idx)))
+            self.camera_combo_box.addItem((str(idx)))
 
     def update_config_file(self):
         try:
@@ -1377,7 +1377,6 @@ class GelbotsWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-
     app = QtWidgets.QApplication(sys.argv)
     mainWin = GelbotsWindow()
     mainWin.show()
