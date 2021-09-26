@@ -1,4 +1,4 @@
 # Project exclude paths
 /venv/
-config.ini
-gelbots.log
+.config.ini
+.gelbots.log
