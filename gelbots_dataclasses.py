@@ -18,7 +18,15 @@ class LaserParams:
 @dataclass
 class CameraParams:
     """Class for keeping camera settings together."""
-    width_value: int
+    cam_width_value: int
+    cam_height_value: int
+    cam_fps_value: int
+    cam_exposure_value: int
+    cam_gain_value: float
+    cam_brightness_value: float
+    save_interval: int
+    save_path: str
+    save_namespace: str
 
 
 @dataclass
