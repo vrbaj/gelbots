@@ -7,9 +7,11 @@ from datetime import datetime
 
 import cv2
 from PyQt5.QtCore import QThread, QMutex, pyqtSignal
+from PyQt5.QtWidgets import QMessageBox
 
-from gelbots_dataclasses import CameraParams
-from error_handling import exception_handler
+from gelbots_dataclasses import CameraParams, CameraWorkerParams
+from error_handling import exception_handler, ErrorLogger
+
 # from tifffile import imsave
 
 
@@ -22,59 +24,49 @@ class CameraWorker(QThread):
 
     def __init__(self, camera,  camera_params: CameraParams):
         super().__init__()
-        self.grab_flag = False  # saving frames to file
-        self.quit_flag = False  # flag to kill worker
-        self.change_params_flag = False  # flag to change camera settings
-        self.status = True
-        self.frame_number = 0
-        self.save_roi = False
-        self.roi_origin = (0, 0)
-        self.roi_endpoint = (0, 0)
-
-        # camera params
         self.camera_params = camera_params
-        self.last_save_time = 0
 
+        self.logger = ErrorLogger()
+        self.camera_worker_params = CameraWorkerParams
         self.mutex = QMutex()
         self.raw_image = []
-        self.back_ground = []
         try:
             self.camera = cv2.VideoCapture(camera, cv2.CAP_DSHOW)
             self.update_params()
-            # ix = 0
-            # while ix < 100:
-            #     self.camera.read()
-            #     ix = ix + 1
-            # ret, self.back_ground = self.camera.read()
-        except Exception as ex:
-            print("Cam exp: ", ex)
-        print("camera init done")
-        # self.background_subtractor = cv2.createBackgroundSubtractorMOG2()
+        except Exception:
+            self.logger.logger.exception("Error"
+                                         " during camera parameters"
+                                         " setting and test image grabbing")
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Error")
+            msg.setInformativeText("Failed to init camera.")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            raise
 
     @exception_handler
     def run(self):
-        while not self.quit_flag:
-            if self.change_params_flag:
-                try:
-                    self.update_params()
-                    self.change_params_flag = False
-                except Exception as ex:
-                    print("Exception in update params ", ex)
+        """
+        Loop to grab images from camera and send them to main.py. If
+        saving is enabled, the image (or ROI) is saved to disk as bmp file.
+        :return:
+        """
+        while not self.camera_worker_params.quit_flag:
+            if self.camera_worker_params.change_params_flag:
+                self.update_params()
+                self.camera_worker_params.change_params_flag = False
             self.mutex.lock()
             self.raw_image = self.get_image()
-            if self.grab_flag:
+            if self.camera_worker_params.grab_flag:
                 actual_time = time.time()
-                if actual_time - self.last_save_time > self.camera_params.save_interval:
-                    self.last_save_time = actual_time
+                if actual_time - self.camera_worker_params.last_save_time > \
+                        self.camera_params.save_interval:
+                    self.camera_worker_params.last_save_time = actual_time
                     try:
-                        # imsave(self.grab_directory + "/" + self.grab_namespace +
-                        #        "{0:08d}.tiff".format(self.frame_number), self.raw_image)
-                        # imsave(self.grab_directory + "/" +
-                        # str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3])
-                        #        + ".tiff", self.raw_image)
                         file_name = str(datetime.now().strftime(
                             "%Y_%m_%d_%H_%M_%S_%f")[:-3]) + ".bmp"
-                        if not self.save_roi:
+                        if not self.camera_worker_params.save_roi:
                             cv2.imwrite(self.camera_params.save_path +
                                         "/" + self.camera_params.save_namespace +
                                         file_name,
@@ -83,23 +75,37 @@ class CameraWorker(QThread):
                             cv2.imwrite(self.camera_params.save_path +
                                         "/" + self.camera_params.save_namespace +
                                         file_name,
-                                        self.raw_image[self.roi_origin[1]:self.roi_endpoint[1],
-                                        self.roi_origin[0]:self.roi_endpoint[0], :])
-                        self.frame_number += 1
-                    except Exception as ex:
-                        print(ex)
+                                        self.raw_image[self.camera_worker_params.roi_origin[1]:
+                                                       self.camera_worker_params.roi_endpoint[1],
+                                        self.camera_worker_params.roi_origin[0]:
+                                        self.camera_worker_params.roi_endpoint[0], :])
+                        self.camera_worker_params.frame_number += 1
+                    except Exception:
+                        self.logger.logger.exception("Error during saving image")
+                        msg = QMessageBox()
+                        msg.setIcon(QMessageBox.Critical)
+                        msg.setText("Error")
+                        msg.setInformativeText("Failed to save an image.")
+                        msg.setWindowTitle("Error")
+                        msg.exec_()
+                        raise
+
             self.mutex.unlock()
             self.image_ready.emit()
-            time.sleep(1 / self.camera_params.cam_fps_value)
+            time.sleep(1 / self.camera_params.fps_value)
 
         self.camera.release()
         self.camera = None
-        self.status = False
+        self.camera_worker_params.status = False
 
         self.quit()
         self.wait()
 
     def get_image(self):
+        """
+        Function to obtain image from the camera.
+        :return:
+        """
         try:
             _, image2 = self.camera.read()
             # image2 = cv2.imread("1920x1080.png")
@@ -112,19 +118,34 @@ class CameraWorker(QThread):
             #
             # print(image)
             return image2
-        except Exception as ex:
-            print(ex)
-            print("in get image")
+        except Exception:
+            self.logger.logger.exception("Error during obtaining image from camera.")
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Error")
+            msg.setInformativeText("Failed to get image from camera.")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            raise
 
     def update_params(self):
+        """
+        Function to set camera parameters.
+        :return:
+        """
         try:
-            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.camera_params.cam_width_value)
-            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.camera_params.cam_height_value)
-            self.camera.set(cv2.CAP_PROP_FPS, self.camera_params.cam_fps_value)
-            self.camera.set(cv2.CAP_PROP_GAIN, self.camera_params.cam_gain_value)
-            self.camera.set(cv2.CAP_PROP_EXPOSURE, self.camera_params.cam_exposure_value)
-            self.camera.set(cv2.CAP_PROP_BRIGHTNESS, self.camera_params.cam_brightness_value)
-
-        except Exception as ex:
-            # self.camera.get(cv2.CAP_PROP_BRIGHTNESS)
-            print("Exception in update_params method> ", ex)
+            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.camera_params.width_value)
+            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.camera_params.height_value)
+            self.camera.set(cv2.CAP_PROP_FPS, self.camera_params.fps_value)
+            self.camera.set(cv2.CAP_PROP_GAIN, self.camera_params.gain_value)
+            self.camera.set(cv2.CAP_PROP_EXPOSURE, self.camera_params.exposure_value)
+            self.camera.set(cv2.CAP_PROP_BRIGHTNESS, self.camera_params.brightness_value)
+        except Exception:
+            self.logger.logger.exception("Error during camera parameters setting")
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Error")
+            msg.setInformativeText("Failed to set camera parameters.")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            raise

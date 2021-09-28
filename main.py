@@ -58,13 +58,13 @@ class GelbotsWindow(QMainWindow):
                 self.sfl_params = SflParams
                 self.camera_params = CameraParams
                 self.config.read(self.CONFIG_FILE_NAME)
-                self.camera_params.cam_width_value = self.config.getint("camera", "width", fallback=1920)
-                self.camera_params.cam_height_value = self.config.getint("camera", "height", fallback=1080)
-                self.camera_params.cam_fps_value = self.config.getint("camera", "fps", fallback=50)
-                self.camera_params.cam_exposure_value = self.config.getint("camera", "exposure", fallback=10)
-                self.camera_params.cam_gain_value = float(str(self.config.get("camera", "gain", fallback=1)).replace(",", "."))
-                self.camera_params.cam_brightness_value = float(str(self.config.get("camera", "brightness",
-                                                                      fallback=0.5)).replace(",", "."))
+                self.camera_params.width_value = self.config.getint("camera", "width", fallback=1920)
+                self.camera_params.height_value = self.config.getint("camera", "height", fallback=1080)
+                self.camera_params.fps_value = self.config.getint("camera", "fps", fallback=50)
+                self.camera_params.exposure_value = self.config.getint("camera", "exposure", fallback=10)
+                self.camera_params.gain_value = float(str(self.config.get("camera", "gain", fallback=1)).replace(",", "."))
+                self.camera_params.brightness_value = float(str(self.config.get("camera", "brightness",
+                                                                                fallback=0.5)).replace(",", "."))
                 self.mag_value = self.config.getint("camera", "mag", fallback=4)
                 self.laser_params.laser_pulse_n = self.config.getint("laser", "pulses", fallback=1)
                 self.laser_params.laser_on_time = self.config.getint("laser", "on_time", fallback=1)
@@ -138,7 +138,7 @@ class GelbotsWindow(QMainWindow):
             self.camera_width_input = QLineEdit(central_widget)
             self.camera_width_input.move(155, 10)
             self.camera_width_input.setFixedWidth(30)
-            self.camera_width_input.setText(str(self.camera_params.cam_width_value))
+            self.camera_width_input.setText(str(self.camera_params.width_value))
             self.camera_width_input.setValidator(self.int_validator)
             self.camera_width_input.editingFinished.connect(self.width_edited)
 
@@ -150,7 +150,7 @@ class GelbotsWindow(QMainWindow):
             self.camera_height_input = QLineEdit(central_widget)
             self.camera_height_input.move(235, 10)
             self.camera_height_input.setFixedWidth(30)
-            self.camera_height_input.setText(str(self.camera_params.cam_height_value))
+            self.camera_height_input.setText(str(self.camera_params.height_value))
             self.camera_height_input.setValidator(self.int_validator)
             self.camera_height_input.editingFinished.connect(self.height_edited)
 
@@ -163,7 +163,7 @@ class GelbotsWindow(QMainWindow):
             self.camera_fps_input = QLineEdit(central_widget)
             self.camera_fps_input.move(305, 10)
             self.camera_fps_input.setFixedWidth(30)
-            self.camera_fps_input.setText(str(self.camera_params.cam_fps_value))
+            self.camera_fps_input.setText(str(self.camera_params.fps_value))
             self.camera_fps_input.setValidator(self.int_validator)
             self.camera_fps_input.editingFinished.connect(self.fps_edited)
 
@@ -176,7 +176,7 @@ class GelbotsWindow(QMainWindow):
             self.camera_exposure_input = QLineEdit(central_widget)
             self.camera_exposure_input.move(400, 10)
             self.camera_exposure_input.setFixedWidth(30)
-            self.camera_exposure_input.setText(str(self.camera_params.cam_exposure_value))
+            self.camera_exposure_input.setText(str(self.camera_params.exposure_value))
             self.camera_exposure_input.setValidator(self.int_validator)
             self.camera_exposure_input.editingFinished.connect(self.exposure_edited)
 
@@ -189,7 +189,7 @@ class GelbotsWindow(QMainWindow):
             self.camera_gain_input = QLineEdit(central_widget)
             self.camera_gain_input.move(480, 10)
             self.camera_gain_input.setFixedWidth(40)
-            self.camera_gain_input.setText(str(self.camera_params.cam_gain_value).replace(".", ","))
+            self.camera_gain_input.setText(str(self.camera_params.gain_value).replace(".", ","))
             self.camera_gain_input.setValidator(self.double_validator)
             self.camera_gain_input.editingFinished.connect(self.gain_edited)
 
@@ -202,7 +202,7 @@ class GelbotsWindow(QMainWindow):
             self.camera_brightness_input = QLineEdit(central_widget)
             self.camera_brightness_input.move(600, 10)
             self.camera_brightness_input.setFixedWidth(30)
-            self.camera_brightness_input.setText(str(self.camera_params.cam_brightness_value).replace(".", ","))
+            self.camera_brightness_input.setText(str(self.camera_params.brightness_value).replace(".", ","))
             self.camera_brightness_input.setValidator(self.double_validator)
             self.camera_brightness_input.editingFinished.connect(self.brightness_edited)
 
@@ -880,8 +880,8 @@ class GelbotsWindow(QMainWindow):
     def click_to_get_coords(self, event):
         x_pixmap = event.pos().x()
         y_pixmap = event.pos().y()
-        x_scale = self.camera_params.cam_width_value / self.PIXMAP_WIDTH
-        y_scale = self.camera_params.cam_height_value / self.PIXMAP_HEIGHT
+        x_scale = self.camera_params.width_value / self.PIXMAP_WIDTH
+        y_scale = self.camera_params.height_value / self.PIXMAP_HEIGHT
         x_image = int(x_pixmap * x_scale)
         y_image = int(y_pixmap * y_scale)
 
@@ -1153,13 +1153,13 @@ class GelbotsWindow(QMainWindow):
 
     def brightness_edited(self):
         """Function to set brightness of the camera"""
-        if self.camera_params.cam_brightness_value is not None:
+        if self.camera_params.brightness_value is not None:
             try:
-                brightness_value = self.camera_worker.cam_brightness_value
+                brightness_value = self.camera_worker.brightness_value
                 new_brightness_value = float(self.camera_brightness_input.text().replace(",", "."))
                 self.message_text.setPlainText(
                   "Brightness value changed from {} to {}".format(str(brightness_value), str(new_brightness_value)))
-                self.camera_worker.camera_params.cam_brightness_value = new_brightness_value
+                self.camera_worker.camera_params.brightness_value = new_brightness_value
                 self.camera_worker.change_params_flag = True
                 print("config set")
                 self.config.set("camera", "brightness", str(new_brightness_value).replace(".", ","))
@@ -1173,11 +1173,11 @@ class GelbotsWindow(QMainWindow):
         """Function to set gain of the camera"""
         if self.camera_worker is not None:
             try:
-                gain_value = self.camera_worker.camera_params.cam_gain_value
+                gain_value = self.camera_worker.camera_params.gain_value
                 new_gain_value = float(self.camera_gain_input.text().replace(",", "."))
                 self.message_text.setPlainText("Gain value changed from {} to {}".format(str(gain_value),
                                                                                          str(new_gain_value)))
-                self.camera_worker.camera_params.cam_gain_value = new_gain_value
+                self.camera_worker.camera_params.gain_value = new_gain_value
                 self.camera_worker.change_params_flag = True
                 self.config.set("camera", "gain", str(new_gain_value).replace(".", ","))
                 self.update_config_file()
@@ -1189,11 +1189,11 @@ class GelbotsWindow(QMainWindow):
         """Function to set Exposure of camera"""
         if self.camera_worker is not None:
             try:
-                exposure_value = self.camera_worker.camera_params.cam_exposure_value
+                exposure_value = self.camera_worker.camera_params.exposure_value
                 new_exposure_value = int(self.camera_exposure_input.text())
                 self.message_text.setPlainText("Exposure value changed from {} to {}".format(str(exposure_value),
                                                                                              str(new_exposure_value)))
-                self.camera_worker.camera_params.cam_exposure_value = new_exposure_value
+                self.camera_worker.camera_params.exposure_value = new_exposure_value
                 self.camera_worker.change_params_flag = True
                 self.config.set("camera", "exposure", new_exposure_value)
                 self.update_config_file()
@@ -1205,11 +1205,11 @@ class GelbotsWindow(QMainWindow):
         """Function to set FPS of camera"""
         if self.camera_worker is not None:
             try:
-                fps_value = self.camera_worker.camera_params.cam_fps_value
+                fps_value = self.camera_worker.camera_params.fps_value
                 new_fps_value = int(self.camera_fps_input.text())
                 self.message_text.setPlainText("FPS value changed from {} to {}".format(str(fps_value),
                                                                                         str(new_fps_value)))
-                self.camera_worker.camera_params.cam_fps_value = new_fps_value
+                self.camera_worker.camera_params.fps_value = new_fps_value
                 self.camera_worker.change_params_flag = True
                 self.config.set("camera", "fps", new_fps_value)
                 self.update_config_file()
@@ -1221,11 +1221,11 @@ class GelbotsWindow(QMainWindow):
         """Function to set  width of camera image"""
         if self.camera_worker is not None:
             try:
-                width_value = self.camera_worker.camera_params.cam_width_value
+                width_value = self.camera_worker.camera_params.width_value
                 new_width_value = int(self.camera_width_input.text())
                 self.message_text.setPlainText("Frame width value changed from {} to {}".format(str(width_value),
                                                                                                 str(new_width_value)))
-                self.camera_worker.camera_params.cam_width_value = new_width_value
+                self.camera_worker.camera_params.width_value = new_width_value
                 self.camera_worker.change_params_flag = True
                 self.config.set("camera", "width", new_width_value)
                 self.update_config_file()
@@ -1237,11 +1237,11 @@ class GelbotsWindow(QMainWindow):
         """Function to set  height of camera image"""
         if self.camera_worker is not None:
             try:
-                height_value = self.camera_worker.camera_params.cam_height_value
+                height_value = self.camera_worker.camera_params.height_value
                 new_height_value = int(self.camera_height_input.text())
                 self.message_text.setPlainText("Frame height value changed from {} to {}".format(str(height_value),
                                                                                                  str(new_height_value)))
-                self.camera_worker.camera_params.cam_height_value = new_height_value
+                self.camera_worker.camera_params.height_value = new_height_value
                 self.camera_worker.change_params_flag = True
                 self.config.set("camera", "height", new_height_value)
                 self.update_config_file()
@@ -1292,16 +1292,16 @@ class GelbotsWindow(QMainWindow):
                     self.gray_image = cv2.drawMarker(self.gray_image, tuple(target), (255, 255, 0),
                                                      markerType=cv2.MARKER_DIAMOND, markerSize=20, thickness=1,
                                                      line_type=cv2.LINE_AA)
-                self.gray_image = cv2.drawMarker(self.gray_image, (self.laser_x_loc, self.laser_y_loc), (0, 255, 0),
+                self.gray_image = cv2.drawMarker(self.gray_image, (self.laser_params.laser_x_loc, self.laser_params.laser_y_loc), (0, 255, 0),
                                                  markerType=cv2.MARKER_STAR, markerSize=20, thickness=1,
                                                  line_type=cv2.LINE_AA)
-                self.gray_image = cv2.drawMarker(self.gray_image, (self.sfl_x_loc, self.sfl_y_loc), (0, 255, 0),
+                self.gray_image = cv2.drawMarker(self.gray_image, (self.sfl_params.sfl_x_loc, self.sfl_params.sfl_y_loc), (0, 255, 0),
                                                  markerType=cv2.MARKER_CROSS, markerSize=20, thickness=1,
                                                  line_type=cv2.LINE_AA)
-                self.gray_image = cv2.circle(self.gray_image, (self.sfl_x_loc, self.sfl_y_loc), self.sfl_radius,
+                self.gray_image = cv2.circle(self.gray_image, (self.sfl_params.sfl_x_loc, self.sfl_params.sfl_y_loc), self.sfl_params.sfl_radius,
                                              (0, 255, 0), 2)
-                x_scale = self.cam_width_value / self.PIXMAP_WIDTH
-                y_scale = self.camera_params.cam_height_value / self.PIXMAP_HEIGHT
+                x_scale = self.camera_params.width_value / self.PIXMAP_WIDTH
+                y_scale = self.camera_params.height_value / self.PIXMAP_HEIGHT
                 if self.draw_roi:
                     rectangle_startpoint_x = int(x_scale * self.origin.x())
                     rectangle_startpoint_y = int(y_scale * self.origin.y())
@@ -1309,9 +1309,9 @@ class GelbotsWindow(QMainWindow):
                     rectangle_endpoint_y = int(y_scale * self.endpoint.y())
                     self.camera_worker.roi_origin = (rectangle_startpoint_x, rectangle_startpoint_y)
                     self.camera_worker.roi_endpoint = (rectangle_endpoint_x, rectangle_endpoint_y)
-                    self.gray_image = cv2.rectangle(self.gray_image, (rectangle_startpoint_x,
-                                                                      rectangle_startpoint_y),
-                                                    (rectangle_endpoint_x, rectangle_endpoint_y),
+                    self.gray_image = cv2.rectangle(self.gray_image, (self.origin.x(),
+                                                                      self.origin.y()),
+                                                    (self.endpoint.x(), self.endpoint.y()),
                                                     (250, 255, 0), 2)
             height, width = self.gray_image.shape[:2]
             image_for_pixmap = QtGui.QImage(self.gray_image, width, height, QtGui.QImage.Format_Grayscale8)

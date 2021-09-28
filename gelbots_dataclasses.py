@@ -18,12 +18,16 @@ class LaserParams:
 @dataclass
 class CameraParams:
     """Class for keeping camera settings together."""
-    cam_width_value: int
-    cam_height_value: int
-    cam_fps_value: int
-    cam_exposure_value: int
-    cam_gain_value: float
-    cam_brightness_value: float
+
+    # pylint: disable=too-many-instance-attributes
+    # 9 is reasonable in this case.
+
+    width_value: int
+    height_value: int
+    fps_value: int
+    exposure_value: int
+    gain_value: float
+    brightness_value: float
     save_interval: int
     save_path: str
     save_namespace: str
@@ -32,6 +36,10 @@ class CameraParams:
 @dataclass
 class SflParams:
     """Class for keeping sfl settings together."""
+
+    # pylint: disable=too-many-instance-attributes
+    # 19 is reasonable in this case.
+
     sfl_flush_on: int
     sfl_flush_off: int
     sfl_light_on: int
@@ -52,3 +60,20 @@ class SflParams:
     stamping_y_steps: int
     stamping_batch_size: int
 
+
+@dataclass
+class CameraWorkerParams:
+    """Class for keeping camera worker params together."""
+
+    # pylint: disable=too-many-instance-attributes
+    # 9 is reasonable in this case.
+
+    grab_flag: bool = False  # saving frames to file
+    quit_flag: bool = False  # flag to kill worker
+    change_params_flag: bool = False  # flag to change camera settings
+    status: bool = True
+    frame_number: int = 0
+    save_roi: bool = False
+    roi_origin: tuple = (0, 0)
+    roi_endpoint: tuple = (0, 0)
+    last_save_time: int = 0
