@@ -60,7 +60,13 @@ class SflParams:
     stamping_y_steps: int
     stamping_batch_size: int
 
-
+    def rasp_repr(self):
+        rasp = str(self.stamping_dx) + "," + str(self.stamping_dy) + "," + str(self.stamping_x_steps) +\
+               "," + str(self.stamping_y_steps) + "," + str(self.stamping_x_delay) + \
+               "," + str(self.stamping_y_delay) + "," + str(self.stamping_light_on) + \
+               "," + str(self.stamping_light_off) + "," + str(self.stamping_flush_on) +\
+               "," + str(self.stamping_flush_off) + "," + str(self.stamping_batch_size)
+        return rasp
 @dataclass
 class CameraWorkerParams:
     """Class for keeping camera worker params together."""

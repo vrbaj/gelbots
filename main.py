@@ -1,5 +1,11 @@
+import configparser
 import sys
+import time
+from copy import deepcopy
+
 import cv2
+import keyboard
+import numpy as np
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QMainWindow, QLabel, QWidget, QComboBox,\
     QLineEdit, QPushButton, QFrame, QCheckBox, QRubberBand
@@ -7,26 +13,25 @@ from PyQt5.QtCore import QSize, QRect, Qt, QPoint
 from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
 
 from error_handling import exception_handler
-import time
-import numpy as np
+from qt_factory import QtFactory
 import worker_camera
 import worker_raspi
 import disk_core2 as disk_core
-import configparser
-import keyboard
 import window_formation
 import window_sfl
 import window_laser
 import window_video
 from gelbots_dataclasses import LaserParams, SflParams, CameraParams
-from copy import deepcopy
 
 
 class GelbotsWindow(QMainWindow):
+
     CONFIG_FILE_NAME = "config.ini"
 
     PIXMAP_HEIGHT = int(1 * 720)
     PIXMAP_WIDTH = int(1280)
+
+    # pylint: disable = E1101
 
     def __init__(self):
         try:
@@ -42,7 +47,7 @@ class GelbotsWindow(QMainWindow):
             self.set_sfl_enabled = False
             self.add_disk_formation = False
             self.add_target_formation = False
-            self.draw_marks_enabled = False
+            self.draw_marks_enabled = True
             self.set_laser_enabled = False
             self.automode_enabled = False
             self.checker_memory = False
@@ -113,11 +118,19 @@ class GelbotsWindow(QMainWindow):
             # Set validators
             self.int_validator = QIntValidator()
             self.double_validator = QDoubleValidator()
-            # CAMERA
-            # Create camera combo box label
-            self.camera_label = QLabel(central_widget)
-            self.camera_label.setGeometry(QRect(10, 5, 80, 31))
-            self.camera_label.setText("Camera:")
+
+            # labels
+            self.camera_label = QtFactory.get_object(QLabel, self, text="Camera:", geometry=QRect(10, 5, 80, 31))
+            self.camera_width_label = QtFactory.get_object(QLabel, self, text="Width:", geometry=QRect(120, 5, 80, 31))
+            self.camera_height_label = QtFactory.get_object(QLabel, self, text="Height:", geometry=QRect(200, 5, 80, 31))
+            self.camera_fps_label = QtFactory.get_object(QLabel, self, text="FPS:", geometry=QRect(280, 5, 80, 31))
+            self.camera_exposure_label = QtFactory.get_object(QLabel, self, text="Exposure:", geometry=QRect(350, 5, 80, 31))
+            self.camera_gain_label = QtFactory.get_object(QLabel, self, text="Gain:", geometry=QRect(450, 5, 80, 31))
+            self.steppers_x_label = QtFactory.get_object(QLabel, self, text="Manual steps X:", geometry=QRect(1600, 5, 80, 31))
+            self.camera_brightness_label = QtFactory.get_object(QLabel, self, text="Brightness:", geometry=QRect(540, 5, 80, 31))
+            self.steppers_y_label = QtFactory.get_object(QLabel, self, text="Manual steps Y:", geometry=QRect(1600, 35, 80, 31))
+            self.mag_label = QtFactory.get_object(QLabel, self, text="Magnification", geometry=QRect(10, 30, 80, 25))
+
 
             # Create combobox and add items.
             self.camera_combo_box = QComboBox(central_widget)
@@ -130,9 +143,6 @@ class GelbotsWindow(QMainWindow):
             except Exception as ex:
                 print(ex)
             # Create width label
-            self.camera_width_label = QLabel(central_widget)
-            self.camera_width_label.setGeometry(QRect(120, 5, 80, 31))
-            self.camera_width_label.setText("Width:")
 
             # Create width input box
             self.camera_width_input = QLineEdit(central_widget)
@@ -142,10 +152,6 @@ class GelbotsWindow(QMainWindow):
             self.camera_width_input.setValidator(self.int_validator)
             self.camera_width_input.editingFinished.connect(self.width_edited)
 
-            # Create height label
-            self.camera_height_label = QLabel(central_widget)
-            self.camera_height_label.setGeometry(QRect(200, 5, 80, 31))
-            self.camera_height_label.setText("Height:")
             # Create height input box
             self.camera_height_input = QLineEdit(central_widget)
             self.camera_height_input.move(235, 10)
@@ -153,11 +159,6 @@ class GelbotsWindow(QMainWindow):
             self.camera_height_input.setText(str(self.camera_params.height_value))
             self.camera_height_input.setValidator(self.int_validator)
             self.camera_height_input.editingFinished.connect(self.height_edited)
-
-            # Create FPS label
-            self.camera_fps_label = QLabel(central_widget)
-            self.camera_fps_label.setGeometry(QRect(280, 5, 80, 31))
-            self.camera_fps_label.setText("FPS:")
 
             # Create fps input box
             self.camera_fps_input = QLineEdit(central_widget)
@@ -167,11 +168,6 @@ class GelbotsWindow(QMainWindow):
             self.camera_fps_input.setValidator(self.int_validator)
             self.camera_fps_input.editingFinished.connect(self.fps_edited)
 
-            # Create exposure label
-            self.camera_exposure_label = QLabel(central_widget)
-            self.camera_exposure_label.setGeometry(QRect(350, 5, 80, 31))
-            self.camera_exposure_label.setText("Exposure:")
-
             # Create exposure input box
             self.camera_exposure_input = QLineEdit(central_widget)
             self.camera_exposure_input.move(400, 10)
@@ -179,11 +175,6 @@ class GelbotsWindow(QMainWindow):
             self.camera_exposure_input.setText(str(self.camera_params.exposure_value))
             self.camera_exposure_input.setValidator(self.int_validator)
             self.camera_exposure_input.editingFinished.connect(self.exposure_edited)
-
-            # Create gain label
-            self.camera_gain_label = QLabel(central_widget)
-            self.camera_gain_label.setGeometry(QRect(450, 5, 80, 31))
-            self.camera_gain_label.setText("Gain:")
 
             # Create gain input box
             self.camera_gain_input = QLineEdit(central_widget)
@@ -193,10 +184,6 @@ class GelbotsWindow(QMainWindow):
             self.camera_gain_input.setValidator(self.double_validator)
             self.camera_gain_input.editingFinished.connect(self.gain_edited)
 
-            # Create brightness label
-            self.camera_brightness_label = QLabel(central_widget)
-            self.camera_brightness_label.setGeometry(QRect(540, 5, 80, 31))
-            self.camera_brightness_label.setText("Brightness:")
 
             # Create gain input box
             self.camera_brightness_input = QLineEdit(central_widget)
@@ -259,12 +246,12 @@ class GelbotsWindow(QMainWindow):
             # self.goalCoordYInput.editingFinished.connect(self.goal_y_loc_edited)
 
             # add pix
-            self.imageDisplay = QLabel(self)
-            self.imageDisplay.setGeometry(QRect(10, 60, self.PIXMAP_WIDTH, self.PIXMAP_HEIGHT))
-            self.imageDisplay.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-            self.imageDisplay.mousePressEvent = self.click_to_get_coords
-            self.imageDisplay.mouseMoveEvent = self.mouseMoveEvent
-            self.imageDisplay.mouseReleaseEvent = self.mouseReleaseEvent
+            self.image_display = QLabel(self)
+            self.image_display.setGeometry(QRect(10, 60, self.PIXMAP_WIDTH, self.PIXMAP_HEIGHT))
+            self.image_display.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+            self.image_display.mousePressEvent = self.click_to_get_coords
+            self.image_display.mouseMoveEvent = self.mouseMoveEvent
+            self.image_display.mouseReleaseEvent = self.mouseReleaseEvent
 
             # Create log
             self.message_text = QtWidgets.QPlainTextEdit(central_widget)
@@ -297,31 +284,22 @@ class GelbotsWindow(QMainWindow):
             self.red_button.setFixedHeight(22)
             self.red_button.clicked.connect(self.red_button_function)
 
-            # steppers x param label
-            self.steppersParamXLabel = QLabel(central_widget)
-            self.steppersParamXLabel.setGeometry(QRect(1600, 5, 80, 31))
-            self.steppersParamXLabel.setText("Manual steps X:")
-
             # steppers x param input
-            self.steppersXInput = QLineEdit(central_widget)
-            self.steppersXInput.move(1680, 10)
-            self.steppersXInput.setFixedWidth(30)
-            self.steppersXInput.setValidator(self.int_validator)
-            self.steppersXInput.setText(str(self.steppers_x))
-            self.steppersXInput.editingFinished.connect(self.steppers_x_edited)
+            self.steppers_x_input = QLineEdit(central_widget)
+            self.steppers_x_input.move(1680, 10)
+            self.steppers_x_input.setFixedWidth(30)
+            self.steppers_x_input.setValidator(self.int_validator)
+            self.steppers_x_input.setText(str(self.steppers_x))
+            self.steppers_x_input.editingFinished.connect(self.steppers_x_edited)
 
-            # steppers y param label
-            self.steppersParamYLabel = QLabel(central_widget)
-            self.steppersParamYLabel.setGeometry(QRect(1600, 35, 80, 31))
-            self.steppersParamYLabel.setText("Manual steps Y:")
 
             # steppers Y param input
-            self.steppersYInput = QLineEdit(central_widget)
-            self.steppersYInput.move(1680, 40)
-            self.steppersYInput.setFixedWidth(30)
-            self.steppersYInput.setValidator(self.int_validator)
-            self.steppersYInput.setText(str(self.steppers_y))
-            self.steppersYInput.editingFinished.connect(self.steppers_y_edited)
+            self.steppers_y_input = QLineEdit(central_widget)
+            self.steppers_y_input.move(1680, 40)
+            self.steppers_y_input.setFixedWidth(30)
+            self.steppers_y_input.setValidator(self.int_validator)
+            self.steppers_y_input.setText(str(self.steppers_y))
+            self.steppers_y_input.editingFinished.connect(self.steppers_y_edited)
 
             # save video settings
             self.save_video_button = QPushButton("Video settings", self)
@@ -337,19 +315,19 @@ class GelbotsWindow(QMainWindow):
             self.laser_settings_button.clicked.connect(self.show_laser_settings)
 
             # sfl settings window
-            self.sflSettingsButton = QPushButton("SFL settings", self)
-            self.sflSettingsButton.setToolTip("Click to set sfl settings")
-            self.sflSettingsButton.move(1750, 200)
-            self.sflSettingsButton.setFixedHeight(22)
-            self.sflSettingsButton.clicked.connect(self.show_sfl_settings)
+            self.sfl_settings_button = QPushButton("SFL settings", self)
+            self.sfl_settings_button.setToolTip("Click to set sfl settings")
+            self.sfl_settings_button.move(1750, 200)
+            self.sfl_settings_button.setFixedHeight(22)
+            self.sfl_settings_button.clicked.connect(self.show_sfl_settings)
 
             # check box to move laser to desired position
-            self.moveLaserCheckbox = QCheckBox(self)
-            self.moveLaserCheckbox.setText("Move laser")
-            self.moveLaserCheckbox.setToolTip("Click to image to move laser to desired position")
-            self.moveLaserCheckbox.setGeometry(QRect(850, 30, 100, 25))
-            self.moveLaserCheckbox.setLayoutDirection(Qt.RightToLeft)
-            self.moveLaserCheckbox.stateChanged.connect(self.laser_checkbox_click)
+            self.move_laser_checkbox = QCheckBox(self)
+            self.move_laser_checkbox.setText("Move laser")
+            self.move_laser_checkbox.setToolTip("Click to image to move laser to desired position")
+            self.move_laser_checkbox.setGeometry(QRect(850, 30, 100, 25))
+            self.move_laser_checkbox.setLayoutDirection(Qt.RightToLeft)
+            self.move_laser_checkbox.stateChanged.connect(self.laser_checkbox_click)
 
             # check box to select disk
             # self.setDiskCheckbox = QCheckBox(self)
@@ -368,73 +346,74 @@ class GelbotsWindow(QMainWindow):
             # self.setGoalCheckbox.stateChanged.connect(self.goal_checkbox_click)
 
             # check box to add disk to formation
-            self.setDiskFormationCheckbox = QCheckBox(self)
-            self.setDiskFormationCheckbox.setText("Add disk")
-            self.setDiskFormationCheckbox.setToolTip("Click to image to add disk to formation")
-            self.setDiskFormationCheckbox.setGeometry(QRect(1800, 500, 100, 25))
-            self.setDiskFormationCheckbox.setLayoutDirection(Qt.RightToLeft)
-            self.setDiskFormationCheckbox.stateChanged.connect(self.disk_formation_checkbox_click)
+            self.set_disk_formation_checkbox = QCheckBox(self)
+            self.set_disk_formation_checkbox.setText("Add disk")
+            self.set_disk_formation_checkbox.setToolTip("Click to image to add disk to formation")
+            self.set_disk_formation_checkbox.setGeometry(QRect(1800, 500, 100, 25))
+            self.set_disk_formation_checkbox.setLayoutDirection(Qt.RightToLeft)
+            self.set_disk_formation_checkbox.stateChanged.connect(self.disk_formation_checkbox_click)
 
             # check box to add disk to formation
-            self.setDiskFormationCheckbox = QCheckBox(self)
-            self.setDiskFormationCheckbox.setText("Add target")
-            self.setDiskFormationCheckbox.setToolTip("Click to image to add target to formation")
-            self.setDiskFormationCheckbox.setGeometry(QRect(1800, 530, 100, 25))
-            self.setDiskFormationCheckbox.setLayoutDirection(Qt.RightToLeft)
-            self.setDiskFormationCheckbox.stateChanged.connect(self.goal_formation_checkbox_click)
+            self.set_disk_formation_checkbox = QCheckBox(self)
+            self.set_disk_formation_checkbox.setText("Add target")
+            self.set_disk_formation_checkbox.setToolTip("Click to image to add target to formation")
+            self.set_disk_formation_checkbox.setGeometry(QRect(1800, 530, 100, 25))
+            self.set_disk_formation_checkbox.setLayoutDirection(Qt.RightToLeft)
+            self.set_disk_formation_checkbox.stateChanged.connect(self.goal_formation_checkbox_click)
 
             # check box save video on disk
-            self.saveVideoCheckbox = QCheckBox(self)
-            self.saveVideoCheckbox.setText("Save video")
-            self.saveVideoCheckbox.setToolTip("Click to save/stop saving the video on the disk")
-            self.saveVideoCheckbox.setGeometry(QRect(850, 5, 100, 25))
-            self.saveVideoCheckbox.setLayoutDirection(Qt.RightToLeft)
-            self.saveVideoCheckbox.stateChanged.connect(self.save_video_checkbox_click)
+            self.save_video_checkbox = QCheckBox(self)
+            self.save_video_checkbox.setText("Save video")
+            self.save_video_checkbox.setToolTip("Click to save/stop saving the video on the disk")
+            self.save_video_checkbox.setGeometry(QRect(850, 5, 100, 25))
+            self.save_video_checkbox.setLayoutDirection(Qt.RightToLeft)
+            self.save_video_checkbox.stateChanged.connect(self.save_video_checkbox_click)
 
             # check box to draw marks
-            self.drawMarksCheckbox = QCheckBox(self)
-            self.drawMarksCheckbox.setText("Draw marks")
-            self.drawMarksCheckbox.setToolTip("Click to draw marks into image")
-            self.drawMarksCheckbox.setGeometry(QRect(1100, 5, 100, 25))
-            self.drawMarksCheckbox.setLayoutDirection(Qt.RightToLeft)
-            self.drawMarksCheckbox.stateChanged.connect(self.draw_marks_checkbox_click)
+            self.draw_marks_checkbox = QCheckBox(self)
+            self.draw_marks_checkbox.setText("Draw marks")
+            self.draw_marks_checkbox.setToolTip("Click to draw marks into image")
+            self.draw_marks_checkbox.setGeometry(QRect(1100, 5, 100, 25))
+            self.draw_marks_checkbox.setLayoutDirection(Qt.RightToLeft)
+            self.draw_marks_checkbox.setChecked(True)
+            self.draw_marks_checkbox.stateChanged.connect(self.draw_marks_checkbox_click)
 
             # check box to set laser
-            self.setLaserCheckbox = QCheckBox(self)
-            self.setLaserCheckbox.setText("Set laser")
-            self.setLaserCheckbox.setToolTip("Click to image to set laser position")
-            self.setLaserCheckbox.setGeometry(QRect(1100, 35, 100, 25))
-            self.setLaserCheckbox.setLayoutDirection(Qt.RightToLeft)
-            self.setLaserCheckbox.stateChanged.connect(self.set_laser_checkbox_click)
+            self.set_laser_checkbox = QCheckBox(self)
+            self.set_laser_checkbox.setText("Set laser")
+            self.set_laser_checkbox.setToolTip("Click to image to set laser position")
+            self.set_laser_checkbox.setGeometry(QRect(1100, 35, 100, 25))
+            self.set_laser_checkbox.setLayoutDirection(Qt.RightToLeft)
+            self.set_laser_checkbox.stateChanged.connect(self.set_laser_checkbox_click)
 
             # check box to set sfl
-            self.setSflCheckbox = QCheckBox(self)
-            self.setSflCheckbox.setText("Set sfl")
-            self.setSflCheckbox.setToolTip("Click to image to set sfl position")
-            self.setSflCheckbox.setGeometry(QRect(1000, 5, 100, 25))
-            self.setSflCheckbox.setLayoutDirection(Qt.RightToLeft)
-            self.setSflCheckbox.stateChanged.connect(self.set_sfl_checkbox_click)
+            self.set_sfl_checkbox = QCheckBox(self)
+            self.set_sfl_checkbox.setText("Set sfl")
+            self.set_sfl_checkbox.setToolTip("Click to image to set sfl position")
+            self.set_sfl_checkbox.setGeometry(QRect(1000, 5, 100, 25))
+            self.set_sfl_checkbox.setLayoutDirection(Qt.RightToLeft)
+            self.set_sfl_checkbox.stateChanged.connect(self.set_sfl_checkbox_click)
 
             # find disks button
-            self.findDisksButton = QPushButton('Find disks', self)
-            self.findDisksButton.setToolTip('Click to find disks')
-            self.findDisksButton.move(1300, 5)
-            self.findDisksButton.setFixedHeight(22)
-            self.findDisksButton.clicked.connect(self.find_disks)
+            self.find_disks_button = QPushButton('Find disks', self)
+            self.find_disks_button.setToolTip('Click to find disks')
+            self.find_disks_button.move(1300, 5)
+            self.find_disks_button.setFixedHeight(22)
+            self.find_disks_button.clicked.connect(self.find_disks)
 
             # automode button
-            self.autoModeButton = QPushButton('Auto ON', self)
-            self.autoModeButton.setToolTip('Auto ON')
-            self.autoModeButton.move(1750, 5)
-            self.autoModeButton.setFixedHeight(22)
-            self.autoModeButton.clicked.connect(self.automode)
+            self.auto_mode_button = QPushButton('Auto ON', self)
+            self.auto_mode_button.setToolTip('Auto ON')
+            self.auto_mode_button.move(1750, 5)
+            self.auto_mode_button.setFixedHeight(22)
+            self.auto_mode_button.clicked.connect(self.automode)
 
             # laser swithc button
-            self.laserButton = QPushButton('Laser ON', self)
-            self.laserButton.setToolTip('Laser ON')
-            self.laserButton.move(1750, 35)
-            self.laserButton.setFixedHeight(22)
-            self.laserButton.clicked.connect(self.laser_switch)
+            self.laser_button = QPushButton('Laser ON', self)
+            self.laser_button.setToolTip('Laser ON')
+            self.laser_button.move(1750, 35)
+            self.laser_button.setFixedHeight(22)
+            self.laser_button.clicked.connect(self.laser_switch)
 
             # start Raspi communication thread
             self.raspi_comm = worker_raspi.RaspiWorker()
@@ -457,7 +436,7 @@ class GelbotsWindow(QMainWindow):
             self.disk_core.laser_shot.connect(self.blink_laser_n)
             self.disk_core.auto_done.connect(self.automode_finished)
 
-            self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
+            self.rubber_band = QRubberBand(QRubberBand.Rectangle, self)
             self.origin = QPoint()
             self.endpoint = QPoint()
             # formation window
@@ -501,52 +480,45 @@ class GelbotsWindow(QMainWindow):
             # signal from sfl window
             # self.sfl_settings_window.key_press_signal.connect(self.sfl_key)
             # check box for magnification
-            self.magLabel = QLabel(self)
-            self.magLabel.setText("Magnification")
-            self.magLabel.setGeometry(QRect(10, 30, 80, 25))
-            self.mag4Checkbox = QCheckBox(self)
-            self.mag4Checkbox.setText("4x")
-            self.mag4Checkbox.setToolTip("Click to set magnification")
-            self.mag4Checkbox.setGeometry(QRect(70, 30, 40, 25))
-            self.mag4Checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.mag4Checkbox.stateChanged.connect(lambda: self.mag_click(self.mag4Checkbox))
-            self.mag10Checkbox = QCheckBox(self)
-            self.mag10Checkbox.setText("10x")
-            self.mag10Checkbox.setToolTip("Click to set magnification")
-            self.mag10Checkbox.setGeometry(QRect(110, 30, 40, 25))
-            self.mag10Checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.mag10Checkbox.stateChanged.connect(lambda: self.mag_click(self.mag10Checkbox))
-            self.mag20Checkbox = QCheckBox(self)
-            self.mag20Checkbox.setText("20x")
-            self.mag20Checkbox.setToolTip("Click to set magnification")
-            self.mag20Checkbox.setGeometry(QRect(150, 30, 40, 25))
-            self.mag20Checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.mag20Checkbox.stateChanged.connect(lambda: self.mag_click(self.mag20Checkbox))
-            self.mag40Checkbox = QCheckBox(self)
-            self.mag40Checkbox.setText("40x")
-            self.mag40Checkbox.setToolTip("Click to set magnification")
-            self.mag40Checkbox.setGeometry(QRect(190, 30, 40, 25))
-            self.mag40Checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.mag40Checkbox.stateChanged.connect(lambda: self.mag_click(self.mag40Checkbox))
+
+            self.mag_4_checkbox = QCheckBox(self)
+            self.mag_4_checkbox.setText("4x")
+            self.mag_4_checkbox.setToolTip("Click to set magnification")
+            self.mag_4_checkbox.setGeometry(QRect(70, 30, 40, 25))
+            self.mag_4_checkbox.setLayoutDirection(Qt.RightToLeft)
+            self.mag_4_checkbox.stateChanged.connect(lambda: self.mag_click(self.mag_4_checkbox))
+            self.mag_10_checkbox = QCheckBox(self)
+            self.mag_10_checkbox.setText("10x")
+            self.mag_10_checkbox.setToolTip("Click to set magnification")
+            self.mag_10_checkbox.setGeometry(QRect(110, 30, 40, 25))
+            self.mag_10_checkbox.setLayoutDirection(Qt.RightToLeft)
+            self.mag_10_checkbox.stateChanged.connect(lambda: self.mag_click(self.mag_10_checkbox))
+            self.mag_20_checkbox = QCheckBox(self)
+            self.mag_20_checkbox.setText("20x")
+            self.mag_20_checkbox.setToolTip("Click to set magnification")
+            self.mag_20_checkbox.setGeometry(QRect(150, 30, 40, 25))
+            self.mag_20_checkbox.setLayoutDirection(Qt.RightToLeft)
+            self.mag_20_checkbox.stateChanged.connect(lambda: self.mag_click(self.mag_20_checkbox))
+            self.mag_40_checkbox = QCheckBox(self)
+            self.mag_40_checkbox.setText("40x")
+            self.mag_40_checkbox.setToolTip("Click to set magnification")
+            self.mag_40_checkbox.setGeometry(QRect(190, 30, 40, 25))
+            self.mag_40_checkbox.setLayoutDirection(Qt.RightToLeft)
+            self.mag_40_checkbox.stateChanged.connect(lambda: self.mag_click(self.mag_40_checkbox))
 
             if self.mag_value == 4:
-                self.mag4Checkbox.setChecked(True)
+                self.mag_4_checkbox.setChecked(True)
             elif self.mag_value == 10:
-                self.mag10Checkbox.setChecked(True)
+                self.mag_10_checkbox.setChecked(True)
             elif self.mag_value == 20:
-                self.mag20Checkbox.setChecked(True)
-            self.checkboxMag_group = QtWidgets.QButtonGroup(self)
-            self.checkboxMag_group.addButton(self.mag4Checkbox)
-            self.checkboxMag_group.addButton(self.mag10Checkbox)
-            self.checkboxMag_group.addButton(self.mag20Checkbox)
-            self.checkboxMag_group.addButton(self.mag40Checkbox)
-            self.checkboxMag_group.setExclusive(True)
+                self.mag_20_checkbox.setChecked(True)
+            self.checkbox_mag_group = QtWidgets.QButtonGroup(self)
+            self.checkbox_mag_group.addButton(self.mag_4_checkbox)
+            self.checkbox_mag_group.addButton(self.mag_10_checkbox)
+            self.checkbox_mag_group.addButton(self.mag_20_checkbox)
+            self.checkbox_mag_group.addButton(self.mag_40_checkbox)
+            self.checkbox_mag_group.setExclusive(True)
 
-            # self.checkboxMarks_group = QtWidgets.QButtonGroup(self)
-            # self.checkboxMarks_group.addButton(self.setSflCheckbox)
-            # self.checkboxMarks_group.addButton(self.setGoalCheckbox)
-            # self.checkboxMarks_group.addButton(self.setDiskCheckbox)
-            # self.checkboxMarks_group.addButton(self.setLaserCheckbox)
             print("passed ALL")
             self.showMaximized()
         except Exception as ex:
@@ -558,27 +530,25 @@ class GelbotsWindow(QMainWindow):
     def formation_change(self, disks_list, targets_list):
         self.disk_list = disks_list
         self.target_list = targets_list
-        print("disks> ", self.disk_list)
-        print("targets> ", self.target_list)
 
     def show_formation_window(self):
         self.formation_window.close()
         self.formation_window.show()
 
     def stamping_switch(self, command):
-        print(command)
         if command == "start":
-            self.raspi_comm.requests_queue.append("b," + str(self.sfl_params.stamping_dx) +
-                                                  "," + str(self.sfl_params.stamping_dy) +
-                                                  "," + str(self.sfl_params.stamping_x_steps) +
-                                                  "," + str(self.sfl_params.stamping_y_steps) +
-                                                  "," + str(self.sfl_params.stamping_x_delay) +
-                                                  "," + str(self.sfl_params.stamping_y_delay) +
-                                                  "," + str(self.sfl_params.stamping_light_on) +
-                                                  "," + str(self.sfl_params.stamping_light_off) +
-                                                  "," + str(self.sfl_params.stamping_flush_on) +
-                                                  "," + str(self.sfl_params.stamping_flush_off) +
-                                                  "," + str(self.sfl_params.stamping_batch_size))
+        #     self.raspi_comm.requests_queue.append("b," + str(self.sfl_params.stamping_dx) +
+        #                                           "," + str(self.sfl_params.stamping_dy) +
+        #                                           "," + str(self.sfl_params.stamping_x_steps) +
+        #                                           "," + str(self.sfl_params.stamping_y_steps) +
+        #                                           "," + str(self.sfl_params.stamping_x_delay) +
+        #                                           "," + str(self.sfl_params.stamping_y_delay) +
+        #                                           "," + str(self.sfl_params.stamping_light_on) +
+        #                                           "," + str(self.sfl_params.stamping_light_off) +
+        #                                           "," + str(self.sfl_params.stamping_flush_on) +
+        #                                           "," + str(self.sfl_params.stamping_flush_off) +
+        #                                           "," + str(self.sfl_params.stamping_batch_size))
+            self.raspi_comm.requests_queue.append(self.sfl_params.rasp_repr())
         elif command == "end":
             self.raspi_comm.requests_queue.append("c")
 
@@ -587,8 +557,8 @@ class GelbotsWindow(QMainWindow):
         if keyboard_pressed == "a":
             # move left
             self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
-            self.disk_core.recompute_goal(-self.steppers_x, 0)
-            self.disk_core.recompute_disk(-self.steppers_x, 0)
+            self.disk_core.recompute_goal(-1 * self.steppers_x, 0)
+            self.disk_core.recompute_disk(-1 * self.steppers_x, 0)
             self.disk_list = deepcopy(self.disk_core.disk_list)
             self.target_list = deepcopy(self.disk_core.target_list)
             self.update_coords(self.disk_list, self.target_list)
@@ -604,8 +574,8 @@ class GelbotsWindow(QMainWindow):
         elif keyboard_pressed == "s":
             # move top
             self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
-            self.disk_core.recompute_goal(0, -self.steppers_y)
-            self.disk_core.recompute_disk(0, -self.steppers_y)
+            self.disk_core.recompute_goal(0, -1 * self.steppers_y)
+            self.disk_core.recompute_disk(0, -1 * self.steppers_y)
             self.disk_list = deepcopy(self.disk_core.disk_list)
             self.target_list = deepcopy(self.disk_core.target_list)
             self.update_coords(self.disk_list, self.target_list)
@@ -673,18 +643,18 @@ class GelbotsWindow(QMainWindow):
         self.update_config_file()
 
     def laser_settings_changed(self, laser_params: LaserParams):
-        self.laser_params.laser_pulse_n = n
-        self.laser_params.laser_on_time = on
-        self.laser_params.laser_off_time = off
-        self.laser_params.laser_x_loc = x
-        self.laser_params.laser_y_loc = y
-        self.laser_params.offset = offset
-        self.config.set("laser", "pulses", self.laser_params.laser_pulse_n)
-        self.config.set("laser", "on_time", self.laser_params.laser_on_time)
-        self.config.set("laser", "off_time", self.laser_params.laser_off_time)
-        self.config.set("laser", "x_loc", self.laser_params.laser_x_loc)
-        self.config.set("laser", "y_loc", self.laser_params.laser_y_loc)
-        self.config.set("laser", "offset", self.laser_params.offset)
+        self.laser_params.laser_pulse_n = laser_params.laser_pulse_n
+        self.laser_params.laser_on_time = laser_params.laser_on_time
+        self.laser_params.laser_off_time = laser_params.laser_off_time
+        self.laser_params.laser_x_loc = laser_params.laser_x_loc
+        self.laser_params.laser_y_loc = laser_params.laser_y_loc
+        self.laser_params.offset = laser_params.offset
+        self.config.set("laser", "pulses", str(self.laser_params.laser_pulse_n))
+        self.config.set("laser", "on_time", str(self.laser_params.laser_on_time))
+        self.config.set("laser", "off_time", str(self.laser_params.laser_off_time))
+        self.config.set("laser", "x_loc", str(self.laser_params.laser_x_loc))
+        self.config.set("laser", "y_loc", str(self.laser_params.laser_y_loc))
+        self.config.set("laser", "offset", str(self.laser_params.offset))
         self.disk_core.region_offset = self.laser_params.offset
         self.update_config_file()
 
@@ -752,12 +722,12 @@ class GelbotsWindow(QMainWindow):
         self.update_config_file()
 
     def laser_switch(self):
-        if self.laserButton.text() == "Laser ON":
+        if self.laser_button.text() == "Laser ON":
             self.raspi_comm.requests_queue.append("s")
-            self.laserButton.setText("Laser OFF")
+            self.laser_button.setText("Laser OFF")
         else:
             self.raspi_comm.requests_queue.append("l")
-            self.laserButton.setText("Laser ON")
+            self.laser_button.setText("Laser ON")
 
     def automode_finished(self):
         self.formation_window.automode_status = False
@@ -809,9 +779,9 @@ class GelbotsWindow(QMainWindow):
         print("y sent")
 
     def automode(self):
-        if self.autoModeButton.text() == "Auto ON":
+        if self.auto_mode_button.text() == "Auto ON":
             if len(self.disk_list) == len(self.target_list):
-                self.autoModeButton.setText("Auto OFF")
+                self.auto_mode_button.setText("Auto OFF")
                 self.automode_enabled = True
                 self.disk_core.auto_mode = True
                 self.disk_core.auto_step = -1
@@ -831,7 +801,7 @@ class GelbotsWindow(QMainWindow):
                 error_dialog.setWindowTitle("Error")
                 error_dialog.exec_()
         else:
-            self.autoModeButton.setText("Auto ON")
+            self.auto_mode_button.setText("Auto ON")
             self.automode_enabled = False
             self.disk_core.auto_mode = False
             self.formation_window.automode_status = False
@@ -860,7 +830,7 @@ class GelbotsWindow(QMainWindow):
 
     def save_video_checkbox_click(self, state):
         if self.camera_worker is not None:
-            self.camera_worker.grab_flag = state
+            self.camera_worker.camera_worker_params.grab_flag = state
 
     def laser_checkbox_click(self, state):
         self.move_laser_enabled = state
@@ -930,8 +900,8 @@ class GelbotsWindow(QMainWindow):
         elif self.video_settings_window.roi_enabled:
             if event.button() == QtCore.Qt.LeftButton:
                 self.origin = QPoint(x_pixmap, y_pixmap)
-                self.rubberBand.setGeometry(QRect(QPoint(x_pixmap + 10, y_pixmap + 60), QSize()))
-                self.rubberBand.show()
+                self.rubber_band.setGeometry(QRect(QPoint(x_pixmap + 10, y_pixmap + 60), QSize()))
+                self.rubber_band.show()
         elif self.set_sfl_enabled:
             self.sfl_x_loc = x_image
             self.sfl_y_loc = y_image
@@ -982,14 +952,14 @@ class GelbotsWindow(QMainWindow):
 
     def steppers_x_edited(self):
         """Function to set steppers steps for manual control"""
-        self.steppers_x = int(self.steppersXInput.text())
+        self.steppers_x = int(self.steppers_x_input.text())
         self.message_text.setPlainText("stepper x: {} ".format(str(self.steppers_x)))
         self.config.set("steppers", "x", self.steppers_x)
         self.update_config_file()
 
     def steppers_y_edited(self):
         """Function to set steppers steps for manual control"""
-        self.steppers_y = int(self.steppersYInput.text())
+        self.steppers_y = int(self.steppers_y_input.text())
         self.message_text.setPlainText("stepper y: {} ".format(str(self.steppers_y)))
         self.config.set("steppers", "y", self.steppers_y)
         self.update_config_file()
@@ -1006,13 +976,17 @@ class GelbotsWindow(QMainWindow):
             self.raspi_comm.start()
 
     def blink_laser_n(self):
-        print("main.py blink_laser_n")
         time_on = int(self.laser_params.laser_on_time)
         time_off = int(self.laser_params.laser_off_time)
         n = int(self.laser_params.laser_pulse_n)
         self.raspi_comm.requests_queue.append("q" + "," + str(time_on) + "," + str(time_off) + "," + str(n))
 
     def raspi_fail(self):
+        """
+        Function that set the label that visualizes the RPI status and terminate the
+        thread, that is communication with RPI.
+        :return:
+        """
         self.message_text.setPlainText("raspi went wrong")
         self.raspi_status_label.setStyleSheet("background-color:red;")
         self.raspi_comm.terminate()
@@ -1068,7 +1042,6 @@ class GelbotsWindow(QMainWindow):
     #     except Exception as ex:
     #         print(ex)
     #     print("target list post", self.target_list)
-
 
     def goal_x_loc_edited(self):
         """Function to set the goal coord"""
@@ -1155,12 +1128,12 @@ class GelbotsWindow(QMainWindow):
         """Function to set brightness of the camera"""
         if self.camera_params.brightness_value is not None:
             try:
-                brightness_value = self.camera_worker.brightness_value
+                brightness_value = self.camera_worker.camera_worker_params.brightness_value
                 new_brightness_value = float(self.camera_brightness_input.text().replace(",", "."))
                 self.message_text.setPlainText(
                   "Brightness value changed from {} to {}".format(str(brightness_value), str(new_brightness_value)))
                 self.camera_worker.camera_params.brightness_value = new_brightness_value
-                self.camera_worker.change_params_flag = True
+                self.camera_worker.camera_worker_params.change_params_flag = True
                 print("config set")
                 self.config.set("camera", "brightness", str(new_brightness_value).replace(".", ","))
                 print("config update")
@@ -1194,7 +1167,7 @@ class GelbotsWindow(QMainWindow):
                 self.message_text.setPlainText("Exposure value changed from {} to {}".format(str(exposure_value),
                                                                                              str(new_exposure_value)))
                 self.camera_worker.camera_params.exposure_value = new_exposure_value
-                self.camera_worker.change_params_flag = True
+                self.camera_worker.camera_worker_params.change_params_flag = True
                 self.config.set("camera", "exposure", new_exposure_value)
                 self.update_config_file()
             except ValueError:
@@ -1226,7 +1199,7 @@ class GelbotsWindow(QMainWindow):
                 self.message_text.setPlainText("Frame width value changed from {} to {}".format(str(width_value),
                                                                                                 str(new_width_value)))
                 self.camera_worker.camera_params.width_value = new_width_value
-                self.camera_worker.change_params_flag = True
+                self.camera_worker.camera_worker_params.change_params_flag = True
                 self.config.set("camera", "width", new_width_value)
                 self.update_config_file()
             except ValueError:
@@ -1242,7 +1215,7 @@ class GelbotsWindow(QMainWindow):
                 self.message_text.setPlainText("Frame height value changed from {} to {}".format(str(height_value),
                                                                                                  str(new_height_value)))
                 self.camera_worker.camera_params.height_value = new_height_value
-                self.camera_worker.change_params_flag = True
+                self.camera_worker.camera_worker_params.change_params_flag = True
                 self.config.set("camera", "height", new_height_value)
                 self.update_config_file()
             except ValueError:
@@ -1250,6 +1223,11 @@ class GelbotsWindow(QMainWindow):
                 print("ValueError")
 
     def run_camera(self):
+        """
+        Function to start the camera_worker (see worker_camera.py) that
+        is responsible for camera settings and image obtaining.
+        :return:
+        """
         if self.camera_combo_box.count() > 0:
             if self.run_camera_button.text() == "Run camera":
                 self.camera_combo_box.setEnabled(False)
@@ -1260,7 +1238,7 @@ class GelbotsWindow(QMainWindow):
                 self.run_camera_button.setText("Stop camera")
             else:
                 self.camera_worker.image_ready.disconnect(self.obtain_image)
-                self.camera_worker.quit_flag = True
+                self.camera_worker.camera_worker_params.quit_flag = True
                 self.camera_combo_box.setEnabled(True)
                 self.run_camera_button.setText("Run camera")
 
@@ -1270,9 +1248,9 @@ class GelbotsWindow(QMainWindow):
             self.camera_worker.mutex.lock()
             self.image_to_display = np.copy(self.camera_worker.raw_image)
             if self.video_settings_window.roi_checkbox.isChecked():
-                self.camera_worker.save_roi = True
+                self.camera_worker.camera_worker_params.save_roi = True
             else:
-                self.camera_worker.save_roi = False
+                self.camera_worker.camera_worker_params.save_roi = False
             self.camera_worker.mutex.unlock()
             self.gray_image = cv2.cvtColor(self.image_to_display, cv2.COLOR_BGR2GRAY)
             if self.draw_marks_enabled:
@@ -1307,8 +1285,10 @@ class GelbotsWindow(QMainWindow):
                     rectangle_startpoint_y = int(y_scale * self.origin.y())
                     rectangle_endpoint_x = int(x_scale * self.endpoint.x())
                     rectangle_endpoint_y = int(y_scale * self.endpoint.y())
-                    self.camera_worker.roi_origin = (rectangle_startpoint_x, rectangle_startpoint_y)
-                    self.camera_worker.roi_endpoint = (rectangle_endpoint_x, rectangle_endpoint_y)
+                    # self.camera_worker.roi_origin = (rectangle_startpoint_x, rectangle_startpoint_y)
+                    # self.camera_worker.roi_endpoint = (rectangle_endpoint_x, rectangle_endpoint_y)
+                    self.camera_worker.camera_worker_params.roi_endpoint = (self.endpoint.x(), self.endpoint.y())
+                    self.camera_worker.camera_worker_params.roi_origin = (self.origin.x(), self.origin.y())
                     self.gray_image = cv2.rectangle(self.gray_image, (self.origin.x(),
                                                                       self.origin.y()),
                                                     (self.endpoint.x(), self.endpoint.y()),
@@ -1316,7 +1296,7 @@ class GelbotsWindow(QMainWindow):
             height, width = self.gray_image.shape[:2]
             image_for_pixmap = QtGui.QImage(self.gray_image, width, height, QtGui.QImage.Format_Grayscale8)
             # self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(1280, 720))
-            self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(self.PIXMAP_WIDTH, self.PIXMAP_HEIGHT))
+            self.image_display.setPixmap(QPixmap(image_for_pixmap).scaled(self.PIXMAP_WIDTH, self.PIXMAP_HEIGHT))
         except Exception as ex:
             print("obtain image: ", ex)
 
@@ -1345,38 +1325,37 @@ class GelbotsWindow(QMainWindow):
             self.camera_combo_box.addItem((str(idx)))
 
     def update_config_file(self):
+        """
+        Function that opens the config ini file and writes the actual settings.
+        :return:
+        """
         try:
-            with open(self.CONFIG_FILE_NAME, "w") as configfile:
+            with open(self.CONFIG_FILE_NAME, mode="w", encoding="utf-8") as configfile:
                 self.config.write(configfile)
         except Exception as ex:
             print("Exception in update_config_file: ", ex)
 
     def closeEvent(self, event):
         if self.camera_worker is not None:
-            self.camera_worker.quit_flag = True
+            self.camera_worker.camera_worker_params.quit_flag = True
             time.sleep(0.5)
         sys.exit()
 
     def mouseMoveEvent(self, event):
         if not self.origin.isNull() and self.video_settings_window.roi_enabled:
-            self.rubberBand.setGeometry(QRect(QPoint(self.origin.x()+10, self.origin.y()+60),
-                                              QPoint(event.pos().x()+10, event.pos().y()+60)))
+            self.rubber_band.setGeometry(QRect(QPoint(self.origin.x() + 10, self.origin.y() + 60),
+                                               QPoint(event.pos().x()+10, event.pos().y()+60)))
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton and self.video_settings_window.roi_enabled:
-            self.rubberBand.hide()
+            self.rubber_band.hide()
             self.endpoint = QPoint(event.pos())
 
             self.video_settings_window.roi_enabled = False
             self.draw_roi = True
 
-
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    try:
-        mainWin = GelbotsWindow()
-        mainWin.show()
-    except Exception as ex:
-        print(ex)
-
+    main_window = GelbotsWindow()
+    main_window.show()
     sys.exit(app.exec_())
