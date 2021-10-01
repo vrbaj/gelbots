@@ -1,3 +1,6 @@
+"""
+Implements Factory pattern for Qt graphical object creation.
+"""
 from PyQt5.QtWidgets import QLabel, QPushButton
 
 

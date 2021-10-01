@@ -300,13 +300,9 @@ class SflSettingsWindow(QMainWindow):
             self.sfl_params.stamping_batch_size = int(self.stamping_batch_size_input.text())
             self.change_params.emit(self.sfl_params)
         except ValueError:
-            self.logger.logger.exception("Error in Sfl window validate settings")
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Critical)
-            msg.setText("Error")
-            msg.setInformativeText("Sfl params are not numbers")
-            msg.setWindowTitle("Error")
-            msg.exec_()
+            self.logger.log_exception("Error in Sfl window validate settings",
+                                      "Sfl params are not numbers")
+
 
     def pulse(self):
         """

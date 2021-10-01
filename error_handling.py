@@ -86,8 +86,14 @@ class ErrorLogger:
                     self.logger.removeHandler(handler)
                 log.rename(new_log_name)
 
-    def log_exception(self, catched_exception):
+    def log_exception(self, logger_text, msg_text):
         """
         Function that logs catched_exception
         """
-        # TODO log catched exception
+        self.logger.exception(logger_text)
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setText("Error")
+        msg.setText(msg_text)
+        msg.setWindowTitle("Error")
+        msg.exec_()
