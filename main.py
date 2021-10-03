@@ -70,7 +70,7 @@ class GelbotsWindow(QMainWindow):
                 self.camera_params.exposure_value = self.config.getint("camera", "exposure", fallback=10)
                 self.camera_params.gain_value = float(str(self.config.get("camera", "gain", fallback=1)).replace(",", "."))
                 self.camera_params.brightness_value = float(str(self.config.get("camera", "brightness",
-                                                                                fallback=0.5)).replace(",", "."))
+                                                                                 fallback=0.5)).replace(",", "."))
                 self.mag_value = self.config.getint("camera", "mag", fallback=4)
                 self.laser_params.laser_pulse_n = self.config.getint("laser", "pulses", fallback=1)
                 self.laser_params.laser_on_time = self.config.getint("laser", "on_time", fallback=1)
@@ -117,17 +117,44 @@ class GelbotsWindow(QMainWindow):
             # Set validators
             self.int_validator = QIntValidator()
             self.double_validator = QDoubleValidator()
+
             # labels
-            self.camera_label = QtFactory.get_object(QLabel, self, text="Camera:", geometry=QRect(10, 5, 80, 31))
-            self.camera_width_label = QtFactory.get_object(QLabel, self, text="Width:", geometry=QRect(120, 5, 80, 31))
-            self.camera_height_label = QtFactory.get_object(QLabel, self, text="Height:", geometry=QRect(200, 5, 80, 31))
-            self.camera_fps_label = QtFactory.get_object(QLabel, self, text="FPS:", geometry=QRect(280, 5, 80, 31))
-            self.camera_exposure_label = QtFactory.get_object(QLabel, self, text="Exposure:", geometry=QRect(350, 5, 80, 31))
-            self.camera_gain_label = QtFactory.get_object(QLabel, self, text="Gain:", geometry=QRect(450, 5, 80, 31))
-            self.steppers_x_label = QtFactory.get_object(QLabel, self, text="Manual steps X:", geometry=QRect(1600, 5, 80, 31))
-            self.camera_brightness_label = QtFactory.get_object(QLabel, self, text="Brightness:", geometry=QRect(540, 5, 80, 31))
-            self.steppers_y_label = QtFactory.get_object(QLabel, self, text="Manual steps Y:", geometry=QRect(1600, 35, 80, 31))
-            self.mag_label = QtFactory.get_object(QLabel, self, text="Magnification", geometry=QRect(10, 30, 80, 25))
+            self.camera_label = QtFactory.get_object(QLabel, central_widget, text="Camera:", geometry=QRect(10, 5, 80, 31))
+            self.camera_width_label = QtFactory.get_object(QLabel, central_widget, text="Width:", geometry=QRect(120, 5, 80, 31))
+            self.camera_height_label = QtFactory.get_object(QLabel, central_widget, text="Height:", geometry=QRect(200, 5, 80, 31))
+            self.camera_fps_label = QtFactory.get_object(QLabel, central_widget, text="FPS:", geometry=QRect(280, 5, 80, 31))
+            self.camera_exposure_label = QtFactory.get_object(QLabel, central_widget, text="Exposure:", geometry=QRect(350, 5, 80, 31))
+            self.camera_gain_label = QtFactory.get_object(QLabel, central_widget, text="Gain:", geometry=QRect(450, 5, 80, 31))
+            self.steppers_x_label = QtFactory.get_object(QLabel, central_widget, text="Manual steps X:", geometry=QRect(1600, 5, 80, 31))
+            self.camera_brightness_label = QtFactory.get_object(QLabel, central_widget, text="Brightness:", geometry=QRect(540, 5, 80, 31))
+            self.steppers_y_label = QtFactory.get_object(QLabel, central_widget, text="Manual steps Y:", geometry=QRect(1600, 35, 80, 31))
+            self.mag_label = QtFactory.get_object(QLabel, central_widget, text="Magnification", geometry=QRect(10, 30, 80, 25))
+
+            # buttons
+            self.laser_button = QtFactory.get_object(QPushButton, central_widget,
+                                                     text="Laser ON", tooltip="Laser switch",
+                                                     position=(1750, 35), func=self.laser_switch)
+            self.run_camera_button = QtFactory.get_object(QPushButton, central_widget, text="Run camera",
+                                                          tooltip="Click to switch camera", position=(650, 10),
+                                                          func=self.run_camera)
+            self.red_button = QtFactory.get_object(QPushButton, central_widget, text="Red button",
+                                                   tooltip="Click to stop all raspberry processes",
+                                                   position=(1000, 30), func=self.red_button_function)
+            self.auto_mode_button = QtFactory.get_object(QPushButton, central_widget,
+                                                         text="Auto ON", tooltip="Auto mode switch",
+                                                         position=(1750, 5), func=self.automode)
+            self.save_video_button = QtFactory.get_object(QPushButton, central_widget,
+                                                          text="Video settings", tooltip="Click to set video settings",
+                                                          position=(1300, 30), func=self.save_video_settings)
+            self.laser_settings_button = QtFactory.get_object(QPushButton, central_widget, text="Laser settings",
+                                                              tooltip="Click to set laser settings",
+                                                              position=(1750, 150), func=self.show_laser_settings)
+            self.sfl_settings_button = QtFactory.get_object(QPushButton, central_widget, text="SFL settings",
+                                                            tooltip="Click to set SFL settings",
+                                                            position=(1750, 200), func=self.show_sfl_settings)
+            self.find_disks_button = QtFactory.get_object(QPushButton, central_widget, text="Find disks",
+                                                          tooltip="Click to find disks", position=(1300, 5),
+                                                          func=self.find_disks)
 
             # Create combobox and add items.
             self.camera_combo_box = QComboBox(central_widget)
@@ -139,7 +166,6 @@ class GelbotsWindow(QMainWindow):
                 self.camera_worker = None
             except Exception as ex:
                 print(ex)
-            # Create width label
 
             # Create width input box
             self.camera_width_input = QLineEdit(central_widget)
@@ -255,12 +281,7 @@ class GelbotsWindow(QMainWindow):
             self.message_text.setGeometry(10, 1050, 1280, 30)
             self.message_text.setReadOnly(True)
             self.message_text.setPlainText("Initialized..")
-            # run camera button
-            self.run_camera_button = QPushButton('Run camera', self)
-            self.run_camera_button.setToolTip('This is an example button')
-            self.run_camera_button.move(650, 10)
-            self.run_camera_button.setFixedHeight(22)
-            self.run_camera_button.clicked.connect(self.run_camera)
+
 
             # status label of raspi
             self.raspi_status_label = QLabel(central_widget)
@@ -274,12 +295,6 @@ class GelbotsWindow(QMainWindow):
             self.raspi_status_label.setLineWidth(2)
             self.raspi_status_label.mousePressEvent = self.init_raspi
 
-            # red button stop
-            self.red_button = QPushButton("Red button", self)
-            self.red_button.setToolTip("Click to stop all raspberry processes")
-            self.red_button.move(1000, 30)
-            self.red_button.setFixedHeight(22)
-            self.red_button.clicked.connect(self.red_button_function)
 
             # steppers x param input
             self.steppers_x_input = QLineEdit(central_widget)
@@ -298,25 +313,6 @@ class GelbotsWindow(QMainWindow):
             self.steppers_y_input.setText(str(self.steppers_y))
             self.steppers_y_input.editingFinished.connect(self.steppers_y_edited)
 
-            # save video settings
-            self.save_video_button = QPushButton("Video settings", self)
-            self.save_video_button.setToolTip("Click to set video settings")
-            self.save_video_button.move(1300, 30)
-            self.save_video_button.setFixedHeight(22)
-            self.save_video_button.clicked.connect(self.save_video_settings)
-            # laser settings window
-            self.laser_settings_button = QPushButton("Laser settings", self)
-            self.laser_settings_button.setToolTip("Click to set laser settings")
-            self.laser_settings_button.move(1750, 150)
-            self.laser_settings_button.setFixedHeight(22)
-            self.laser_settings_button.clicked.connect(self.show_laser_settings)
-
-            # sfl settings window
-            self.sfl_settings_button = QPushButton("SFL settings", self)
-            self.sfl_settings_button.setToolTip("Click to set sfl settings")
-            self.sfl_settings_button.move(1750, 200)
-            self.sfl_settings_button.setFixedHeight(22)
-            self.sfl_settings_button.clicked.connect(self.show_sfl_settings)
 
             # check box to move laser to desired position
             self.move_laser_checkbox = QCheckBox(self)
@@ -391,26 +387,6 @@ class GelbotsWindow(QMainWindow):
             self.set_sfl_checkbox.setLayoutDirection(Qt.RightToLeft)
             self.set_sfl_checkbox.stateChanged.connect(self.set_sfl_checkbox_click)
 
-            # find disks button
-            self.find_disks_button = QPushButton('Find disks', self)
-            self.find_disks_button.setToolTip('Click to find disks')
-            self.find_disks_button.move(1300, 5)
-            self.find_disks_button.setFixedHeight(22)
-            self.find_disks_button.clicked.connect(self.find_disks)
-
-            # automode button
-            self.auto_mode_button = QPushButton('Auto ON', self)
-            self.auto_mode_button.setToolTip('Auto ON')
-            self.auto_mode_button.move(1750, 5)
-            self.auto_mode_button.setFixedHeight(22)
-            self.auto_mode_button.clicked.connect(self.automode)
-
-            # laser swithc button
-            self.laser_button = QPushButton('Laser ON', self)
-            self.laser_button.setToolTip('Laser ON')
-            self.laser_button.move(1750, 35)
-            self.laser_button.setFixedHeight(22)
-            self.laser_button.clicked.connect(self.laser_switch)
 
             # start Raspi communication thread
             self.raspi_comm = worker_raspi.RaspiWorker()
@@ -749,7 +725,8 @@ class GelbotsWindow(QMainWindow):
         self.raspi_comm.requests_queue.append("x" + str(x))
         self.raspi_comm.requests_queue.append("y" + str(y))
 
-    def automode(self):
+    @exception_handler
+    def automode(self, _):
         if self.auto_mode_button.text() == "Auto ON":
             if len(self.disk_list) == len(self.target_list):
                 self.auto_mode_button.setText("Auto OFF")
@@ -1248,7 +1225,6 @@ class GelbotsWindow(QMainWindow):
         if event.button() == QtCore.Qt.LeftButton and self.video_settings_window.roi_enabled:
             self.rubber_band.hide()
             self.endpoint = QPoint(event.pos())
-
             self.video_settings_window.roi_enabled = False
             self.draw_roi = True
 

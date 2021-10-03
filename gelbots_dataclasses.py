@@ -67,6 +67,8 @@ class SflParams:
                "," + str(self.stamping_light_off) + "," + str(self.stamping_flush_on) +\
                "," + str(self.stamping_flush_off) + "," + str(self.stamping_batch_size)
         return rasp
+
+
 @dataclass
 class CameraWorkerParams:
     """Class for keeping camera worker params together."""
