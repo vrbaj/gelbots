@@ -155,6 +155,13 @@ class GelbotsWindow(QMainWindow):
             self.find_disks_button = QtFactory.get_object(QPushButton, central_widget, text="Find disks",
                                                           tooltip="Click to find disks", position=(1300, 5),
                                                           func=self.find_disks)
+            self.formation_window_button = QtFactory.get_object(QPushButton, central_widget, text="Formation editor",
+                                                                tooltip="Click to setup formation",
+                                                                position=(1750, 300), func=self.show_formation_window)
+            # inputs
+            self.camera_width_input = QtFactory.get_object(QLineEdit, central_widget,
+                                                           text=self.camera_params.width_value, position=(155, 10),
+                                                           validator="int", func=self.width_edited)
 
             # Create combobox and add items.
             self.camera_combo_box = QComboBox(central_widget)
@@ -168,12 +175,6 @@ class GelbotsWindow(QMainWindow):
                 print(ex)
 
             # Create width input box
-            self.camera_width_input = QLineEdit(central_widget)
-            self.camera_width_input.move(155, 10)
-            self.camera_width_input.setFixedWidth(30)
-            self.camera_width_input.setText(str(self.camera_params.width_value))
-            self.camera_width_input.setValidator(self.int_validator)
-            self.camera_width_input.editingFinished.connect(self.width_edited)
 
             # Create height input box
             self.camera_height_input = QLineEdit(central_widget)
@@ -414,11 +415,6 @@ class GelbotsWindow(QMainWindow):
             self.endpoint = QPoint()
             # formation window
             self.formation_window = window_formation.FormationWindow()
-            self.formation_window_button = QPushButton("Formation editor", self)
-            self.formation_window_button.setToolTip("Click to setup formation")
-            self.formation_window_button.move(1750, 300)
-            self.formation_window_button.setFixedHeight(22)
-            self.formation_window_button.clicked.connect(self.show_formation_window)
 
             # self.formation_start_button = QPushButton("Start formation", self)
             # self.formation_start_button.setToolTip("Click to establish formation")
@@ -523,42 +519,23 @@ class GelbotsWindow(QMainWindow):
         elif command == "end":
             self.raspi_comm.requests_queue.append("c")
 
+    @exception_handler
     def keyboard_event_received(self, event):
-        # TODO rewrite
         keyboard_pressed = event.name
-        if keyboard_pressed == "a":
-            # move left
-            self.raspi_comm.requests_queue.append("x-" + str(self.steppers_x))
-            self.disk_core.recompute_goal(-1 * self.steppers_x, 0)
-            self.disk_core.recompute_disk(-1 * self.steppers_x, 0)
+        if keyboard_pressed in ["a", "s", "d", "w"]:
+            if keyboard_pressed in ["a", "d"]:
+                constant, raspi_command = (1, "x") if keyboard_pressed == "a" else (-1, "x-")
+                stepper, axis = [constant * self.steppers_x, 0], self.steppers_x
+            elif keyboard_pressed in ["s", "w"]:
+                constant, raspi_command = (1, "y") if keyboard_pressed == "w" else (-1, "y-")
+                stepper, axis = [0, constant * self.steppers_y], self.steppers_y
+            self.raspi_comm.requests_queue.append(raspi_command + str(axis))
+            self.disk_core.recompute_goal(stepper[0], stepper[1])
+            self.disk_core.recompute_disk(stepper[0], stepper[1])
             self.disk_list = deepcopy(self.disk_core.disk_list)
             self.target_list = deepcopy(self.disk_core.target_list)
             self.update_coords(self.disk_list, self.target_list)
-
-        elif keyboard_pressed == "d":
-            # move right
-            self.raspi_comm.requests_queue.append("x" + str(self.steppers_x))
-            self.disk_core.recompute_goal(self.steppers_x, 0)
-            self.disk_core.recompute_disk(self.steppers_x, 0)
-            self.disk_list = deepcopy(self.disk_core.disk_list)
-            self.target_list = deepcopy(self.disk_core.target_list)
-            self.update_coords(self.disk_list, self.target_list)
-        elif keyboard_pressed == "s":
-            # move top
-            self.raspi_comm.requests_queue.append("y-" + str(self.steppers_y))
-            self.disk_core.recompute_goal(0, -1 * self.steppers_y)
-            self.disk_core.recompute_disk(0, -1 * self.steppers_y)
-            self.disk_list = deepcopy(self.disk_core.disk_list)
-            self.target_list = deepcopy(self.disk_core.target_list)
-            self.update_coords(self.disk_list, self.target_list)
-        elif keyboard_pressed == "w":
-            # move down
-            self.raspi_comm.requests_queue.append("y" + str(self.steppers_y))
-            self.disk_core.recompute_goal(0, self.steppers_y)
-            self.disk_core.recompute_disk(0, self.steppers_y)
-            self.disk_list = deepcopy(self.disk_core.disk_list)
-            self.target_list = deepcopy(self.disk_core.target_list)
-            self.update_coords(self.disk_list, self.target_list)
+            # TODO update_coords rewrite and add param to determine the translation
         elif keyboard_pressed == "q":
             self.raspi_comm.requests_queue.append("s")
         elif keyboard_pressed == "e":
@@ -566,20 +543,8 @@ class GelbotsWindow(QMainWindow):
 
     @exception_handler
     def mag_click(self, mag):
-
         mag_text = mag.text()
-        if mag_text == "4x":
-            self.mag_value = 4
-            self.disk_core.mag = 4
-        elif mag_text == "10x":
-            self.mag_value = 10
-            self.disk_core.mag = 10
-        elif mag_text == "20x":
-            self.mag_value = 20
-            self.disk_core.mag = 20
-        elif mag_text == "40x":
-            self.mag_value = 40
-            self.disk_core.mag = 40
+        self.mag_value = self.disk_core.mag = int(mag_text.replace("x", ""))
         self.config.set("camera", "mag", self.mag_value)
         self.update_config_file()
 
@@ -590,9 +555,7 @@ class GelbotsWindow(QMainWindow):
         self.raspi_comm.requests_queue.append(command)
 
     def sfl_settings_changed(self, sfl_params: SflParams):
-        print("entering sfl_settings_changed function")
         self.sfl_params = sfl_params
-
         self.config.set("sfl", "pulse", str(self.sfl_params.sfl_pulse))
         self.config.set("sfl", "light_on", str(self.sfl_params.sfl_light_on))
         self.config.set("sfl", "light_off", str(self.sfl_params.sfl_light_off))
@@ -1172,6 +1135,7 @@ class GelbotsWindow(QMainWindow):
         This function emits a signal to CameraWorker thread, that the working camera was changed.
         :return: No return
         """
+        # TODO WTF funguje to?
         print("emit signal to camera worker with index> ", self.camera_combo_box.currentIndex())
 
     def refresh_camera_list(self):
