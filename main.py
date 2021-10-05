@@ -162,6 +162,9 @@ class GelbotsWindow(QMainWindow):
             self.camera_width_input = QtFactory.get_object(QLineEdit, central_widget,
                                                            text=self.camera_params.width_value, position=(155, 10),
                                                            validator="int", func=self.width_edited)
+            self.camera_height_input = QtFactory.get_object(QLineEdit, central_widget,
+                                                            text=self.camera_params.height_value, position=(235, 10),
+                                                            validator="int", func=self.height_edited)
 
             # Create combobox and add items.
             self.camera_combo_box = QComboBox(central_widget)
@@ -177,12 +180,6 @@ class GelbotsWindow(QMainWindow):
             # Create width input box
 
             # Create height input box
-            self.camera_height_input = QLineEdit(central_widget)
-            self.camera_height_input.move(235, 10)
-            self.camera_height_input.setFixedWidth(30)
-            self.camera_height_input.setText(str(self.camera_params.height_value))
-            self.camera_height_input.setValidator(self.int_validator)
-            self.camera_height_input.editingFinished.connect(self.height_edited)
 
             # Create fps input box
             self.camera_fps_input = QLineEdit(central_widget)
@@ -416,13 +413,6 @@ class GelbotsWindow(QMainWindow):
             # formation window
             self.formation_window = window_formation.FormationWindow()
 
-            # self.formation_start_button = QPushButton("Start formation", self)
-            # self.formation_start_button.setToolTip("Click to establish formation")
-            # self.formation_start_button.move(1750, 350)
-            # self.formation_start_button.setFixedHeight(22)
-            # self.formation_start_button.clicked.connect(self.start_formation)
-
-            # self.formation_window.show()
             self.formation_window.change_params.connect(self.formation_change)
             # video settings window
             self.video_settings_window = window_video.VideoSettingsWindow(self.camera_params.save_interval,
@@ -1141,8 +1131,7 @@ class GelbotsWindow(QMainWindow):
     def refresh_camera_list(self):
         """
         This function finds available cameras in Windows 10 OS
-        and fill camera combo box with the indexes of available
-        cameras.
+        and fill camera combo box with the indexes of available cameras.
         :return: No return
         """
         arr = []
