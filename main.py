@@ -1,4 +1,5 @@
 import configparser
+import socket
 import sys
 import time
 from copy import deepcopy
@@ -284,7 +285,7 @@ class GelbotsWindow(QMainWindow):
             # start Disk Core thread
 
             self.disk_core = disk_core.DiskCore([self.laser_params.laser_x_loc, self.laser_params.laser_y_loc],
-                                                self.laser_params.get_cycle_time(), self.laser_params.offset,
+                                                self.laser_params.get_cycle_time, self.laser_params.offset,
                                                 self.mag_value, self.target_list, self.disk_list)
 
             self.disk_core.gray_image_request.connect(self.core_image_request)
@@ -1036,7 +1037,9 @@ class GelbotsWindow(QMainWindow):
         :param event:
         :return:
         """
-        # TODO release socket!!
+        if self.raspi_comm.raspi_status:
+            self.raspi_comm.k.shutdown(socket.SHUT_RDWR)
+            self.raspi_comm.k.close()
         if self.camera_worker is not None:
             self.camera_worker.camera_worker_params.quit_flag = True
             time.sleep(0.5)

@@ -135,6 +135,7 @@ class FormationWindow(QMainWindow):
         for index in index_list:
             self.targets_model.removeRow(index.row())
         self.get_targets_disks()
+        # TODO update CORE!!
 
     def add_disk(self, disk):
         """

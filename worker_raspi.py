@@ -52,6 +52,7 @@ class RaspiWorker(QThread):
                 except socket.error:
                     self.logger.logger.exception("Sending command to RPI failed")
                     self.raspi_status = False
+                    self.k.shutdown(socket.SHUT_RDWR)
                     self.k.close()
                     self.quit_flag = True
                     self.signal_comm_err.emit()

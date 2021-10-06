@@ -1,6 +1,6 @@
 # TODO general
 - decorator for exception catching in general functions
-- read and save to config inside the dataclass
+- read and save to config inside the dataclass?
 - video convertor to gui
 - progress bar at the start of application (to check log size etc)
 - log exceptions via log_exception function!!
