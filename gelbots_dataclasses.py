@@ -3,8 +3,11 @@ Module for all dataclasses related to gelbots project.
 """
 from dataclasses import dataclass
 
+# TODO transform all to properties and add setters?
+# TODO use function asdict() for writing settings file
 
-@dataclass
+
+@dataclass(frozen=True)
 class LaserParams:
     """Class for keeping laser settings together."""
     offset: int
@@ -14,8 +17,11 @@ class LaserParams:
     laser_x_loc: int
     laser_y_loc: int
 
+    def get_cycle_time(self):
+        return self.laser_pulse_n * (self.laser_on_time * self.laser_off_time)
 
-@dataclass
+
+@dataclass(frozen=True)
 class CameraParams:
     """Class for keeping camera settings together."""
 
@@ -33,7 +39,7 @@ class CameraParams:
     save_namespace: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class SflParams:
     """Class for keeping sfl settings together."""
 
@@ -69,7 +75,7 @@ class SflParams:
         return rasp
 
 
-@dataclass
+@dataclass(frozen=True)
 class CameraWorkerParams:
     """Class for keeping camera worker params together."""
 

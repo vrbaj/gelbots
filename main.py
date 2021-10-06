@@ -165,6 +165,23 @@ class GelbotsWindow(QMainWindow):
             self.camera_height_input = QtFactory.get_object(QLineEdit, central_widget,
                                                             text=self.camera_params.height_value, position=(235, 10),
                                                             validator="int", func=self.height_edited)
+            self.camera_fps_input = QtFactory.get_object(QLineEdit, central_widget, text=self.camera_params.fps_value,
+                                                         position=(305, 10), validator="int", func=self.fps_edited)
+            self.camera_exposure_input = QtFactory.get_object(QLineEdit, central_widget, position=(400, 10),
+                                                              text=self.camera_params.exposure_value, validator="int",
+                                                              func=self.exposure_edited)
+            self.camera_gain_input = QtFactory.get_object(QLineEdit, central_widget, position=(480, 10),
+                                                          text=self.camera_params.gain_value, validator="float",
+                                                          func=self.gain_edited)
+            self.camera_brightness_input = QtFactory.get_object(QLineEdit, central_widget, position=(600, 10),
+                                                                text=self.camera_params.brightness_value,
+                                                                validator="float", func=self.brightness_edited)
+            self.steppers_x_input = QtFactory.get_object(QLineEdit, central_widget, text=self.steppers_x,
+                                                         position=(1680, 10), validator="int",
+                                                         func=self.steppers_x_edited)
+            self.steppers_y_input = QtFactory.get_object(QLineEdit, central_widget, text=self.steppers_y,
+                                                         position=(1680, 40), validator="int",
+                                                         func=self.steppers_y_edited)
 
             # Create combobox and add items.
             self.camera_combo_box = QComboBox(central_widget)
@@ -176,95 +193,6 @@ class GelbotsWindow(QMainWindow):
                 self.camera_worker = None
             except Exception as ex:
                 print(ex)
-
-            # Create width input box
-
-            # Create height input box
-
-            # Create fps input box
-            self.camera_fps_input = QLineEdit(central_widget)
-            self.camera_fps_input.move(305, 10)
-            self.camera_fps_input.setFixedWidth(30)
-            self.camera_fps_input.setText(str(self.camera_params.fps_value))
-            self.camera_fps_input.setValidator(self.int_validator)
-            self.camera_fps_input.editingFinished.connect(self.fps_edited)
-
-            # Create exposure input box
-            self.camera_exposure_input = QLineEdit(central_widget)
-            self.camera_exposure_input.move(400, 10)
-            self.camera_exposure_input.setFixedWidth(30)
-            self.camera_exposure_input.setText(str(self.camera_params.exposure_value))
-            self.camera_exposure_input.setValidator(self.int_validator)
-            self.camera_exposure_input.editingFinished.connect(self.exposure_edited)
-
-            # Create gain input box
-            self.camera_gain_input = QLineEdit(central_widget)
-            self.camera_gain_input.move(480, 10)
-            self.camera_gain_input.setFixedWidth(40)
-            self.camera_gain_input.setText(str(self.camera_params.gain_value).replace(".", ","))
-            self.camera_gain_input.setValidator(self.double_validator)
-            self.camera_gain_input.editingFinished.connect(self.gain_edited)
-
-
-            # Create gain input box
-            self.camera_brightness_input = QLineEdit(central_widget)
-            self.camera_brightness_input.move(600, 10)
-            self.camera_brightness_input.setFixedWidth(30)
-            self.camera_brightness_input.setText(str(self.camera_params.brightness_value).replace(".", ","))
-            self.camera_brightness_input.setValidator(self.double_validator)
-            self.camera_brightness_input.editingFinished.connect(self.brightness_edited)
-
-            # Create disk x loc label
-            # self.diskLocXLabel = QLabel(central_widget)
-            # self.diskLocXLabel.setGeometry(QRect(410, 30, 80, 31))
-            # self.diskLocXLabel.setText("Disk X:")
-            #
-            # Create disk x coordinate input box
-            # self.diskCoordXInput = QLineEdit(central_widget)
-            # self.diskCoordXInput.move(445, 35)
-            # self.diskCoordXInput.setFixedWidth(30)
-            # self.diskCoordXInput.setValidator(self.int_validator)
-            # self.diskCoordXInput.setText(str(self.disk_x_loc))
-            # self.diskCoordXInput.editingFinished.connect(self.disk_x_loc_edited)
-            #
-            # Create disk y loc label
-            # self.diskLocYLabel = QLabel(central_widget)
-            # self.diskLocYLabel.setGeometry(QRect(480, 30, 80, 31))
-            # self.diskLocYLabel.setText("Y:")
-            #
-            # Create disk y coordinate input box
-            # self.diskCoordYInput = QLineEdit(central_widget)
-            # self.diskCoordYInput.move(510, 35)
-            # self.diskCoordYInput.setFixedWidth(30)
-            # self.diskCoordYInput.setValidator(self.int_validator)
-            # self.diskCoordYInput.setText(str(self.disk_y_loc))
-            # self.diskCoordYInput.editingFinished.connect(self.disk_y_loc_edited)
-            #
-            # Create goal x loc label
-            # self.goalLocXLabel = QLabel(central_widget)
-            # self.goalLocXLabel.setGeometry(QRect(550, 30, 80, 31))
-            # self.goalLocXLabel.setText("Goal X:")
-            #
-            # Create goal x coordinate input box
-            # self.goalCoordXInput = QLineEdit(central_widget)
-            # self.goalCoordXInput.move(585, 35)
-            # self.goalCoordXInput.setFixedWidth(30)
-            # self.goalCoordXInput.setValidator(self.int_validator)
-            # self.goalCoordXInput.setText(str(self.goal_x_loc))
-            # self.goalCoordXInput.editingFinished.connect(self.goal_x_loc_edited)
-            #
-            # Create goal y loc label
-            # self.goalLocYLabel = QLabel(central_widget)
-            # self.goalLocYLabel.setGeometry(QRect(625, 30, 80, 31))
-            # self.goalLocYLabel.setText("Y:")
-            #
-            # Create goal y coordinate input box
-            # self.goalCoordYInput = QLineEdit(central_widget)
-            # self.goalCoordYInput.move(640, 35)
-            # self.goalCoordYInput.setFixedWidth(30)
-            # self.goalCoordYInput.setValidator(self.int_validator)
-            # self.goalCoordYInput.setText(str(self.goal_y_loc))
-            # self.goalCoordYInput.editingFinished.connect(self.goal_y_loc_edited)
 
             # add pix
             self.image_display = QLabel(self)
@@ -280,7 +208,6 @@ class GelbotsWindow(QMainWindow):
             self.message_text.setReadOnly(True)
             self.message_text.setPlainText("Initialized..")
 
-
             # status label of raspi
             self.raspi_status_label = QLabel(central_widget)
             self.raspi_status_label.setGeometry(QRect(1500, 5, 80, 30))
@@ -293,25 +220,6 @@ class GelbotsWindow(QMainWindow):
             self.raspi_status_label.setLineWidth(2)
             self.raspi_status_label.mousePressEvent = self.init_raspi
 
-
-            # steppers x param input
-            self.steppers_x_input = QLineEdit(central_widget)
-            self.steppers_x_input.move(1680, 10)
-            self.steppers_x_input.setFixedWidth(30)
-            self.steppers_x_input.setValidator(self.int_validator)
-            self.steppers_x_input.setText(str(self.steppers_x))
-            self.steppers_x_input.editingFinished.connect(self.steppers_x_edited)
-
-
-            # steppers Y param input
-            self.steppers_y_input = QLineEdit(central_widget)
-            self.steppers_y_input.move(1680, 40)
-            self.steppers_y_input.setFixedWidth(30)
-            self.steppers_y_input.setValidator(self.int_validator)
-            self.steppers_y_input.setText(str(self.steppers_y))
-            self.steppers_y_input.editingFinished.connect(self.steppers_y_edited)
-
-
             # check box to move laser to desired position
             self.move_laser_checkbox = QCheckBox(self)
             self.move_laser_checkbox.setText("Move laser")
@@ -319,22 +227,6 @@ class GelbotsWindow(QMainWindow):
             self.move_laser_checkbox.setGeometry(QRect(850, 30, 100, 25))
             self.move_laser_checkbox.setLayoutDirection(Qt.RightToLeft)
             self.move_laser_checkbox.stateChanged.connect(self.laser_checkbox_click)
-
-            # check box to select disk
-            # self.setDiskCheckbox = QCheckBox(self)
-            # self.setDiskCheckbox.setText("Select disk")
-            # self.setDiskCheckbox.setToolTip("Click to image to to select target disk")
-            # self.setDiskCheckbox.setGeometry(QRect(750, 30, 100, 25))
-            # self.setDiskCheckbox.setLayoutDirection(Qt.RightToLeft)
-            # self.setDiskCheckbox.stateChanged.connect(self.disk_checkbox_click)
-
-            # check box to set goal
-            # self.setGoalCheckbox = QCheckBox(self)
-            # self.setGoalCheckbox.setText("Set target")
-            # self.setGoalCheckbox.setToolTip("Click to image to set goal")
-            # self.setGoalCheckbox.setGeometry(QRect(750, 5, 100, 25))
-            # self.setGoalCheckbox.setLayoutDirection(Qt.RightToLeft)
-            # self.setGoalCheckbox.stateChanged.connect(self.goal_checkbox_click)
 
             # check box to add disk to formation
             self.set_disk_formation_checkbox = QCheckBox(self)
@@ -385,22 +277,16 @@ class GelbotsWindow(QMainWindow):
             self.set_sfl_checkbox.setLayoutDirection(Qt.RightToLeft)
             self.set_sfl_checkbox.stateChanged.connect(self.set_sfl_checkbox_click)
 
-
             # start Raspi communication thread
             self.raspi_comm = worker_raspi.RaspiWorker()
             self.raspi_comm.signal_comm_err.connect(self.raspi_fail)
             self.raspi_comm.start()
             # start Disk Core thread
-            # self.disk_core = disk_core.DiskCore([self.disk_x_loc, self.disk_y_loc],
-            #                                     [self.laser_x_loc, self.laser_y_loc],
-            #                                     [self.goal_x_loc, self.goal_y_loc],
-            #                                     self.laser_pulse_n * (self.laser_on_time + self.laser_off_time),
-            #                                     self.offset, self.mag_value, self.target_list, self.disk_list)
 
             self.disk_core = disk_core.DiskCore([self.laser_params.laser_x_loc, self.laser_params.laser_y_loc],
-                                               self.laser_params.laser_pulse_n * (self.laser_params.laser_on_time + self.laser_params.laser_off_time),
-                                               self.laser_params.offset,
-                                               self.mag_value, self.target_list, self.disk_list)
+                                                self.laser_params.get_cycle_time(), self.laser_params.offset,
+                                                self.mag_value, self.target_list, self.disk_list)
+
             self.disk_core.gray_image_request.connect(self.core_image_request)
             self.disk_core.steppers_request.connect(self.move_steppers)
             self.disk_core.coords_update.connect(self.update_coords)
@@ -410,10 +296,11 @@ class GelbotsWindow(QMainWindow):
             self.rubber_band = QRubberBand(QRubberBand.Rectangle, self)
             self.origin = QPoint()
             self.endpoint = QPoint()
+
             # formation window
             self.formation_window = window_formation.FormationWindow()
-
             self.formation_window.change_params.connect(self.formation_change)
+
             # video settings window
             self.video_settings_window = window_video.VideoSettingsWindow(self.camera_params.save_interval,
                                                                           self.camera_params.save_namespace,
@@ -421,9 +308,6 @@ class GelbotsWindow(QMainWindow):
             self.video_settings_window.closed.connect(self.video_settings_close)
 
             # laser settings window
-            # self.laser_settings_window = window_laser.LaserSettingsWindow(self.laser_pulse_n, self.laser_on_time,
-            #                                                               self.laser_off_time, self.laser_x_loc,
-            #                                                               self.laser_y_loc, self.offset)
             self.laser_settings_window = window_laser.LaserSettingsWindow(self.laser_params)
             self.laser_settings_window.change_params.connect(self.laser_settings_changed)
             self.laser_settings_window.laser_control_signal.connect(self.laser_control)
@@ -438,8 +322,8 @@ class GelbotsWindow(QMainWindow):
             self.sfl_settings_window.stamping_switch_signal.connect(self.stamping_switch)
             # signal from sfl window
             # self.sfl_settings_window.key_press_signal.connect(self.sfl_key)
-            # check box for magnification
 
+            # check box for magnification
             self.mag_4_checkbox = QCheckBox(self)
             self.mag_4_checkbox.setText("4x")
             self.mag_4_checkbox.setToolTip("Click to set magnification")
@@ -535,7 +419,7 @@ class GelbotsWindow(QMainWindow):
     def mag_click(self, mag):
         mag_text = mag.text()
         self.mag_value = self.disk_core.mag = int(mag_text.replace("x", ""))
-        self.config.set("camera", "mag", self.mag_value)
+        self.config.set("camera", "mag", str(self.mag_value))
         self.update_config_file()
 
     def set_sfl_checkbox_click(self, state):
@@ -819,13 +703,9 @@ class GelbotsWindow(QMainWindow):
 
     @exception_handler
     def video_settings_close(self, save_interval, save_namespace, save_path):
-        self.camera_params.save_interval = save_interval
-        self.camera_params.save_namespace = save_namespace
-        self.camera_params.save_path = save_path
-        self.camera_worker.camera_params.save_interval = save_interval
-        self.camera_worker.camera_params.save_path = save_path
-        self.camera_worker.camera_params.save_namespace = save_namespace
-
+        self.camera_params.save_interval, self.camera_worker.camera_params.save_interval = save_interval
+        self.camera_params.save_namespace, self.camera_worker.camera_params.save_namespace = save_namespace
+        self.camera_params.save_path, self.camera_worker.camera_params.save_path = save_path
         self.config.set("video", "interval", str(save_interval))
         self.config.set("video", "namespace", str(save_namespace))
         self.config.set("video", "path", str(save_path))
@@ -1075,13 +955,7 @@ class GelbotsWindow(QMainWindow):
             self.gray_image = cv2.cvtColor(self.image_to_display, cv2.COLOR_BGR2GRAY)
             if self.draw_marks_enabled:
                 # TODO wrap draw markers into function that will check the coordinates (if it is inside of img)
-                pass
-                # self.gray_image = cv2.drawMarker(self.gray_image, (self.goal_x_loc, self.goal_y_loc), (0, 255, 255),
-                #                                  markerType=cv2.MARKER_DIAMOND, markerSize=20, thickness=1,
-                #                                  line_type=cv2.LINE_AA)
-                # self.gray_image = cv2.drawMarker(self.gray_image, (self.disk_x_loc, self.disk_y_loc), (255, 255, 0),
-                #                                  markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,
-                #                                  line_type=cv2.LINE_AA)
+
                 for disk in self.disk_list:
                     self.gray_image = cv2.drawMarker(self.gray_image, tuple(disk), (255, 255, 0),
                                                      markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,
@@ -1115,7 +989,6 @@ class GelbotsWindow(QMainWindow):
                                                     (250, 255, 0), 2)
             height, width = self.gray_image.shape[:2]
             image_for_pixmap = QtGui.QImage(self.gray_image, width, height, QtGui.QImage.Format_Grayscale8)
-            # self.imageDisplay.setPixmap(QPixmap(image_for_pixmap).scaled(1280, 720))
             self.image_display.setPixmap(QPixmap(image_for_pixmap).scaled(self.PIXMAP_WIDTH, self.PIXMAP_HEIGHT))
         except Exception as ex:
             print("obtain image: ", ex)
