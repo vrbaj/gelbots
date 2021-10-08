@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import QMainWindow, QLabel, QWidget, QComboBox,\
 from PyQt5.QtCore import QSize, QRect, Qt, QPoint
 from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
 
+
 from error_handling import exception_handler
 from error_handling import ErrorLogger
 from qt_factory import QtFactory
@@ -130,7 +131,6 @@ class GelbotsWindow(QMainWindow):
             self.camera_brightness_label = QtFactory.get_object(QLabel, central_widget, text="Brightness:", geometry=QRect(540, 5, 80, 31))
             self.steppers_y_label = QtFactory.get_object(QLabel, central_widget, text="Manual steps Y:", geometry=QRect(1600, 35, 80, 31))
             self.mag_label = QtFactory.get_object(QLabel, central_widget, text="Magnification", geometry=QRect(10, 30, 80, 25))
-
             # buttons
             self.laser_button = QtFactory.get_object(QPushButton, central_widget,
                                                      text="Laser ON", tooltip="Laser switch",
@@ -183,6 +183,46 @@ class GelbotsWindow(QMainWindow):
             self.steppers_y_input = QtFactory.get_object(QLineEdit, central_widget, text=self.steppers_y,
                                                          position=(1680, 40), validator="int",
                                                          func=self.steppers_y_edited)
+            # checkbox
+            self.move_laser_checkbox = QtFactory.get_object(QCheckBox, central_widget, geometry=QRect(850, 30, 100, 25),
+                                                            func=self.laser_checkbox_click, text="Move laser",
+                                                            tooltip="Click to image to move laser to desired position")
+            self.set_sfl_checkbox = QtFactory.get_object(QCheckBox, central_widget, geometry=QRect(1000, 5, 100, 25),
+                                                         func=self.set_sfl_checkbox_click, text="Set sfl",
+                                                         tooltip="Click to image to set sfl position")
+            self.set_disk_formation_checkbox = QtFactory.get_object(QCheckBox, central_widget, text="Add disk",
+                                                                    geometry=QRect(1800, 500, 100, 25),
+                                                                    tooltip="Click to image to add disk to formation",
+                                                                    func=self.disk_formation_checkbox_click)
+            self.set_disk_formation_checkbox = QtFactory.get_object(QCheckBox, central_widget, text="Add target",
+                                                                    geometry=QRect(1800, 530, 100, 25),
+                                                                    tooltip="Click to image to add target to formation",
+                                                                    func=self.goal_formation_checkbox_click)
+            self.save_video_checkbox = QtFactory.get_object(QCheckBox, central_widget, geometry=QRect(850, 5, 100, 25),
+                                                            text="Save video", func=self.save_video_checkbox_click,
+                                                            tooltip="Click to save/stop saving the video on the disk")
+            self.set_laser_checkbox = QtFactory.get_object(QCheckBox, central_widget, geometry=QRect(1100, 35, 100, 25),
+                                                           text="Set laser", func=self.set_laser_checkbox_click,
+                                                           tooltip="Click to image to set laser position")
+            self.draw_marks_checkbox = QtFactory.get_object(QCheckBox, central_widget, geometry=QRect(1100, 5, 100, 25),
+                                                            text="Draw marks", func=self.draw_marks_checkbox_click,
+                                                            tooltip="Click to draw marks into image", checked=True)
+            self.mag_4_checkbox = QtFactory.get_object(QCheckBox, central_widget, geometry=QRect(70, 30, 40, 25),
+                                                       text="4x", tooltip="Click to set magnification",
+                                                       func=lambda: self.mag_click(self.mag_4_checkbox))
+            self.mag_10_checkbox = QtFactory.get_object(QCheckBox, central_widget, geometry=QRect(110, 30, 40, 25),
+                                                        text="10x", tooltip="Click to set magnification",
+                                                        func=lambda: self.mag_click(self.mag_10_checkbox))
+            self.mag_20_checkbox = QtFactory.get_object(QCheckBox, central_widget, geometry=QRect(150, 30, 40, 25),
+                                                        text="20x", tooltip="Click to set magnification",
+                                                        func=lambda: self.mag_click(self.mag_20_checkbox))
+            self.mag_40_checkbox = QtFactory.get_object(QCheckBox, central_widget, geometry=QRect(190, 30, 40, 25),
+                                                        text="40x", tooltip="Click to set magnification",
+                                                        func=lambda: self.mag_click(self.mag_40_checkbox))
+
+
+
+
 
             # Create combobox and add items.
             self.camera_combo_box = QComboBox(central_widget)
@@ -220,63 +260,6 @@ class GelbotsWindow(QMainWindow):
             self.raspi_status_label.setFrameShadow(QFrame.Sunken)
             self.raspi_status_label.setLineWidth(2)
             self.raspi_status_label.mousePressEvent = self.init_raspi
-
-            # check box to move laser to desired position
-            self.move_laser_checkbox = QCheckBox(self)
-            self.move_laser_checkbox.setText("Move laser")
-            self.move_laser_checkbox.setToolTip("Click to image to move laser to desired position")
-            self.move_laser_checkbox.setGeometry(QRect(850, 30, 100, 25))
-            self.move_laser_checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.move_laser_checkbox.stateChanged.connect(self.laser_checkbox_click)
-
-            # check box to add disk to formation
-            self.set_disk_formation_checkbox = QCheckBox(self)
-            self.set_disk_formation_checkbox.setText("Add disk")
-            self.set_disk_formation_checkbox.setToolTip("Click to image to add disk to formation")
-            self.set_disk_formation_checkbox.setGeometry(QRect(1800, 500, 100, 25))
-            self.set_disk_formation_checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.set_disk_formation_checkbox.stateChanged.connect(self.disk_formation_checkbox_click)
-
-            # check box to add disk to formation
-            self.set_disk_formation_checkbox = QCheckBox(self)
-            self.set_disk_formation_checkbox.setText("Add target")
-            self.set_disk_formation_checkbox.setToolTip("Click to image to add target to formation")
-            self.set_disk_formation_checkbox.setGeometry(QRect(1800, 530, 100, 25))
-            self.set_disk_formation_checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.set_disk_formation_checkbox.stateChanged.connect(self.goal_formation_checkbox_click)
-
-            # check box save video on disk
-            self.save_video_checkbox = QCheckBox(self)
-            self.save_video_checkbox.setText("Save video")
-            self.save_video_checkbox.setToolTip("Click to save/stop saving the video on the disk")
-            self.save_video_checkbox.setGeometry(QRect(850, 5, 100, 25))
-            self.save_video_checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.save_video_checkbox.stateChanged.connect(self.save_video_checkbox_click)
-
-            # check box to draw marks
-            self.draw_marks_checkbox = QCheckBox(self)
-            self.draw_marks_checkbox.setText("Draw marks")
-            self.draw_marks_checkbox.setToolTip("Click to draw marks into image")
-            self.draw_marks_checkbox.setGeometry(QRect(1100, 5, 100, 25))
-            self.draw_marks_checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.draw_marks_checkbox.setChecked(True)
-            self.draw_marks_checkbox.stateChanged.connect(self.draw_marks_checkbox_click)
-
-            # check box to set laser
-            self.set_laser_checkbox = QCheckBox(self)
-            self.set_laser_checkbox.setText("Set laser")
-            self.set_laser_checkbox.setToolTip("Click to image to set laser position")
-            self.set_laser_checkbox.setGeometry(QRect(1100, 35, 100, 25))
-            self.set_laser_checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.set_laser_checkbox.stateChanged.connect(self.set_laser_checkbox_click)
-
-            # check box to set sfl
-            self.set_sfl_checkbox = QCheckBox(self)
-            self.set_sfl_checkbox.setText("Set sfl")
-            self.set_sfl_checkbox.setToolTip("Click to image to set sfl position")
-            self.set_sfl_checkbox.setGeometry(QRect(1000, 5, 100, 25))
-            self.set_sfl_checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.set_sfl_checkbox.stateChanged.connect(self.set_sfl_checkbox_click)
 
             # start Raspi communication thread
             self.raspi_comm = worker_raspi.RaspiWorker()
@@ -321,34 +304,7 @@ class GelbotsWindow(QMainWindow):
             self.sfl_settings_window.flush_switch_signal.connect(self.flush_switch)
             self.sfl_settings_window.light_switch_signal.connect(self.light_switch)
             self.sfl_settings_window.stamping_switch_signal.connect(self.stamping_switch)
-            # signal from sfl window
-            # self.sfl_settings_window.key_press_signal.connect(self.sfl_key)
 
-            # check box for magnification
-            self.mag_4_checkbox = QCheckBox(self)
-            self.mag_4_checkbox.setText("4x")
-            self.mag_4_checkbox.setToolTip("Click to set magnification")
-            self.mag_4_checkbox.setGeometry(QRect(70, 30, 40, 25))
-            self.mag_4_checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.mag_4_checkbox.stateChanged.connect(lambda: self.mag_click(self.mag_4_checkbox))
-            self.mag_10_checkbox = QCheckBox(self)
-            self.mag_10_checkbox.setText("10x")
-            self.mag_10_checkbox.setToolTip("Click to set magnification")
-            self.mag_10_checkbox.setGeometry(QRect(110, 30, 40, 25))
-            self.mag_10_checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.mag_10_checkbox.stateChanged.connect(lambda: self.mag_click(self.mag_10_checkbox))
-            self.mag_20_checkbox = QCheckBox(self)
-            self.mag_20_checkbox.setText("20x")
-            self.mag_20_checkbox.setToolTip("Click to set magnification")
-            self.mag_20_checkbox.setGeometry(QRect(150, 30, 40, 25))
-            self.mag_20_checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.mag_20_checkbox.stateChanged.connect(lambda: self.mag_click(self.mag_20_checkbox))
-            self.mag_40_checkbox = QCheckBox(self)
-            self.mag_40_checkbox.setText("40x")
-            self.mag_40_checkbox.setToolTip("Click to set magnification")
-            self.mag_40_checkbox.setGeometry(QRect(190, 30, 40, 25))
-            self.mag_40_checkbox.setLayoutDirection(Qt.RightToLeft)
-            self.mag_40_checkbox.stateChanged.connect(lambda: self.mag_click(self.mag_40_checkbox))
 
             if self.mag_value == 4:
                 self.mag_4_checkbox.setChecked(True)
@@ -356,6 +312,8 @@ class GelbotsWindow(QMainWindow):
                 self.mag_10_checkbox.setChecked(True)
             elif self.mag_value == 20:
                 self.mag_20_checkbox.setChecked(True)
+            elif self.mag_value == 40:
+                self.mag_40_checkbox.setChecked(True)
             self.checkbox_mag_group = QtWidgets.QButtonGroup(self)
             self.checkbox_mag_group.addButton(self.mag_4_checkbox)
             self.checkbox_mag_group.addButton(self.mag_10_checkbox)
@@ -703,6 +661,7 @@ class GelbotsWindow(QMainWindow):
             self.formation_window.add_target(str([x_image, y_image]))
 
     @exception_handler
+    # TODO tenhle onClose shit dat primo do window_xxxx.py
     def video_settings_close(self, save_interval, save_namespace, save_path):
         self.camera_params.save_interval, self.camera_worker.camera_params.save_interval = save_interval
         self.camera_params.save_namespace, self.camera_worker.camera_params.save_namespace = save_namespace

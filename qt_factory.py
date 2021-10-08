@@ -1,9 +1,10 @@
 """
 Implements Factory pattern for Qt graphical object creation.
 """
-from PyQt5.QtWidgets import QLabel, QPushButton, QLineEdit
+from PyQt5.QtWidgets import QLabel, QPushButton, QLineEdit, QCheckBox
 from PyQt5.QtGui import QIntValidator, QDoubleValidator
-
+from PyQt5.QtCore import Qt
+from error_handling import exception_handler
 
 class QtFactory:
     """
@@ -38,6 +39,15 @@ class QtFactory:
                     validator = QIntValidator()
                 elif kwargs["validator"] == "float":
                     validator = QDoubleValidator()
-                qt_object.setValidator(validator)
+            qt_object.setValidator(validator)
             qt_object.editingFinished.connect(kwargs["func"])
+        elif object_type == QCheckBox:
+            qt_object = QCheckBox(window)
+            qt_object.setText(kwargs["text"])
+            qt_object.setToolTip(kwargs["tooltip"])
+            qt_object.setGeometry(kwargs["geometry"])
+            qt_object.setLayoutDirection(Qt.RightToLeft)
+            qt_object.stateChanged.connect(kwargs["func"])
+            if "checked" in kwargs:
+                qt_object.setChecked(kwargs["checked"])
         return qt_object
