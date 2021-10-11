@@ -51,7 +51,7 @@ class ErrorLogger:
     Class that implements logger that is utilizing gelbots.log file for all
     logged errors.
     """
-    LOG_FILE_NAME = "gelbots.log"
+    LOG_FILE_NAME = "../gelbots.log"
     LOG_MAX_SIZE = 1000000  # 1 MB
 
     def __init__(self):

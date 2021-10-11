@@ -14,17 +14,11 @@ from PyQt5.QtCore import QSize, QRect, Qt, QPoint
 from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
 
 
-from error_handling import exception_handler
-from error_handling import ErrorLogger
-from qt_factory import QtFactory
-import worker_camera
-import worker_raspi
-import disk_core2 as disk_core
-import window_formation
-import window_sfl
-import window_laser
-import window_video
-from gelbots_dataclasses import LaserParams, SflParams, CameraParams
+from gelbots.error_handling import exception_handler, ErrorLogger
+from gelbots.qt_factory import QtFactory
+from gelbots import worker_raspi, window_laser, disk_core2 as disk_core, window_video, worker_camera, window_sfl, \
+    window_formation
+from gelbots.gelbots_dataclasses import LaserParams, SflParams, CameraParams
 
 
 class GelbotsWindow(QMainWindow):
@@ -987,7 +981,7 @@ class GelbotsWindow(QMainWindow):
             with open(self.CONFIG_FILE_NAME, mode="w", encoding="utf-8") as configfile:
                 self.config.write(configfile)
         except IOError:
-            self.logger.log_exception("Error in main.py during update_config_file",
+            self.logger.log_exception("Error in gelbots.py during update_config_file",
                                       "Could not save the parameters.")
 
     def closeEvent(self, event):

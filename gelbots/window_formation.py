@@ -93,7 +93,7 @@ class FormationWindow(QMainWindow):
         """
         This function call the optimization function and fills lists with
         disks and targets coordinates according to optimization result.
-        Signal with new disk list and disk order is emited to main.py.
+        Signal with new disk list and disk order is emited to gelbots.py.
         :return:
         """
         if not self.automode_status:
@@ -152,7 +152,7 @@ class FormationWindow(QMainWindow):
         """
         This function refreshes the lists with disks and targets as same
         as according list views. Signal with new disks and targets list
-        is then sent to main.py
+        is then sent to gelbots.py
         :return:
         """
         self.disks_list = []

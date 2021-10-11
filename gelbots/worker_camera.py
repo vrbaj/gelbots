@@ -48,7 +48,7 @@ class CameraWorker(QThread):
     @exception_handler
     def run(self):
         """
-        Loop to grab images from camera and send them to main.py. If
+        Loop to grab images from camera and send them to gelbots.py. If
         saving is enabled, the image (or ROI) is saved to disk as bmp file.
         :return:
         """

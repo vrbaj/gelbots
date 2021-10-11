@@ -4,7 +4,7 @@ Implements Factory pattern for Qt graphical object creation.
 from PyQt5.QtWidgets import QLabel, QPushButton, QLineEdit, QCheckBox
 from PyQt5.QtGui import QIntValidator, QDoubleValidator
 from PyQt5.QtCore import Qt
-from error_handling import exception_handler
+
 
 class QtFactory:
     """

@@ -2,7 +2,7 @@
 This module is implementing the window with sfl settings and control.
 """
 
-from PyQt5.QtWidgets import QMainWindow, QLabel, QLineEdit, QPushButton, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QLabel, QLineEdit, QPushButton
 from PyQt5.QtCore import QSize, QRect, pyqtSignal
 from PyQt5.QtGui import QIntValidator
 
@@ -277,7 +277,7 @@ class SflSettingsWindow(QMainWindow):
     def validate_settings(self):
         """
         This function converts the text from input boxes to numbers and emit
-        signal to main.py where is the config file overwritten.
+        signal to gelbots.py where is the config file overwritten.
         :return:
         """
         try:
@@ -306,35 +306,35 @@ class SflSettingsWindow(QMainWindow):
 
     def pulse(self):
         """
-        Function to emit signal to main.py to perform sfl pulse.
+        Function to emit signal to gelbots.py to perform sfl pulse.
         :return:
         """
         self.pulse_signal.emit()
 
     def flush_switch(self):
         """
-        Function to emit signal to main.py to switch flush.
+        Function to emit signal to gelbots.py to switch flush.
         :return:
         """
         self.flush_switch_signal.emit()
 
     def light_switch(self):
         """
-        Function to emit signal to main.py to switch light.
+        Function to emit signal to gelbots.py to switch light.
         :return:
         """
         self.light_switch_signal.emit()
 
     def sfl_switch(self):
         """
-        Function to emit signal to main.py to start sfl.
+        Function to emit signal to gelbots.py to start sfl.
         :return:
         """
         self.sfl_switch_signal.emit()
 
     def switch_stamping(self):
         """
-        Function to emit signal to main.py to start sfl stamping mode.
+        Function to emit signal to gelbots.py to start sfl stamping mode.
         :return:
         """
         if self.sfl_stamping_button.text() == "Stamping ON":

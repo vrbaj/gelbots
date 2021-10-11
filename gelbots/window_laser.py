@@ -158,7 +158,7 @@ class LaserSettingsWindow(QMainWindow):
     def validate_settings(self):
         """
         Function to collect data with laser settings from inputboxes.
-        The data are sent via signal to main.py.
+        The data are sent via signal to gelbots.py.
         :return:
         """
         try:
@@ -180,7 +180,7 @@ class LaserSettingsWindow(QMainWindow):
 
     def blink_laser(self):
         """
-        Function to emit signal with laser blinking settings. Signal is accepted in main.py
+        Function to emit signal with laser blinking settings. Signal is accepted in gelbots.py
         that sends and appropriate request to RPI via worker_raspi.py.
         :return:
         """
@@ -204,8 +204,8 @@ class LaserSettingsWindow(QMainWindow):
 
     def switch_laser(self):
         """
-        Function to emit signal to main.py about requested state of laser (ON/OFF).
-        Signal is accepted in main.py and the appropriate request is sent via worker_raspi.py.
+        Function to emit signal to gelbots.py about requested state of laser (ON/OFF).
+        Signal is accepted in gelbots.py and the appropriate request is sent via worker_raspi.py.
         :return:
         """
         if self.switch_laser_button.text() == "Laser ON":
