@@ -19,6 +19,7 @@ from gelbots.qt_factory import QtFactory
 from gelbots import worker_raspi, window_laser, disk_core2 as disk_core, window_video, worker_camera, window_sfl, \
     window_formation
 from gelbots.gelbots_dataclasses import LaserParams, SflParams, CameraParams
+from gelbots.gelbots_utils import draw_marks
 
 
 class GelbotsWindow(QMainWindow):
@@ -215,9 +216,6 @@ class GelbotsWindow(QMainWindow):
                                                         func=lambda: self.mag_click(self.mag_40_checkbox))
 
 
-
-
-
             # Create combobox and add items.
             self.camera_combo_box = QComboBox(central_widget)
             self.camera_combo_box.setGeometry(QRect(60, 10, 40, 20))
@@ -299,24 +297,34 @@ class GelbotsWindow(QMainWindow):
             self.sfl_settings_window.light_switch_signal.connect(self.light_switch)
             self.sfl_settings_window.stamping_switch_signal.connect(self.stamping_switch)
 
+            try:
+                # TODO rethink eval() usage
+                eval("self.mag_" + str(self.mag_value) + "_checkbox.setChecked(True)")
+            except AttributeError:
+                self.logger.log_exception("config.ini file is inconsistent. Unexpected magnification value.",
+                                          "Unexpected magnification value. Select proper magnification value.")
 
-            if self.mag_value == 4:
-                self.mag_4_checkbox.setChecked(True)
-            elif self.mag_value == 10:
-                self.mag_10_checkbox.setChecked(True)
-            elif self.mag_value == 20:
-                self.mag_20_checkbox.setChecked(True)
-            elif self.mag_value == 40:
-                self.mag_40_checkbox.setChecked(True)
             self.checkbox_mag_group = QtWidgets.QButtonGroup(self)
-            self.checkbox_mag_group.addButton(self.mag_4_checkbox)
-            self.checkbox_mag_group.addButton(self.mag_10_checkbox)
-            self.checkbox_mag_group.addButton(self.mag_20_checkbox)
-            self.checkbox_mag_group.addButton(self.mag_40_checkbox)
+            for item in [4, 10, 20, 40]: eval("self.checkbox_mag_group.addButton(self.mag_"+ str(item) + "_checkbox)")
             self.checkbox_mag_group.setExclusive(True)
             self.showMaximized()
         except Exception as ex:
             print(ex)
+
+    def cam_params_edited(self, param_name):
+        # TODO promyslet
+        # if self.camera_params.brightness_value is not None:
+        #     try:
+        #         brightness_value = self.camera_worker.camera_worker_params.brightness_value
+        #         new_value = float(self.camera_brightness_input.text().replace(",", "."))
+        #
+        #         self.camera_worker.camera_params.brightness_value = new_brightness_value
+        #         self.camera_worker.camera_worker_params.change_params_flag = True
+        #         self.config.set("camera", "brightness", str(new_brightness_value).replace(".", ","))
+        #         self.camera_params.save_to_ini()
+        #     except ValueError:
+        #         self.logger.log_exception("Error in brightness_edited", "Brightness value error.")
+        pass
 
     def start_formation(self):
         pass
@@ -331,17 +339,6 @@ class GelbotsWindow(QMainWindow):
 
     def stamping_switch(self, command):
         if command == "start":
-        #     self.raspi_comm.requests_queue.append("b," + str(self.sfl_params.stamping_dx) +
-        #                                           "," + str(self.sfl_params.stamping_dy) +
-        #                                           "," + str(self.sfl_params.stamping_x_steps) +
-        #                                           "," + str(self.sfl_params.stamping_y_steps) +
-        #                                           "," + str(self.sfl_params.stamping_x_delay) +
-        #                                           "," + str(self.sfl_params.stamping_y_delay) +
-        #                                           "," + str(self.sfl_params.stamping_light_on) +
-        #                                           "," + str(self.sfl_params.stamping_light_off) +
-        #                                           "," + str(self.sfl_params.stamping_flush_on) +
-        #                                           "," + str(self.sfl_params.stamping_flush_off) +
-        #                                           "," + str(self.sfl_params.stamping_batch_size))
             self.raspi_comm.requests_queue.append(self.sfl_params.rasp_repr())
         elif command == "end":
             self.raspi_comm.requests_queue.append("c")
@@ -586,12 +583,15 @@ class GelbotsWindow(QMainWindow):
     def goal_checkbox_click(self, state):
         self.set_goal_enabled = state
 
+    @exception_handler
     def click_to_get_coords(self, event):
         # TODO REWRITE
         x_pixmap = event.pos().x()
         y_pixmap = event.pos().y()
         x_scale = self.camera_params.width_value / self.PIXMAP_WIDTH
         y_scale = self.camera_params.height_value / self.PIXMAP_HEIGHT
+        x_scale = 1
+        y_scale = 1
         x_image = int(x_pixmap * x_scale)
         y_image = int(y_pixmap * y_scale)
 
@@ -625,12 +625,12 @@ class GelbotsWindow(QMainWindow):
                 self.disk_core.target_disk_y = self.disk_y_loc
                 self.update_config_file()
         elif self.set_laser_enabled:
-            self.laser_x_loc = x_image
-            self.laser_y_loc = y_image
+            self.laser_params.laser_x_loc = x_image
+            self.laser_params.laser_y_loc = y_image
             self.laser_settings_window.laser_coordx_input.setText(str(x_image))
             self.laser_settings_window.laser_coordy_input.setText(str(y_image))
-            self.config.set("laser", "x_loc", self.laser_x_loc)
-            self.config.set("laser", "y_loc", self.laser_y_loc)
+            self.config.set("laser", "x_loc", self.laser_params.laser_x_loc)
+            self.config.set("laser", "y_loc", self.laser_params.laser_y_loc)
             self.update_config_file()
         elif self.video_settings_window.roi_enabled:
             if event.button() == QtCore.Qt.LeftButton:
@@ -909,23 +909,10 @@ class GelbotsWindow(QMainWindow):
             self.gray_image = cv2.cvtColor(self.image_to_display, cv2.COLOR_BGR2GRAY)
             if self.draw_marks_enabled:
                 # TODO wrap draw markers into function that will check the coordinates (if it is inside of img)
+                self.gray_image = draw_marks(self.gray_image, self.target_list, self.disk_list,
+                           [self.laser_params.laser_x_loc, self.laser_params.laser_y_loc],
+                           [self.sfl_params.sfl_x_loc, self.sfl_params.sfl_y_loc, self.sfl_params.sfl_radius])
 
-                for disk in self.disk_list:
-                    self.gray_image = cv2.drawMarker(self.gray_image, tuple(disk), (255, 255, 0),
-                                                     markerType=cv2.MARKER_TILTED_CROSS, markerSize=20, thickness=1,
-                                                     line_type=cv2.LINE_AA)
-                for target in self.target_list:
-                    self.gray_image = cv2.drawMarker(self.gray_image, tuple(target), (255, 255, 0),
-                                                     markerType=cv2.MARKER_DIAMOND, markerSize=20, thickness=1,
-                                                     line_type=cv2.LINE_AA)
-                self.gray_image = cv2.drawMarker(self.gray_image, (self.laser_params.laser_x_loc, self.laser_params.laser_y_loc), (0, 255, 0),
-                                                 markerType=cv2.MARKER_STAR, markerSize=20, thickness=1,
-                                                 line_type=cv2.LINE_AA)
-                self.gray_image = cv2.drawMarker(self.gray_image, (self.sfl_params.sfl_x_loc, self.sfl_params.sfl_y_loc), (0, 255, 0),
-                                                 markerType=cv2.MARKER_CROSS, markerSize=20, thickness=1,
-                                                 line_type=cv2.LINE_AA)
-                self.gray_image = cv2.circle(self.gray_image, (self.sfl_params.sfl_x_loc, self.sfl_params.sfl_y_loc), self.sfl_params.sfl_radius,
-                                             (0, 255, 0), 2)
                 x_scale = self.camera_params.width_value / self.PIXMAP_WIDTH
                 y_scale = self.camera_params.height_value / self.PIXMAP_HEIGHT
                 if self.draw_roi:

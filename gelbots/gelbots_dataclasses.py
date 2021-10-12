@@ -1,10 +1,15 @@
 """
 Module for all dataclasses related to gelbots project.
 """
+import configparser
 from dataclasses import dataclass
+from error_handling import ErrorLogger
+
+
+CONFIG_FILE_NAME = "config.ini"
 
 # TODO transform all to properties and add setters?
-# TODO use function asdict() for writing settings file
+# TODO use function asdict() for writing settings file?
 
 
 @dataclass(frozen=True)
@@ -37,6 +42,24 @@ class CameraParams:
     save_interval: int
     save_path: str
     save_namespace: str
+
+    def save_to_ini(self):
+        """
+        Function that opens the config ini file and writes the actual camera settings.
+        :return:
+        """
+        config = configparser.RawConfigParser()
+        config.read(CONFIG_FILE_NAME)
+        config.set("camera", "width", str(self.width_value))
+        config.set("camera", "height", str(self.height_value))
+        config.set("camera", "fps", str(self.fps_value))
+        config.set("camera", "exposure", str(self.exposure_value))
+        config.set("camera", "gain", str(self.gain_value).replace(".", ","))
+        config.set("camera", "brightness", str(self.brightness_value).replace(".", ","))
+        config.set("video", "interval", str(self.save_interval))
+        config.set("video", "namespace", str(self.save_namespace))
+        config.set("video", "path", str(self.save_path))
+        save_config(config)
 
 
 @dataclass(frozen=True)
@@ -91,3 +114,13 @@ class CameraWorkerParams:
     roi_origin: tuple = (0, 0)
     roi_endpoint: tuple = (0, 0)
     last_save_time: int = 0
+
+
+def save_config(config):
+    logger = ErrorLogger()
+    try:
+        with open(CONFIG_FILE_NAME, mode="w", encoding="utf-8") as configfile:
+            config.write(configfile)
+    except IOError:
+        logger.log_exception("Error in CameraParams class (save_to_ini()) ",
+                             "Could not save the parameters.")
