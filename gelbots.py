@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import QMainWindow, QLabel, QWidget, QComboBox,\
 from PyQt5.QtCore import QSize, QRect, Qt, QPoint
 from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
 
-
+import gelbots_utils
 from gelbots.error_handling import exception_handler, ErrorLogger
 from gelbots.qt_factory import QtFactory
 from gelbots import worker_raspi, window_laser, disk_core2 as disk_core, window_video, worker_camera, window_sfl, \
@@ -53,57 +53,23 @@ class GelbotsWindow(QMainWindow):
             self.disk_list = []
             try:
                 self.config = configparser.RawConfigParser()
+                self.config.read("config.ini")
             except Exception as ex:
                 print(ex)
             try:
                 #TODO this TRY bullshit to function
-                self.laser_params = LaserParams
-                self.sfl_params = SflParams
-                self.camera_params = CameraParams
-                self.config.read(self.CONFIG_FILE_NAME)
-                self.camera_params.width_value = self.config.getint("camera", "width", fallback=1920)
-                self.camera_params.height_value = self.config.getint("camera", "height", fallback=1080)
-                self.camera_params.fps_value = self.config.getint("camera", "fps", fallback=50)
-                self.camera_params.exposure_value = self.config.getint("camera", "exposure", fallback=10)
-                self.camera_params.gain_value = float(str(self.config.get("camera", "gain", fallback=1)).replace(",", "."))
-                self.camera_params.brightness_value = float(str(self.config.get("camera", "brightness",
-                                                                                 fallback=0.5)).replace(",", "."))
-                self.mag_value = self.config.getint("camera", "mag", fallback=4)
-                self.laser_params.laser_pulse_n = self.config.getint("laser", "pulses", fallback=1)
-                self.laser_params.laser_on_time = self.config.getint("laser", "on_time", fallback=1)
-                self.laser_params.laser_off_time = self.config.getint("laser", "off_time", fallback=1)
-                self.laser_params.laser_x_loc = self.config.getint("laser", "x_loc", fallback=0)
-                self.laser_params.laser_y_loc = self.config.getint("laser", "y_loc", fallback=0)
-                self.laser_params.offset = self.config.getint("laser", "offset", fallback=10)
-                self.disk_x_loc = self.config.getint("disk", "x_loc", fallback=0)
-                self.disk_y_loc = self.config.getint("disk", "y_loc", fallback=0)
-                self.goal_x_loc = self.config.getint("goal", "x_loc", fallback=0)
-                self.goal_y_loc = self.config.getint("goal", "y_loc", fallback=0)
-                self.sfl_params.sfl_x_loc = self.config.getint("sfl", "x_loc", fallback=0)
-                self.sfl_params.sfl_y_loc = self.config.getint("sfl", "y_loc", fallback=0)
-                self.sfl_params.sfl_radius = self.config.getint("sfl", "radius", fallback=0)
-                self.steppers_x = self.config.getint("steppers", "x", fallback=10)
-                self.steppers_y = self.config.getint("steppers", "y", fallback=10)
-                self.camera_params.save_interval = self.config.getint("video", "interval", fallback=1)
-                self.camera_params.save_namespace = self.config.get("video", "namespace", fallback="video")
-                self.camera_params.save_path = self.config.get("video", "path", fallback="c:/")
-                self.sfl_params.sfl_flush_on = self.config.getint("sfl", "flush_on", fallback=50)
-                self.sfl_params.sfl_flush_off = self.config.getint("sfl", "flush_off", fallback=500)
-                self.sfl_params.sfl_light_on = self.config.getint("sfl", "light_on", fallback=50)
-                self.sfl_params.sfl_light_off = self.config.getint("sfl", "light_off", fallback=500)
-                self.sfl_params.sfl_pulse = self.config.getint("sfl", "pulse", fallback=3000)
-                # stamping settings
-                self.sfl_params.stamping_dx = self.config.getint("stamping", "dx", fallback=1)
-                self.sfl_params.stamping_dy = self.config.getint("stamping", "dy", fallback=1)
-                self.sfl_params.stamping_x_delay = self.config.getint("stamping", "x_delay", fallback=100)
-                self.sfl_params.stamping_y_delay = self.config.getint("stamping", "y_delay", fallback=100)
-                self.sfl_params.stamping_light_on = self.config.getint("stamping", "light_on", fallback=100)
-                self.sfl_params.stamping_light_off = self.config.getint("stamping", "light_off", fallback=100)
-                self.sfl_params.stamping_flush_on = self.config.getint("stamping", "flush_on", fallback=100)
-                self.sfl_params.stamping_flush_off = self.config.getint("stamping", "flush_off", fallback=100)
-                self.sfl_params.stamping_x_steps = self.config.getint("stamping", "x_steps", fallback=100)
-                self.sfl_params.stamping_y_steps = self.config.getint("stamping", "y_steps", fallback=100)
-                self.sfl_params.stamping_batch_size = self.config.getint("stamping", "batch_size", fallback=100)
+                config_data = gelbots_utils.read_config()
+                self.laser_params = config_data["laser"]
+                self.sfl_params = config_data["sfl"]
+                self.camera_params = config_data["camera"]
+                self.disk_x_loc = config_data["disk_target"][0]
+                self.disk_y_loc = config_data["disk_target"][1]
+                self.goal_x_loc = config_data["disk_target"][2]
+                self.goal_y_loc = config_data["disk_target"][3]
+
+                self.steppers_x = config_data["steppers"][0]
+                self.steppers_y = config_data["steppers"][1]
+
             except Exception as ex:
                 print(ex)
             # set window properties
@@ -261,7 +227,7 @@ class GelbotsWindow(QMainWindow):
 
             self.disk_core = disk_core.DiskCore([self.laser_params.laser_x_loc, self.laser_params.laser_y_loc],
                                                 self.laser_params.get_cycle_time, self.laser_params.offset,
-                                                self.mag_value, self.target_list, self.disk_list)
+                                                self.camera_params.mag_value, self.target_list, self.disk_list)
 
             self.disk_core.gray_image_request.connect(self.core_image_request)
             self.disk_core.steppers_request.connect(self.move_steppers)
@@ -299,7 +265,7 @@ class GelbotsWindow(QMainWindow):
 
             try:
                 # TODO rethink eval() usage
-                eval("self.mag_" + str(self.mag_value) + "_checkbox.setChecked(True)")
+                eval("self.mag_" + str(self.camera_params.mag_value) + "_checkbox.setChecked(True)")
             except AttributeError:
                 self.logger.log_exception("config.ini file is inconsistent. Unexpected magnification value.",
                                           "Unexpected magnification value. Select proper magnification value.")
@@ -368,9 +334,10 @@ class GelbotsWindow(QMainWindow):
     @exception_handler
     def mag_click(self, mag):
         mag_text = mag.text()
-        self.mag_value = self.disk_core.mag = int(mag_text.replace("x", ""))
-        self.config.set("camera", "mag", str(self.mag_value))
-        self.update_config_file()
+        mag_value = int(mag_text.replace("x", ""))
+        if mag.isChecked and mag_value != self.camera_params.mag_value:
+            self.camera_params.mag_value = self.disk_core.mag = mag_value
+            self.camera_params.save_to_ini()
 
     def set_sfl_checkbox_click(self, state):
         self.set_sfl_enabled = state
@@ -378,28 +345,10 @@ class GelbotsWindow(QMainWindow):
     def laser_control(self, command):
         self.raspi_comm.requests_queue.append(command)
 
+    @exception_handler
     def sfl_settings_changed(self, sfl_params: SflParams):
         self.sfl_params = sfl_params
-        self.config.set("sfl", "pulse", str(self.sfl_params.sfl_pulse))
-        self.config.set("sfl", "light_on", str(self.sfl_params.sfl_light_on))
-        self.config.set("sfl", "light_off", str(self.sfl_params.sfl_light_off))
-        self.config.set("sfl", "flush_on", str(self.sfl_params.sfl_flush_on))
-        self.config.set("sfl", "flush_off", str(self.sfl_params.sfl_flush_off))
-        self.config.set("sfl", "radius", str(self.sfl_params.sfl_radius))
-
-        self.config.set("stamping", "dx", str(self.sfl_params.stamping_dx))
-        self.config.set("stamping", "dy", str(self.sfl_params.stamping_dy))
-        self.config.set("stamping", "x_delay", str(self.sfl_params.stamping_x_delay))
-        self.config.set("stamping", "y_delay", str(self.sfl_params.stamping_y_delay))
-        self.config.set("stamping", "light_on", str(self.sfl_params.stamping_light_on))
-        self.config.set("stamping", "light_off", str(self.sfl_params.stamping_light_off))
-        self.config.set("stamping", "flush_on", str(self.sfl_params.stamping_flush_on))
-        self.config.set("stamping", "flush_off", str(self.sfl_params.stamping_flush_off))
-        self.config.set("stamping", "x_steps", str(self.sfl_params.stamping_x_steps))
-        self.config.set("stamping", "y_steps", str(self.sfl_params.stamping_y_steps))
-        self.config.set("stamping", "batch_size", str(self.sfl_params.stamping_batch_size))
-
-        self.update_config_file()
+        self.sfl_params.save_to_ini()
 
     def laser_settings_changed(self, laser_params: LaserParams):
         self.laser_params.laser_pulse_n = laser_params.laser_pulse_n
@@ -638,10 +587,10 @@ class GelbotsWindow(QMainWindow):
                 self.rubber_band.setGeometry(QRect(QPoint(x_pixmap + 10, y_pixmap + 60), QSize()))
                 self.rubber_band.show()
         elif self.set_sfl_enabled:
-            self.sfl_x_loc = x_image
-            self.sfl_y_loc = y_image
-            self.config.set("sfl", "x_loc", self.sfl_x_loc)
-            self.config.set("sfl", "y_loc", self.sfl_y_loc)
+            self.sfl_params.sfl_x_loc = x_image
+            self.sfl_params.sfl_y_loc = y_image
+            self.config.set("sfl", "x_loc", self.sfl_params.sfl_x_loc)
+            self.config.set("sfl", "y_loc", self.sfl_params.sfl_y_loc)
             self.update_config_file()
         elif self.add_disk_formation:
             locs = self.disk_core.find_disks(self.gray_image)
@@ -657,9 +606,9 @@ class GelbotsWindow(QMainWindow):
     @exception_handler
     # TODO tenhle onClose shit dat primo do window_xxxx.py
     def video_settings_close(self, save_interval, save_namespace, save_path):
-        self.camera_params.save_interval, self.camera_worker.camera_params.save_interval = save_interval
-        self.camera_params.save_namespace, self.camera_worker.camera_params.save_namespace = save_namespace
-        self.camera_params.save_path, self.camera_worker.camera_params.save_path = save_path
+        self.camera_params.save_interval = self.camera_worker.camera_params.save_interval = save_interval
+        self.camera_params.save_namespace = self.camera_worker.camera_params.save_namespace = save_namespace
+        self.camera_params.save_path = self.camera_worker.camera_params.save_path = save_path
         self.config.set("video", "interval", str(save_interval))
         self.config.set("video", "namespace", str(save_namespace))
         self.config.set("video", "path", str(save_path))
@@ -869,10 +818,10 @@ class GelbotsWindow(QMainWindow):
                 new_height_value = int(self.camera_height_input.text())
                 self.message_text.setPlainText("Frame height value changed from {} to {}".format(str(height_value),
                                                                                                  str(new_height_value)))
+                self.camera_params.height_value = new_height_value
                 self.camera_worker.camera_params.height_value = new_height_value
                 self.camera_worker.camera_worker_params.change_params_flag = True
-                self.config.set("camera", "height", str(new_height_value))
-                self.update_config_file()
+                self.camera_params.save_to_ini()
             except ValueError:
                 self.logger.log_exception("Error in height_edited function", "Height value error.")
 
@@ -896,6 +845,7 @@ class GelbotsWindow(QMainWindow):
                 self.camera_combo_box.setEnabled(True)
                 self.run_camera_button.setText("Run camera")
 
+    @exception_handler
     def obtain_image(self):
         """Function to get camera image from camera worker. The conversion to grayscale is done."""
         try:
@@ -907,9 +857,10 @@ class GelbotsWindow(QMainWindow):
                 self.camera_worker.camera_worker_params.save_roi = False
             self.camera_worker.mutex.unlock()
             self.gray_image = cv2.cvtColor(self.image_to_display, cv2.COLOR_BGR2GRAY)
+            self.image_to_display = cv2.cvtColor(self.gray_image, cv2.COLOR_GRAY2RGB)
             if self.draw_marks_enabled:
                 # TODO wrap draw markers into function that will check the coordinates (if it is inside of img)
-                self.gray_image = draw_marks(self.gray_image, self.target_list, self.disk_list,
+                self.image_to_display = draw_marks(self.image_to_display, self.disk_list, self.target_list,
                            [self.laser_params.laser_x_loc, self.laser_params.laser_y_loc],
                            [self.sfl_params.sfl_x_loc, self.sfl_params.sfl_y_loc, self.sfl_params.sfl_radius])
 
@@ -924,12 +875,12 @@ class GelbotsWindow(QMainWindow):
                     # self.camera_worker.roi_endpoint = (rectangle_endpoint_x, rectangle_endpoint_y)
                     self.camera_worker.camera_worker_params.roi_endpoint = (self.endpoint.x(), self.endpoint.y())
                     self.camera_worker.camera_worker_params.roi_origin = (self.origin.x(), self.origin.y())
-                    self.gray_image = cv2.rectangle(self.gray_image, (self.origin.x(),
+                    self.image_to_display = cv2.rectangle(self.image_to_display, (self.origin.x(),
                                                                       self.origin.y()),
                                                     (self.endpoint.x(), self.endpoint.y()),
-                                                    (250, 255, 0), 2)
+                                                    (255, 20, 147), 2)
             height, width = self.gray_image.shape[:2]
-            image_for_pixmap = QtGui.QImage(self.gray_image, width, height, QtGui.QImage.Format_Grayscale8)
+            image_for_pixmap = QtGui.QImage(self.image_to_display, width, height, QtGui.QImage.Format_RGB888)
             self.image_display.setPixmap(QPixmap(image_for_pixmap).scaled(self.PIXMAP_WIDTH, self.PIXMAP_HEIGHT))
         except Exception as ex:
             print("obtain image: ", ex)

@@ -1,4 +1,6 @@
 # TODO general
+- FIX MULTIPLE LOGGING PROBLEM
+- disk_x_loc obsolete, target_x_loc obsolete...
 - decorator for exception catching in general functions
 - read and save to config inside the dataclass?
 - video convertor to gui
