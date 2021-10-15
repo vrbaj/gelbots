@@ -6,7 +6,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QMainWindow, QLabel, QLineEdit, QPushButton, QInputDialog
 from PyQt5.QtCore import QSize, QRect, pyqtSignal
 
-import formation_optimization
+import gelbots.formation_optimization
 
 
 class FormationWindow(QMainWindow):

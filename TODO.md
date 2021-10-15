@@ -1,5 +1,4 @@
 # TODO general
-- FIX MULTIPLE LOGGING PROBLEM
 - disk_x_loc obsolete, target_x_loc obsolete...
 - decorator for exception catching in general functions
 - read and save to config inside the dataclass?
@@ -9,6 +8,11 @@
 - release socket in onCLoseEvent
 - rewrite click_to_get_coords
 - pixmap / real world coordinates shit
+- automode does not stop after Stop button
+- info message when 0 disks found
+- sleeping time for move servo to settings
+- check optimization algorithm
+- xxx_edited function to use dataclasses methods
 # To pylint
 - disk_core2.py
 - formation_optimization.py

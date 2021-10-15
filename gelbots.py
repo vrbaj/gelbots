@@ -13,13 +13,12 @@ from PyQt5.QtWidgets import QMainWindow, QLabel, QWidget, QComboBox,\
 from PyQt5.QtCore import QSize, QRect, Qt, QPoint
 from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
 
-import gelbots_utils
 from gelbots.error_handling import exception_handler, ErrorLogger
 from gelbots.qt_factory import QtFactory
 from gelbots import worker_raspi, window_laser, disk_core2 as disk_core, window_video, worker_camera, window_sfl, \
     window_formation
 from gelbots.gelbots_dataclasses import LaserParams, SflParams, CameraParams
-from gelbots.gelbots_utils import draw_marks
+from gelbots.gelbots_utils import draw_marks, read_config
 
 
 class GelbotsWindow(QMainWindow):
@@ -33,7 +32,7 @@ class GelbotsWindow(QMainWindow):
     def __init__(self):
         try:
             QMainWindow.__init__(self)
-            self.logger = ErrorLogger()
+            self.logger = ErrorLogger(__name__)
             self.hook = keyboard.on_press(self.keyboard_event_received)
             self.draw_roi = False
             # variables
@@ -58,17 +57,12 @@ class GelbotsWindow(QMainWindow):
                 print(ex)
             try:
                 #TODO this TRY bullshit to function
-                config_data = gelbots_utils.read_config()
+                config_data = read_config()
                 self.laser_params = config_data["laser"]
                 self.sfl_params = config_data["sfl"]
                 self.camera_params = config_data["camera"]
-                self.disk_x_loc = config_data["disk_target"][0]
-                self.disk_y_loc = config_data["disk_target"][1]
-                self.goal_x_loc = config_data["disk_target"][2]
-                self.goal_y_loc = config_data["disk_target"][3]
+                self.servo_params = config_data["steppers"]
 
-                self.steppers_x = config_data["steppers"][0]
-                self.steppers_y = config_data["steppers"][1]
 
             except Exception as ex:
                 print(ex)
@@ -138,10 +132,10 @@ class GelbotsWindow(QMainWindow):
             self.camera_brightness_input = QtFactory.get_object(QLineEdit, central_widget, position=(600, 10),
                                                                 text=self.camera_params.brightness_value,
                                                                 validator="float", func=self.brightness_edited)
-            self.steppers_x_input = QtFactory.get_object(QLineEdit, central_widget, text=self.steppers_x,
+            self.steppers_x_input = QtFactory.get_object(QLineEdit, central_widget, text=self.servo_params.steppers_x,
                                                          position=(1680, 10), validator="int",
                                                          func=self.steppers_x_edited)
-            self.steppers_y_input = QtFactory.get_object(QLineEdit, central_widget, text=self.steppers_y,
+            self.steppers_y_input = QtFactory.get_object(QLineEdit, central_widget, text=self.servo_params.steppers_y,
                                                          position=(1680, 40), validator="int",
                                                          func=self.steppers_y_edited)
             # checkbox
@@ -227,7 +221,8 @@ class GelbotsWindow(QMainWindow):
 
             self.disk_core = disk_core.DiskCore([self.laser_params.laser_x_loc, self.laser_params.laser_y_loc],
                                                 self.laser_params.get_cycle_time, self.laser_params.offset,
-                                                self.camera_params.mag_value, self.target_list, self.disk_list)
+                                                self.camera_params.mag_value, self.target_list, self.disk_list,
+                                                self.servo_params.waiting_time)
 
             self.disk_core.gray_image_request.connect(self.core_image_request)
             self.disk_core.steppers_request.connect(self.move_steppers)
@@ -274,11 +269,12 @@ class GelbotsWindow(QMainWindow):
             for item in [4, 10, 20, 40]: eval("self.checkbox_mag_group.addButton(self.mag_"+ str(item) + "_checkbox)")
             self.checkbox_mag_group.setExclusive(True)
             self.showMaximized()
+            self.run_camera()
         except Exception as ex:
             print(ex)
 
     def cam_params_edited(self, param_name):
-        # TODO promyslet
+        # TODO promyslet jestli nejde narvat vsechno sem
         # if self.camera_params.brightness_value is not None:
         #     try:
         #         brightness_value = self.camera_worker.camera_worker_params.brightness_value
@@ -315,10 +311,10 @@ class GelbotsWindow(QMainWindow):
         if keyboard_pressed in ["a", "s", "d", "w"]:
             if keyboard_pressed in ["a", "d"]:
                 constant, raspi_command = (1, "x") if keyboard_pressed == "a" else (-1, "x-")
-                stepper, axis = [constant * self.steppers_x, 0], self.steppers_x
+                stepper, axis = [constant * self.servo_params.steppers_x, 0], self.servo_params.steppers_x
             elif keyboard_pressed in ["s", "w"]:
                 constant, raspi_command = (1, "y") if keyboard_pressed == "w" else (-1, "y-")
-                stepper, axis = [0, constant * self.steppers_y], self.steppers_y
+                stepper, axis = [0, constant * self.servo_params.steppers_y], self.servo_params.steppers_y
             self.raspi_comm.requests_queue.append(raspi_command + str(axis))
             self.disk_core.recompute_goal(stepper[0], stepper[1])
             self.disk_core.recompute_disk(stepper[0], stepper[1])
@@ -469,12 +465,9 @@ class GelbotsWindow(QMainWindow):
                 self.automode_enabled = True
                 self.disk_core.auto_mode = True
                 self.disk_core.auto_step = -1
-                self.disk_core.target_disk_x = self.disk_x_loc
-                self.disk_core.target_disk_y = self.disk_y_loc
-                self.disk_core.laser_x = self.laser_x_loc
-                self.disk_core.laser_y = self.laser_y_loc
-                self.disk_core.goal_x = self.goal_x_loc
-                self.disk_core.goal_y = self.goal_y_loc
+
+                self.disk_core.laser_x = self.laser_params.laser_x_loc
+                self.disk_core.laser_y = self.laser_params.laser_y_loc
                 self.disk_core.target_list = self.target_list
                 self.disk_core.disk_list = self.disk_list
                 self.formation_window.automode_status = True
@@ -550,29 +543,6 @@ class GelbotsWindow(QMainWindow):
             self.raspi_comm.requests_queue.append("y" + str(int(6.6666 * steps_y/2.5)))
             self.raspi_comm.requests_queue.append("x" + str(int(6.6666 * steps_x/2.5)))
 
-            # TODO send command to RaspiWorker
-        elif self.set_goal_enabled:
-            self.goal_x_loc = x_image
-            self.goal_y_loc = y_image
-            self.goalCoordXInput.setText(str(x_image))
-            self.goalCoordYInput.setText(str(y_image))
-            self.config.set("goal", "x_loc", str(self.goal_x_loc))
-            self.config.set("goal", "y_loc", str(self.goal_y_loc))
-            self.disk_core.goal_x = self.goal_x_loc
-            self.disk_core.goal_y = self.goal_y_loc
-            self.update_config_file()
-
-        elif self.set_disk_enabled:
-            locs = self.disk_core.find_disks(self.gray_image)
-            if len(locs) > 0:
-                nearest_disk = self.disk_core.nearest_disk([x_image, y_image], locs)
-                self.disk_x_loc = nearest_disk[0]
-                self.disk_y_loc = nearest_disk[1]
-                self.config.set("disk", "x_loc", str(self.disk_x_loc))
-                self.config.set("disk", "y_loc", str(self.disk_y_loc))
-                self.disk_core.target_disk_x = self.disk_x_loc
-                self.disk_core.target_disk_y = self.disk_y_loc
-                self.update_config_file()
         elif self.set_laser_enabled:
             self.laser_params.laser_x_loc = x_image
             self.laser_params.laser_y_loc = y_image
@@ -581,6 +551,7 @@ class GelbotsWindow(QMainWindow):
             self.config.set("laser", "x_loc", self.laser_params.laser_x_loc)
             self.config.set("laser", "y_loc", self.laser_params.laser_y_loc)
             self.update_config_file()
+
         elif self.video_settings_window.roi_enabled:
             if event.button() == QtCore.Qt.LeftButton:
                 self.origin = QPoint(x_pixmap, y_pixmap)
@@ -641,9 +612,9 @@ class GelbotsWindow(QMainWindow):
     def steppers_x_edited(self):
         """Function to set steppers steps for manual control"""
         try:
-            self.steppers_x = int(self.steppers_x_input.text())
-            self.message_text.setPlainText("stepper x: {} ".format(str(self.steppers_x)))
-            self.config.set("steppers", "x", self.steppers_x)
+            self.servo_params.steppers_x = int(self.steppers_x_input.text())
+            self.message_text.setPlainText("stepper x: {} ".format(str(self.servo_params.steppers_x)))
+            self.config.set("steppers", "x", self.servo_params.steppers_x)
             self.update_config_file()
         except ValueError:
             self.logger.log_exception("Error in steppers_x_edited.", "Stepper X value error.")
@@ -651,9 +622,9 @@ class GelbotsWindow(QMainWindow):
     def steppers_y_edited(self):
         """Function to set steppers steps for manual control"""
         try:
-            self.steppers_y = int(self.steppers_y_input.text())
-            self.message_text.setPlainText("stepper y: {} ".format(str(self.steppers_y)))
-            self.config.set("steppers", "y", self.steppers_y)
+            self.servo_params.steppers_y = int(self.steppers_y_input.text())
+            self.message_text.setPlainText("stepper y: {} ".format(str(self.servo_params.steppers_y)))
+            self.config.set("steppers", "y", self.servo_params.steppers_y)
             self.update_config_file()
         except ValueError:
             self.logger.log_exception("Error in steppers_y_edited.", "Stepper Y value error.")
@@ -735,17 +706,20 @@ class GelbotsWindow(QMainWindow):
         except ValueError:
             self.logger.log_exception("Error in pulse_number_edited.", "Pulse number error.")
 
+    @exception_handler
     def brightness_edited(self):
         """Function to set brightness of the camera"""
         if self.camera_params.brightness_value is not None:
+            print("brightness passed 1")
             try:
-                brightness_value = self.camera_worker.camera_worker_params.brightness_value
+                brightness_value = self.camera_worker.camera_params.brightness_value
                 new_brightness_value = float(self.camera_brightness_input.text().replace(",", "."))
                 self.message_text.setPlainText(
                   "Brightness value changed from {} to {}".format(str(brightness_value), str(new_brightness_value)))
                 self.camera_worker.camera_params.brightness_value = new_brightness_value
                 self.camera_worker.camera_worker_params.change_params_flag = True
                 self.config.set("camera", "brightness", str(new_brightness_value).replace(".", ","))
+
                 self.update_config_file()
             except ValueError:
                 self.logger.log_exception("Error in brightness_edited", "Brightness value error.")

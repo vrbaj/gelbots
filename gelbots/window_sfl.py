@@ -6,8 +6,8 @@ from PyQt5.QtWidgets import QMainWindow, QLabel, QLineEdit, QPushButton
 from PyQt5.QtCore import QSize, QRect, pyqtSignal
 from PyQt5.QtGui import QIntValidator
 
-from gelbots_dataclasses import SflParams
-from error_handling import ErrorLogger
+from gelbots.gelbots_dataclasses import SflParams
+from gelbots.error_handling import ErrorLogger
 
 
 class SflSettingsWindow(QMainWindow):
@@ -31,7 +31,7 @@ class SflSettingsWindow(QMainWindow):
 
     def __init__(self, sfl_params: SflParams):
         super().__init__()
-        self.logger = ErrorLogger()
+        self.logger = ErrorLogger(__name__)
         self.sfl_params = sfl_params
         self.int_validator = QIntValidator()
 

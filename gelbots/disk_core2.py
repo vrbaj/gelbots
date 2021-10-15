@@ -17,9 +17,9 @@ class DiskCore(QThread):
     laser_shot = pyqtSignal()
     auto_done = pyqtSignal()
 
-    def __init__(self, laser, laser_time, offset, magnification, target_list, disk_list):
+    def __init__(self, laser, laser_time, offset, magnification, target_list, disk_list, wait_time):
         super(DiskCore, self).__init__()
-        self.wait_time = 0.6  # seconds
+        self.wait_time = wait_time / 1000  # seconds
         self.image_to_process = None
         self.disk_locs = None
         self.status = True

@@ -6,8 +6,8 @@ from PyQt5.QtWidgets import QMainWindow, QLabel, QLineEdit, QPushButton, QMessag
 from PyQt5.QtCore import QSize, QRect, pyqtSignal
 from PyQt5.QtGui import QIntValidator, QFont
 
-from error_handling import ErrorLogger
-from gelbots_dataclasses import LaserParams
+from gelbots.error_handling import ErrorLogger
+from gelbots.gelbots_dataclasses import LaserParams
 
 
 class LaserSettingsWindow(QMainWindow):
@@ -24,7 +24,7 @@ class LaserSettingsWindow(QMainWindow):
 
     def __init__(self, laser_params: LaserParams):
         super().__init__()
-        self.logger = ErrorLogger()
+        self.logger = ErrorLogger(__name__)
         self.laser_params = laser_params
         self.int_validator = QIntValidator()
 

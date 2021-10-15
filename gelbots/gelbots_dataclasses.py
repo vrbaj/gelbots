@@ -3,13 +3,21 @@ Module for all dataclasses related to gelbots project.
 """
 import configparser
 from dataclasses import dataclass
-from error_handling import ErrorLogger
+from gelbots.error_handling import ErrorLogger
 
 
 CONFIG_FILE_NAME = "config.ini"
 
 # TODO transform all to properties and add setters?
 # TODO use function asdict() for writing settings file?
+
+
+@dataclass(frozen=False)
+class ServoParams:
+    """Class for keeping servo settings together"""
+    steppers_x: int = 0
+    steppers_y: int = 0
+    waiting_time: int = 0
 
 
 @dataclass(frozen=False)
@@ -143,7 +151,7 @@ class CameraWorkerParams:
 
 
 def save_config(config):
-    logger = ErrorLogger()
+    logger = ErrorLogger(__name__)
     try:
         with open(CONFIG_FILE_NAME, mode="w", encoding="utf-8") as configfile:
             config.write(configfile)

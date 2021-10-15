@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QMainWindow, QLabel, QLineEdit, \
 from PyQt5.QtCore import QSize, QRect, Qt, pyqtSignal
 from PyQt5.QtGui import QIntValidator
 
-from error_handling import ErrorLogger
+from gelbots.error_handling import ErrorLogger
 
 
 class VideoSettingsWindow(QMainWindow):
@@ -23,7 +23,7 @@ class VideoSettingsWindow(QMainWindow):
 
     def __init__(self, interval, namespace, path):
         super().__init__()
-        self.logger = ErrorLogger()
+        self.logger = ErrorLogger(__name__)
         self.int_validator = QIntValidator()
 
         # set variables

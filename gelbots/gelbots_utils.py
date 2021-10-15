@@ -1,7 +1,7 @@
 import cv2
 import configparser
 
-from gelbots_dataclasses import  SflParams, LaserParams, CameraParams
+from gelbots.gelbots_dataclasses import SflParams, LaserParams, CameraParams, ServoParams
 
 CONFIG_FILE_NAME = "config.ini"
 
@@ -37,6 +37,7 @@ def read_config():
     laser_params = LaserParams()
     sfl_params = SflParams()
     camera_params = CameraParams()
+    servo_params = ServoParams()
     config.read(CONFIG_FILE_NAME)
     camera_params.width_value = config.getint("camera", "width", fallback=1920)
     camera_params.height_value = config.getint("camera", "height", fallback=1080)
@@ -52,15 +53,12 @@ def read_config():
     laser_params.laser_x_loc = config.getint("laser", "x_loc", fallback=0)
     laser_params.laser_y_loc = config.getint("laser", "y_loc", fallback=0)
     laser_params.offset = config.getint("laser", "offset", fallback=10)
-    disk_x_loc = config.getint("disk", "x_loc", fallback=0)
-    disk_y_loc = config.getint("disk", "y_loc", fallback=0)
-    goal_x_loc = config.getint("goal", "x_loc", fallback=0)
-    goal_y_loc = config.getint("goal", "y_loc", fallback=0)
     sfl_params.sfl_x_loc = config.getint("sfl", "x_loc", fallback=0)
     sfl_params.sfl_y_loc = config.getint("sfl", "y_loc", fallback=0)
     sfl_params.sfl_radius = config.getint("sfl", "radius", fallback=0)
-    steppers_x = config.getint("steppers", "x", fallback=10)
-    steppers_y = config.getint("steppers", "y", fallback=10)
+    servo_params.steppers_x = config.getint("steppers", "x", fallback=10)
+    servo_params.steppers_y = config.getint("steppers", "y", fallback=10)
+    servo_params.waiting_time = config.getint("steppers", "waiting", fallback=10)
     camera_params.save_interval = config.getint("video", "interval", fallback=1)
     camera_params.save_namespace = config.get("video", "namespace", fallback="video")
     camera_params.save_path = config.get("video", "path", fallback="c:/")
@@ -83,6 +81,5 @@ def read_config():
     sfl_params.stamping_batch_size = config.getint("stamping", "batch_size", fallback=100)
     returned_data = {"camera": camera_params, "sfl": sfl_params,
                      "laser": laser_params,
-                     "steppers": [steppers_x, steppers_y],
-                     "disk_target": [disk_x_loc, disk_y_loc, goal_x_loc, goal_y_loc]}
+                     "steppers": servo_params}
     return returned_data

@@ -24,7 +24,7 @@ def exception_handler(func):
             func(*args, **kwargs)
         except ValueError:
             error_message = f"{func.__name__} - unexpected ValueError exception occurred."
-            logger = ErrorLogger()
+            logger = ErrorLogger(__name__)
             logger.logger.exception(error_message)
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
@@ -54,8 +54,8 @@ class ErrorLogger:
     LOG_FILE_NAME = "gelbots.log"
     LOG_MAX_SIZE = 1000000  # 1 MB
 
-    def __init__(self):
-        self.logger = logging.getLogger("gelbots_logger")
+    def __init__(self, name):
+        self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.INFO)  # you can set this to be DEBUG, INFO, ERROR
 
         # Assign a file-handler to that instance

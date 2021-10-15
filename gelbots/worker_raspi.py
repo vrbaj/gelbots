@@ -5,7 +5,7 @@ import time
 import socket
 
 from PyQt5.QtCore import QThread, pyqtSignal
-from error_handling import ErrorLogger
+from gelbots.error_handling import ErrorLogger
 
 
 class RaspiWorker(QThread):
@@ -27,7 +27,7 @@ class RaspiWorker(QThread):
         self.raspi_status = True
         self.k = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.k.settimeout(0.5)
-        self.logger = ErrorLogger()
+        self.logger = ErrorLogger(__name__)
 
     def run(self):
         """

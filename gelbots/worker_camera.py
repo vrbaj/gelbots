@@ -9,8 +9,8 @@ import cv2
 from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
 
-from gelbots_dataclasses import CameraParams, CameraWorkerParams
-from error_handling import exception_handler, ErrorLogger
+from gelbots.gelbots_dataclasses import CameraParams, CameraWorkerParams
+from gelbots.error_handling import exception_handler, ErrorLogger
 
 # from tifffile import imsave
 
@@ -26,7 +26,7 @@ class CameraWorker(QThread):
         super().__init__()
         self.camera_params = camera_params
 
-        self.logger = ErrorLogger()
+        self.logger = ErrorLogger(__name__)
         self.camera_worker_params = CameraWorkerParams
         self.mutex = QMutex()
         self.raw_image = []
