@@ -347,20 +347,9 @@ class GelbotsWindow(QMainWindow):
         self.sfl_params.save_to_ini()
 
     def laser_settings_changed(self, laser_params: LaserParams):
-        self.laser_params.laser_pulse_n = laser_params.laser_pulse_n
-        self.laser_params.laser_on_time = laser_params.laser_on_time
-        self.laser_params.laser_off_time = laser_params.laser_off_time
-        self.laser_params.laser_x_loc = laser_params.laser_x_loc
-        self.laser_params.laser_y_loc = laser_params.laser_y_loc
-        self.laser_params.offset = laser_params.offset
-        self.config.set("laser", "pulses", str(self.laser_params.laser_pulse_n))
-        self.config.set("laser", "on_time", str(self.laser_params.laser_on_time))
-        self.config.set("laser", "off_time", str(self.laser_params.laser_off_time))
-        self.config.set("laser", "x_loc", str(self.laser_params.laser_x_loc))
-        self.config.set("laser", "y_loc", str(self.laser_params.laser_y_loc))
-        self.config.set("laser", "offset", str(self.laser_params.offset))
+        self.laser_params = laser_params
         self.disk_core.region_offset = self.laser_params.offset
-        self.update_config_file()
+        self.laser_params.save_to_ini()
 
     def pulse(self):
         self.raspi_comm.requests_queue.append("a" + "," +

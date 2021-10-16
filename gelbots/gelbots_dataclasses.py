@@ -33,6 +33,20 @@ class LaserParams:
     def get_cycle_time(self):
         return self.laser_pulse_n * (self.laser_on_time * self.laser_off_time)
 
+    def save_to_ini(self):
+        """
+        Function that opens the config ini file and writes the actual camera settings.
+        :return:
+        """
+        config = configparser.RawConfigParser()
+        config.read(CONFIG_FILE_NAME)
+        config.set("laser", "pulses", str(self.laser_pulse_n))
+        config.set("laser", "on_time", str(self.laser_on_time))
+        config.set("laser", "off_time", str(self.laser_off_time))
+        config.set("laser", "x_loc", str(self.laser_x_loc))
+        config.set("laser", "y_loc", str(self.laser_y_loc))
+        config.set("laser", "offset", str(self.offset))
+        save_config(config)
 
 @dataclass(frozen=False)
 class CameraParams:
@@ -57,7 +71,6 @@ class CameraParams:
         Function that opens the config ini file and writes the actual camera settings.
         :return:
         """
-        print("entering camera save to ini")
         config = configparser.RawConfigParser()
         config.read(CONFIG_FILE_NAME)
         config.set("camera", "width", str(self.width_value))
