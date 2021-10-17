@@ -1,5 +1,5 @@
 """
-Module that definese general state interface for state machine, that is
+Module that defines general state interface for state machine, that is
 utilized by disk_core.py.
 """
 
@@ -9,8 +9,15 @@ class State(object):
     individual states within the state machine.
     """
 
-    def __init__(self):
+    def __init__(self, *kwargs):
         print('Processing current state:', str(self))
+
+    def process_state(self):
+        """
+        Actual work is done here.
+        :return:
+        """
+        pass
 
     def on_event(self, event):
         """

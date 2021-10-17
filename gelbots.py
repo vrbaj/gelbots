@@ -388,8 +388,6 @@ class GelbotsWindow(QMainWindow):
             self.raspi_comm.requests_queue.append("o")
             self.sfl_settings_window.sfl_switch_button.setText("SFL ON")
 
-            # TODO stop
-
     def sfl_light_on_edited(self):
         self.sfl_settings_window.sfl_light_on = int(self.sflLightOnInput.text())
         self.message_text.setPlainText("sfl light on: {} ".format(str(self.sfl_light_on)))
@@ -516,7 +514,6 @@ class GelbotsWindow(QMainWindow):
 
     @exception_handler
     def click_to_get_coords(self, event):
-        # TODO REWRITE
         x_pixmap = event.pos().x()
         y_pixmap = event.pos().y()
         x_scale = self.camera_params.width_value / self.PIXMAP_WIDTH
@@ -525,22 +522,17 @@ class GelbotsWindow(QMainWindow):
         y_scale = 1
         x_image = int(x_pixmap * x_scale)
         y_image = int(y_pixmap * y_scale)
-
         if self.move_laser_enabled:
-            steps_x = x_image - self.laser_x_loc
-            steps_y = y_image - self.laser_y_loc
+            steps_x = x_image - self.laser_params.laser_x_loc
+            steps_y = y_image - self.laser_params.laser_y_loc
             self.raspi_comm.requests_queue.append("y" + str(int(6.6666 * steps_y/2.5)))
             self.raspi_comm.requests_queue.append("x" + str(int(6.6666 * steps_x/2.5)))
-
         elif self.set_laser_enabled:
             self.laser_params.laser_x_loc = x_image
             self.laser_params.laser_y_loc = y_image
             self.laser_settings_window.laser_coordx_input.setText(str(x_image))
             self.laser_settings_window.laser_coordy_input.setText(str(y_image))
-            self.config.set("laser", "x_loc", self.laser_params.laser_x_loc)
-            self.config.set("laser", "y_loc", self.laser_params.laser_y_loc)
-            self.update_config_file()
-
+            self.laser_params.save_to_ini()
         elif self.video_settings_window.roi_enabled:
             if event.button() == QtCore.Qt.LeftButton:
                 self.origin = QPoint(x_pixmap, y_pixmap)
@@ -549,9 +541,7 @@ class GelbotsWindow(QMainWindow):
         elif self.set_sfl_enabled:
             self.sfl_params.sfl_x_loc = x_image
             self.sfl_params.sfl_y_loc = y_image
-            self.config.set("sfl", "x_loc", self.sfl_params.sfl_x_loc)
-            self.config.set("sfl", "y_loc", self.sfl_params.sfl_y_loc)
-            self.update_config_file()
+            self.sfl_params.save_to_ini()
         elif self.add_disk_formation:
             locs = self.disk_core.find_disks(self.gray_image)
             if len(locs) > 0:
@@ -569,10 +559,7 @@ class GelbotsWindow(QMainWindow):
         self.camera_params.save_interval = self.camera_worker.camera_params.save_interval = save_interval
         self.camera_params.save_namespace = self.camera_worker.camera_params.save_namespace = save_namespace
         self.camera_params.save_path = self.camera_worker.camera_params.save_path = save_path
-        self.config.set("video", "interval", str(save_interval))
-        self.config.set("video", "namespace", str(save_namespace))
-        self.config.set("video", "path", str(save_path))
-        self.update_config_file()
+        self.camera_params.save_to_ini()
 
     @exception_handler
     def save_video_settings(self, _):
@@ -592,6 +579,7 @@ class GelbotsWindow(QMainWindow):
 
     @exception_handler
     def show_sfl_settings(self, _):
+        # TODO potrebuju na tohle fakt funkci?
         """
         Function to show Sfl settings window.
         :return:
