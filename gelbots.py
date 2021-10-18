@@ -9,7 +9,7 @@ import keyboard
 import numpy as np
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QMainWindow, QLabel, QWidget, QComboBox,\
-    QLineEdit, QPushButton, QFrame, QCheckBox, QRubberBand
+    QLineEdit, QPushButton, QFrame, QCheckBox, QRubberBand, QProgressDialog
 from PyQt5.QtCore import QSize, QRect, Qt, QPoint
 from PyQt5.QtGui import QIntValidator, QPixmap, QDoubleValidator
 
@@ -29,9 +29,12 @@ class GelbotsWindow(QMainWindow):
 
     # pylint: disable = E1101
 
-    def __init__(self):
+    def __init__(self, progress):
+        progress.setValue(30)
+
         try:
             QMainWindow.__init__(self)
+
             self.logger = ErrorLogger(__name__)
             self.hook = keyboard.on_press(self.keyboard_event_received)
             self.draw_roi = False
@@ -50,6 +53,8 @@ class GelbotsWindow(QMainWindow):
             self.checker_memory = False
             self.target_list = []
             self.disk_list = []
+            progress.setLabelText("Reading config")
+            progress.setValue(40)
             try:
                 self.config = configparser.RawConfigParser()
                 self.config.read("config.ini")
@@ -74,7 +79,8 @@ class GelbotsWindow(QMainWindow):
             # Set validators
             self.int_validator = QIntValidator()
             self.double_validator = QDoubleValidator()
-
+            progress.setLabelText("Initializing graphic..")
+            progress.setValue(50)
             # labels
             self.camera_label = QtFactory.get_object(QLabel, central_widget, text="Camera:", geometry=QRect(10, 5, 80, 31))
             self.camera_width_label = QtFactory.get_object(QLabel, central_widget, text="Width:", geometry=QRect(120, 5, 80, 31))
@@ -182,6 +188,8 @@ class GelbotsWindow(QMainWindow):
             self.camera_combo_box.setObjectName("cameraComboBox")
             self.camera_combo_box.currentIndexChanged.connect(self.camera_changed)
             try:
+                progress.setLabelText("Scanning camera devices...")
+                progress.setValue(75)
                 self.refresh_camera_list()
                 self.camera_worker = None
             except Exception as ex:
@@ -269,7 +277,10 @@ class GelbotsWindow(QMainWindow):
             for item in [4, 10, 20, 40]: eval("self.checkbox_mag_group.addButton(self.mag_"+ str(item) + "_checkbox)")
             self.checkbox_mag_group.setExclusive(True)
             self.showMaximized()
+            progress.setLabelText("Initializing camera...")
+            progress.setValue(90)
             self.run_camera()
+            progress.setValue(100)
         except Exception as ex:
             print(ex)
 
@@ -477,15 +488,16 @@ class GelbotsWindow(QMainWindow):
         # TODO include this into utils?
         helpy_im = self.gray_image
         locs = self.disk_core.find_disks(helpy_im)
-        for max_loc in locs:
-            helpy_im = cv2.drawMarker(helpy_im, max_loc, (255, 255, 255), markerType=cv2.MARKER_CROSS,
-                                      markerSize=20, thickness=1, line_type=cv2.LINE_AA)
+        if len(locs) > 0:
+            for max_loc in locs:
+                helpy_im = cv2.drawMarker(helpy_im, max_loc, (255, 255, 255), markerType=cv2.MARKER_CROSS,
+                                          markerSize=20, thickness=1, line_type=cv2.LINE_AA)
 
-            cv2.putText(helpy_im, str(max_loc), max_loc, cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 255), 2,
-                        cv2.LINE_AA)
-        helpy_im = cv2.resize(helpy_im, (1280, 720))
-        cv2.imshow("Disk locations", helpy_im)
-        cv2.waitKey(0)
+                cv2.putText(helpy_im, str(max_loc), max_loc, cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 255), 2,
+                            cv2.LINE_AA)
+            helpy_im = cv2.resize(helpy_im, (1280, 720))
+            cv2.imshow("Disk locations", helpy_im)
+            cv2.waitKey(0)
 
     def set_laser_checkbox_click(self, state):
         self.set_laser_enabled = state
@@ -902,6 +914,16 @@ class GelbotsWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    main_window = GelbotsWindow()
+    progress = QProgressDialog("Main window initializing","cancel", 0, 100)
+    progress.setWindowModality(Qt.WindowModal)
+    progress.setCancelButton(None)
+    progress.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+    progress.setWindowFlags(progress.windowFlags() | QtCore.Qt.WindowStaysOnTopHint )
+    progress.show()
+    progress.setValue(10)
+    progress.setGeometry(760, 500, 300, 100)
+    progress.setWindowTitle("Loading")
+    progress.show()
+    main_window = GelbotsWindow(progress)
     main_window.show()
     sys.exit(app.exec_())

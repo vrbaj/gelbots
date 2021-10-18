@@ -3,7 +3,8 @@ import math
 
 import cv2
 import numpy as np
-from PyQt5.QtCore import QThread, QMutex, pyqtSignal
+from PyQt5.QtCore import QThread, QMutex, pyqtSignal, Qt
+from PyQt5.QtWidgets import QMessageBox
 
 
 class DiskCore(QThread):
@@ -19,6 +20,7 @@ class DiskCore(QThread):
 
     def __init__(self, laser, laser_time, offset, magnification, target_list, disk_list, wait_time):
         super(DiskCore, self).__init__()
+        self.msg = None
         self.wait_time = wait_time / 1000  # seconds
         self.image_to_process = None
         self.disk_locs = None
@@ -174,7 +176,6 @@ class DiskCore(QThread):
 
     def find_disks(self, image):
         # TODO find disks centers
-        start_time = time.time()
         # image = cv2.medianBlur(image, 5)
         # cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
         scaled_min_radius = int(18 * self.mag / 4)
@@ -185,10 +186,14 @@ class DiskCore(QThread):
         if circles is not None:
             circles = np.uint16(np.around(circles))
             for i in circles[0, :]:
-                # find center
-                # if 50 < i[2] < 80:
                 disk_locs.append((i[0], i[1]))
-            print(time.time() - start_time)
+        if len(disk_locs) == 0:
+            self.msg = QMessageBox()
+            self.msg.setIcon(QMessageBox.Information)
+            self.msg.setWindowTitle("Warning")
+            self.msg.setText("        Disks not found        ")
+            self.msg.setModal(False)
+            self.msg.show()
         return disk_locs
 
     @staticmethod
