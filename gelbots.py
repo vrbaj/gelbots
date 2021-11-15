@@ -67,6 +67,7 @@ class GelbotsWindow(QMainWindow):
                 self.sfl_params = config_data["sfl"]
                 self.camera_params = config_data["camera"]
                 self.servo_params = config_data["steppers"]
+                self.servo_params.waiting_time = 2000
 
 
             except Exception as ex:
@@ -74,7 +75,7 @@ class GelbotsWindow(QMainWindow):
             # set window properties
             central_widget = QWidget(self)
             self.setMinimumSize(QSize(1800, 1030))
-            self.setWindowTitle("Gelbot aimbot")
+            self.setWindowTitle("Gelbot aimbot v1")
             self.setCentralWidget(central_widget)
             # Set validators
             self.int_validator = QIntValidator()
@@ -228,7 +229,7 @@ class GelbotsWindow(QMainWindow):
             # start Disk Core thread
 
             self.disk_core = disk_core.DiskCore([self.laser_params.laser_x_loc, self.laser_params.laser_y_loc],
-                                                self.laser_params.get_cycle_time, self.laser_params.offset,
+                                                self.laser_params.laser_pulse_n * (self.laser_params.laser_on_time + self.laser_params.laser_off_time), self.laser_params.offset,
                                                 self.camera_params.mag_value, self.target_list, self.disk_list,
                                                 self.servo_params.waiting_time)
 
@@ -321,7 +322,7 @@ class GelbotsWindow(QMainWindow):
         keyboard_pressed = event.name
         if keyboard_pressed in ["a", "s", "d", "w"]:
             if keyboard_pressed in ["a", "d"]:
-                constant, raspi_command = (1, "x") if keyboard_pressed == "a" else (-1, "x-")
+                constant, raspi_command = (1, "x-") if keyboard_pressed == "a" else (-1, "x")
                 stepper, axis = [constant * self.servo_params.steppers_x, 0], self.servo_params.steppers_x
             elif keyboard_pressed in ["s", "w"]:
                 constant, raspi_command = (1, "y") if keyboard_pressed == "w" else (-1, "y-")
@@ -530,10 +531,11 @@ class GelbotsWindow(QMainWindow):
         y_pixmap = event.pos().y()
         x_scale = self.camera_params.width_value / self.PIXMAP_WIDTH
         y_scale = self.camera_params.height_value / self.PIXMAP_HEIGHT
-        x_scale = 1
-        y_scale = 1
+        # x_scale = 1
+        # y_scale = 1
         x_image = int(x_pixmap * x_scale)
         y_image = int(y_pixmap * y_scale)
+        print("clicked")
         if self.move_laser_enabled:
             steps_x = x_image - self.laser_params.laser_x_loc
             steps_y = y_image - self.laser_params.laser_y_loc
@@ -551,9 +553,12 @@ class GelbotsWindow(QMainWindow):
                 self.rubber_band.setGeometry(QRect(QPoint(x_pixmap + 10, y_pixmap + 60), QSize()))
                 self.rubber_band.show()
         elif self.set_sfl_enabled:
+            print("entering set sfl enabled")
             self.sfl_params.sfl_x_loc = x_image
             self.sfl_params.sfl_y_loc = y_image
+            print("got coords")
             self.sfl_params.save_to_ini()
+            print("sfl saved")
         elif self.add_disk_formation:
             locs = self.disk_core.find_disks(self.gray_image)
             if len(locs) > 0:
@@ -808,7 +813,7 @@ class GelbotsWindow(QMainWindow):
                 self.camera_combo_box.setEnabled(True)
                 self.run_camera_button.setText("Run camera")
 
-    @exception_handler
+    # @exception_handler
     def obtain_image(self):
         """Function to get camera image from camera worker. The conversion to grayscale is done."""
         try:

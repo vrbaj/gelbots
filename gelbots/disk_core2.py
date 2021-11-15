@@ -178,11 +178,12 @@ class DiskCore(QThread):
         # TODO find disks centers
         # image = cv2.medianBlur(image, 5)
         # cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-        scaled_min_radius = int(18 * self.mag / 4)
-        scaled_max_radius = int(40 * self.mag / 4)
+        scaled_min_radius = int(23 * self.mag / 4)
+        scaled_max_radius = int(29* self.mag / 4)
         disk_locs = []
         circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 1, 40,
                                    param1=50, param2=30, minRadius=scaled_min_radius, maxRadius=scaled_max_radius)
+        print(circles)
         if circles is not None:
             circles = np.uint16(np.around(circles))
             for i in circles[0, :]:

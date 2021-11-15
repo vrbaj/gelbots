@@ -3,7 +3,7 @@ Module for all dataclasses related to gelbots project.
 """
 import configparser
 from dataclasses import dataclass
-from gelbots.error_handling import ErrorLogger
+from gelbots.error_handling import ErrorLogger, exception_handler
 
 
 CONFIG_FILE_NAME = "config.ini"
@@ -17,7 +17,7 @@ class ServoParams:
     """Class for keeping servo settings together"""
     steppers_x: int = 0
     steppers_y: int = 0
-    waiting_time: int = 0
+    waiting_time: int = 1000
 
 
 @dataclass(frozen=False)
@@ -30,8 +30,10 @@ class LaserParams:
     laser_x_loc: int = 50
     laser_y_loc: int = 50
 
+    @exception_handler
     def get_cycle_time(self):
-        return self.laser_pulse_n * (self.laser_on_time * self.laser_off_time)
+        print("cycle time ", self.laser_pulse_n * (self.laser_on_time + self.laser_off_time))
+        return self.laser_pulse_n * (self.laser_on_time + self.laser_off_time)
 
     def save_to_ini(self):
         """
@@ -113,6 +115,7 @@ class SflParams:
     stamping_y_steps: int = 0
     stamping_batch_size: int = 0
 
+    @exception_handler
     def save_to_ini(self):
         config = configparser.RawConfigParser()
         config.read(CONFIG_FILE_NAME)
@@ -133,7 +136,7 @@ class SflParams:
         config.set("stamping", "x_steps", str(self.stamping_x_steps))
         config.set("stamping", "y_steps", str(self.stamping_y_steps))
         config.set("stamping", "batch_size", str(self.stamping_batch_size))
-        save_config()
+        save_config(config)
 
     def rasp_repr(self):
         rasp = str(self.stamping_dx) + "," + str(self.stamping_dy) + "," + str(self.stamping_x_steps) +\
@@ -163,7 +166,9 @@ class CameraWorkerParams:
     last_save_time: int = 0
 
 
+@exception_handler
 def save_config(config):
+    print("entering save_config")
     logger = ErrorLogger(__name__)
     try:
         with open(CONFIG_FILE_NAME, mode="w", encoding="utf-8") as configfile:
@@ -171,3 +176,5 @@ def save_config(config):
     except IOError:
         logger.log_exception("Error in CameraParams class (save_to_ini()) ",
                              "Could not save the parameters.")
+    except Exception as ex:
+        print(ex)
