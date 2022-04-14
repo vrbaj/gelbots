@@ -322,12 +322,15 @@ class GelbotsWindow(QMainWindow):
         keyboard_pressed = event.name
         if keyboard_pressed in ["a", "s", "d", "w"]:
             if keyboard_pressed in ["a", "d"]:
-                constant, raspi_command = (1, "x-") if keyboard_pressed == "a" else (-1, "x")
+                constant, raspi_command = (1, "x") if keyboard_pressed == "a" else (-1, "x")
                 stepper, axis = [constant * self.servo_params.steppers_x, 0], self.servo_params.steppers_x
             elif keyboard_pressed in ["s", "w"]:
-                constant, raspi_command = (1, "y") if keyboard_pressed == "w" else (-1, "y-")
+                constant, raspi_command = (1, "y") if keyboard_pressed == "w" else (-1, "y")
                 stepper, axis = [0, constant * self.servo_params.steppers_y], self.servo_params.steppers_y
-            self.raspi_comm.requests_queue.append(raspi_command + str(axis))
+            if raspi_command == "x":
+                self.raspi_comm.requests_queue.append("x" + str(constant * axis) + ",0")
+            else:
+                self.raspi_comm.requests_queue.append("x0," + str(constant * axis))
             self.disk_core.recompute_goal(stepper[0], stepper[1])
             self.disk_core.recompute_disk(stepper[0], stepper[1])
             self.disk_list = deepcopy(self.disk_core.disk_list)
@@ -458,8 +461,9 @@ class GelbotsWindow(QMainWindow):
         self.formation_window.refill_lists()
 
     def move_steppers(self, x, y):
-        self.raspi_comm.requests_queue.append("x" + str(x))
-        self.raspi_comm.requests_queue.append("y" + str(y))
+        # self.raspi_comm.requests_queue.append("x" + str(x))
+        # self.raspi_comm.requests_queue.append("y" + str(y))
+        self.raspi_comm.requests_queue.append("x" + str(x) + "," + str(y))
 
     @exception_handler
     def automode(self, _):
@@ -544,8 +548,8 @@ class GelbotsWindow(QMainWindow):
         if self.move_laser_enabled:
             steps_x = x_image - self.laser_params.laser_x_loc
             steps_y = y_image - self.laser_params.laser_y_loc
-            self.raspi_comm.requests_queue.append("y" + str(int(6.6666 * steps_y/2.5)))
-            self.raspi_comm.requests_queue.append("x" + str(int(6.6666 * steps_x/2.5)))
+            self.raspi_comm.requests_queue.append("x" + str(int(6.6666 * steps_x/2.5)) + "," + str(int(6.6666 * steps_y/2.5)))
+            #self.raspi_comm.requests_queue.append("x" + str(int(6.6666 * steps_x/2.5)))
         elif self.set_laser_enabled:
             self.laser_params.laser_x_loc = x_image
             self.laser_params.laser_y_loc = y_image

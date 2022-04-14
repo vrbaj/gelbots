@@ -139,7 +139,7 @@ class SflParams:
         save_config(config)
 
     def rasp_repr(self):
-        rasp = str(self.stamping_dx) + "," + str(self.stamping_dy) + "," + str(self.stamping_x_steps) +\
+        rasp = "b," + str(self.stamping_dx) + "," + str(self.stamping_dy) + "," + str(self.stamping_x_steps) +\
                "," + str(self.stamping_y_steps) + "," + str(self.stamping_x_delay) + \
                "," + str(self.stamping_y_delay) + "," + str(self.stamping_light_on) + \
                "," + str(self.stamping_light_off) + "," + str(self.stamping_flush_on) +\
