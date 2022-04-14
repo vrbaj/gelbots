@@ -341,10 +341,15 @@ class GelbotsWindow(QMainWindow):
 
     @exception_handler
     def mag_click(self, mag):
+
         mag_text = mag.text()
+
         mag_value = int(mag_text.replace("x", ""))
+
         if mag.isChecked and mag_value != self.camera_params.mag_value:
+
             self.camera_params.mag_value = self.disk_core.mag = mag_value
+
             self.camera_params.save_to_ini()
 
     def set_sfl_checkbox_click(self, state):
